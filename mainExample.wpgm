@@ -1,0 +1,11 @@
+import wollok.game.*
+
+import example.pepita
+
+program PepitaGame {
+	game.title("Pepita")
+	game.height(10)
+	game.width(10)
+
+	game.start()
+}
