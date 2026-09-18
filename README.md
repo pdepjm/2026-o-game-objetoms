@@ -1,5 +1,13 @@
-### [Nombre del juego]
+### Buffet Albert Einstein
 
-* Integrante 1
-* Integrante 2
-* Etc...
+
+La IA dominó el mundo, y echaron a todos los trabajadores del buffet.
+Los ingenieros tenemos hambre y tenemos que seguir comiendo. 
+Es tu tarea automatizar todos los procesos del buffet.
+
+## Participantes
+- Mateo Bustos
+- Carlos Aramis Chambi Flores
+- Facundo Ramounat
+- Federico Scalise Giussani
+- Mateo Silva

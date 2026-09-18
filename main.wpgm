@@ -1,0 +1,15 @@
+import wollok.game.*
+import tablero.*
+
+program BuffetAlbertEinstein {
+	game.title("Pepita")
+	game.height(13)
+	game.width(25)
+	game.cellSize(50)
+
+	game.boardGround("fondo.png")
+
+	game.onClickDo({pos => orquestador.click(pos)})
+
+	game.start()
+}
