@@ -9,7 +9,12 @@ program BuffetAlbertEinstein {
 
 	game.boardGround("fondo.png")
 
-	game.onClickDo({pos => orquestador.click(pos)})
+	game.onClickDo({
+		pos => orquestador.colocar(pos)
+	})
+	game.onDoubleClickDo({
+		pos => orquestador.quitar(pos) 
+	})
 
 	game.start()
 }

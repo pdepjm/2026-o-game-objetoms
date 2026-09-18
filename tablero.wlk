@@ -3,37 +3,40 @@
 import wollok.game.*
 import elementos.*
 
+object tablero {
+	var contenido = new Dictionary()
+
+	method obtenerPosicion(posicion) = contenido.getOrElse(posicion, { => null})
+
+	method quitarPosicion(posicion) = contenido.remove(posicion)
+	method establecer(posicion, cosa) {
+		contenido.put(posicion, cosa)
+	}
+}
+
 object orquestador {
-	// FILAS - COLUMNAS
-	var tablero = new List()
+	var cosaActual = null
 
-	method initialize() {
-		13.times({ i =>
-			const fila = new List()
-			25.times({ j => fila.add(null) })
-			tablero.add(fila)
-		})
+	method actualizarObjeto(posicion) {
+		cosaActual = tablero.obtenerPosicion(posicion)
 	}
 
-	method obtenerPosicion(fila, columna) = tablero.get(fila).get(columna)
+	method colocar(posicion) {
+		self.actualizarObjeto(posicion)
 
-	method establecer(fila, columna, cosa) {
-		tablero[fila][columna].add(cosa)
-	}
-
-	method click(posicion) {
-		const columna = posicion.x()
-		const fila = posicion.y()
-
-		const cosaActual = self.obtenerPosicion(fila, columna)
-
-		if (cosaActual == 0) {
-			const cosa = new Personaje(position = posicion)
+		if (cosaActual == null) {
+			var cosa = new Personaje(position = posicion)
 			game.addVisual(cosa)
-			self.establecer(fila, columna, cosa)
-		} else {
+			tablero.establecer(posicion, cosa)
+		}
+	}
+
+	method quitar(posicion) {
+		self.actualizarObjeto(posicion)
+
+		if (cosaActual != null) {
 			game.removeVisual(cosaActual)
-			self.establecer(fila, columna, null)
+			tablero.quitarPosicion(posicion)
 		}
 	}
 }
