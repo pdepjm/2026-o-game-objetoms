@@ -19,6 +19,9 @@ program BuffetAlbertEinstein {
 		pos => clickManager.doubleClickHandler(pos) 
 	})
 
+
+	keyboard.a().whilePressedDo({=>menu.prev()}, 1)
+	keyboard.s().whilePressedDo({=>menu.next()}, 1)
 	game.start()
 }
 

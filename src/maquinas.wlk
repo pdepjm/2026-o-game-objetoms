@@ -26,6 +26,7 @@ class Horno inherits Maquina{
 }
 
 class Freidora inherits Maquina{
+  method image() = "freidora.png"
 
 }
 

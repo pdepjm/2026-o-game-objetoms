@@ -1,6 +1,16 @@
 import maquinas.*
 object menu{
     var paginaActual = 0
+
+    method prev(){
+            paginaActual = 0
+            game.removeVisual(firstPage)
+        }
+
+    method next(){
+        paginaActual = 1
+        game.addVisual(firstPage)
+    }
     method obtenerElemento(pos){
         var elemento = 0
 
@@ -28,8 +38,33 @@ object menu{
             }
         }
 
+        if(paginaActual ==1){
+            if (pos.y()>=1 && pos.y() <=2){
+                elemento = 8
+            }
+
+            if (pos.y()>=4 && pos.y() <=5){
+                elemento = 7
+            }
+
+            if (pos.y()>=7 && pos.y() <=9){
+                elemento = 6
+            }
+
+            if (pos.y()>=11 && pos.y() <=13){
+                elemento = 5
+            }
+        }
+
         return elemento
     }
+    
+}
+
+
+object firstPage{
+    var property position = game.at(21, 0)
+    var property image = "menu1.png"
     
 }
 
@@ -56,6 +91,10 @@ object toolManager{
 
 		if (elemento == 3){
 			selectedTool = {=> new Horno()}
+		}
+
+        if (elemento == 5){
+			selectedTool = {=> new Freidora()}
 		}
 	}
 }
