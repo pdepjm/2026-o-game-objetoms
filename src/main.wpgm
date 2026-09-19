@@ -47,19 +47,9 @@ object toolManager{
 	// selectedTool va a devolver una nueva instancia de la herramienta seleccionada.
 	// chooseTool va a validar el click y va a actualizar selectedTool segun corresponda.
 
-	var selectedTool = "cinta"
-	method selectedTool() {
-
-		if(selectedTool == "cinta"){
-			return new Cinta()
-		}
-		if(selectedTool == "horno"){
-			return new Horno()
-		}
-
-		return null
-	}
-
+	// herramienta default y aplicar la lambda de la herramietna seleccioanda
+	var selectedTool =  {=> new Cinta()}
+	method selectedTool() = selectedTool.apply()
 	method chooseTool(pos){
 		// Este método, depende donde se hizo click, establece la herramienta seleccionada
 		// a la clase correspondiente al elemento
@@ -68,14 +58,15 @@ object toolManager{
 		if (pos.x()>=25 || pos.x()<=22){
 		}
 
+		// se establecen lambdas que instancien las maquinas/herramientas.
 		if (pos.y()>=1 && pos.y() <=2){
 			console.println("Choose Cinta")
-			selectedTool =  "cinta"
+			selectedTool =  {=> new Cinta()}
 		}
 
 		if (pos.y()>=4 && pos.y() <=5){
 			console.println("Choose Horno")
-			selectedTool = "horno"
+			selectedTool = {=> new Horno()}
 		}
 	}
 }
