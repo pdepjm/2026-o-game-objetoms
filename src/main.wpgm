@@ -60,12 +60,10 @@ object toolManager{
 
 		// se establecen lambdas que instancien las maquinas/herramientas.
 		if (pos.y()>=1 && pos.y() <=2){
-			console.println("Choose Cinta")
 			selectedTool =  {=> new Cinta()}
 		}
 
 		if (pos.y()>=4 && pos.y() <=5){
-			console.println("Choose Horno")
 			selectedTool = {=> new Horno()}
 		}
 	}
