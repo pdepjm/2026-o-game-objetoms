@@ -1,6 +1,7 @@
 import wollok.game.*
 import tablero.*
 import maquinas.*
+import menu.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -25,7 +26,6 @@ program BuffetAlbertEinstein {
 object clickManager {
 	// Que hay que hacer en caso de que se haga click en una determinada parte de la pantalla
 	method clickHandler(pos){
-		console.println(pos)
 		if (pos.x()> 20){
 			// Se hizo click en el menú
 			toolManager.chooseTool(pos)
@@ -42,29 +42,3 @@ object clickManager {
 }
 
 
-object toolManager{
-	// Tenemos dos motedos.
-	// selectedTool va a devolver una nueva instancia de la herramienta seleccionada.
-	// chooseTool va a validar el click y va a actualizar selectedTool segun corresponda.
-
-	// herramienta default y aplicar la lambda de la herramietna seleccioanda
-	var selectedTool =  {=> new Cinta()}
-	method selectedTool() = selectedTool.apply()
-	method chooseTool(pos){
-		// Este método, depende donde se hizo click, establece la herramienta seleccionada
-		// a la clase correspondiente al elemento
-
-		// Guard clause: se hizo click fuera de las columnas de elementos
-		if (pos.x()>=25 || pos.x()<=22){
-		}
-
-		// se establecen lambdas que instancien las maquinas/herramientas.
-		if (pos.y()>=1 && pos.y() <=2){
-			selectedTool =  {=> new Cinta()}
-		}
-
-		if (pos.y()>=4 && pos.y() <=5){
-			selectedTool = {=> new Horno()}
-		}
-	}
-}
