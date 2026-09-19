@@ -2,12 +2,6 @@
 
 import wollok.game.*
 
-class Personaje {
-  var property position = game.origin()
-
-  method image() = "pepitaa.png"
-}
-
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.
 // Tiene que haber una posicion de salida. Un "item actual" para tener el objeto que le toca procesar.
@@ -16,29 +10,30 @@ class Maquina {
 }
 
 class Cinta inherits Maquina{
-  method image() = "cinta.png"
+  method image() = "maquinas/cinta.png"
 
 }
 
 class Horno inherits Maquina{
-  method image() = "horno.png"
+  method image() = "maquinas/horno.png"
 
 }
 
 class Freidora inherits Maquina{
-  method image() = "freidora.png"
+  method image() = "maquinas/freidora.png"
 
 }
 
 class Cortadora inherits Maquina{
-
+  method image() = "maquinas/cortadora.png"
 }
 
 class Ensambladora inherits Maquina{
-
+  method image() = "maquinas/ensambladora.png"
 }
 
 class Dispensadora inherits Maquina{
   // Dispensa un item cada un determinado tiempo
+  method image() = "maquinas/dispensadora.png"
 }
 

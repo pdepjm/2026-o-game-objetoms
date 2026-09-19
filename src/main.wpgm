@@ -30,7 +30,7 @@ program BuffetAlbertEinstein {
 object clickManager {
 	// Que hay que hacer en caso de que se haga click en una determinada parte de la pantalla
 	method clickHandler(pos){
-		if (pos.x()> 20){
+		if (pos.x().between(21, 24)){
 			// Se hizo click en el menú
 			toolManager.chooseTool(pos)
 

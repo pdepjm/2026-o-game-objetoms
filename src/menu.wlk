@@ -1,57 +1,57 @@
 import maquinas.*
+
 object menu{
+    var property image = "menu0/menu0_default.png"
     var paginaActual = 0
+    var tool_selected = 0
 
     method position() = game.at(21,0)
 
+    // Resalta la herramienta seleccionada solo si pertenece a la pagina que se esta mostrando
+    method actualizarImagen() {
+        const carpeta = "menu" + paginaActual.toString()
+        const elementoEnPagina = tool_selected - paginaActual * 4
 
-    var property image = "menu0.png"
+        if (elementoEnPagina.between(1, 4))
+            image = carpeta + "/" + carpeta + "_elem" + elementoEnPagina.toString() + "_selected.png"
+        else
+            image = carpeta + "/" + carpeta + "_default.png"
+    }
 
     method prev(){
         paginaActual = 0
-        self.image("menu0.png")
+        self.actualizarImagen()
     }
 
     method next(){
         paginaActual = 1
-        self.image("menu1.png")
+        self.actualizarImagen()
     }
-    method obtenerElemento(pos){
-        var region = 0
 
-        // Guard clause: se hizo click fuera de las columnas de elementos
-        if (pos.x()>=24 || pos.x()<=21){
-            return  0
-		}
+    method elementoEn(pos){
+        var elemento = 0
 
-        if (pos.y()>=1 && pos.y() <=2){
-            region = 4
-        }
+        if (pos.y().between(1, 2)) elemento = 4
 
-        if (pos.y()>=4 && pos.y() <=5){
-            region = 3
-        }
+        if (pos.y().between(4, 5)) elemento = 3
 
-        if (pos.y()>=7 && pos.y() <=9){
-            region = 2
-        }
+        if (pos.y().between(7, 9)) elemento = 2
 
-        if (pos.y()>=11 && pos.y() <=13){
-            region = 1
-        }
-		// se establecen lambdas que instancien las maquinas/herramientas.
-        // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento 
-      
+        if (pos.y().between(10, 13)) elemento = 1
 
-        return region + paginaActual * 4
+        // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento
+
+        if (elemento == 0) return 0
+
+        return elemento + paginaActual * 4
     }
-    
+
+    // Se llama solo cuando la selección fue aceptada por toolManager
+    method seleccionar(tool){
+        tool_selected = tool
+        self.actualizarImagen()
+    }
 }
-
-
-
-
-
 
 // Maneja cual es la Tool Seleccionada actual
 object toolManager{
@@ -59,26 +59,27 @@ object toolManager{
 	// selectedTool va a devolver una nueva instancia de la herramienta seleccionada.
 	// chooseTool va a validar el click y va a actualizar selectedTool segun corresponda.
 
-	// herramienta default y aplicar la lambda de la herramietna seleccioanda
+	const herramientas = new Dictionary()
+
 	var selectedTool =  {=> new Cinta()}
+
+	method initialize() {
+        herramientas.put(1, {=> new Cortadora()})
+        herramientas.put(2, {=> new Ensambladora()})
+		herramientas.put(3, {=> new Horno()})
+		herramientas.put(4, {=> new Cinta()})
+		herramientas.put(5, {=> new Freidora()})
+		herramientas.put(6, {=> new Dispensadora()})
+	}
+
 	method selectedTool() = selectedTool.apply()
+
 	method chooseTool(pos){
-        
-        var elemento = menu.obtenerElemento(pos)
-		// Este método, depende donde se hizo click, establece la herramienta seleccionada
-		// a la clase correspondiente al elemento
+		const elemento = menu.elementoEn(pos)
 
-		// se establecen lambdas que instancien las maquinas/herramientas.
-		if (elemento == 4){
-			selectedTool =  {=> new Cinta()}
-		}
-
-		if (elemento == 3){
-			selectedTool = {=> new Horno()}
-		}
-
-        if (elemento == 5){
-			selectedTool = {=> new Freidora()}
+		if (herramientas.containsKey(elemento)) {
+			selectedTool = herramientas.get(elemento)
+			menu.seleccionar(elemento)
 		}
 	}
 }
