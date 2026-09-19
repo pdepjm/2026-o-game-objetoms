@@ -2,72 +2,55 @@ import maquinas.*
 object menu{
     var paginaActual = 0
 
+    method position() = game.at(21,0)
+
+
+    var property image = "menu0.png"
+
     method prev(){
-            paginaActual = 0
-            game.removeVisual(firstPage)
-        }
+        paginaActual = 0
+        self.image("menu0.png")
+    }
 
     method next(){
         paginaActual = 1
-        game.addVisual(firstPage)
+        self.image("menu1.png")
     }
     method obtenerElemento(pos){
-        var elemento = 0
+        var region = 0
 
         // Guard clause: se hizo click fuera de las columnas de elementos
         if (pos.x()>=24 || pos.x()<=21){
             return  0
 		}
 
+        if (pos.y()>=1 && pos.y() <=2){
+            region = 4
+        }
+
+        if (pos.y()>=4 && pos.y() <=5){
+            region = 3
+        }
+
+        if (pos.y()>=7 && pos.y() <=9){
+            region = 2
+        }
+
+        if (pos.y()>=11 && pos.y() <=13){
+            region = 1
+        }
 		// se establecen lambdas que instancien las maquinas/herramientas.
         // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento 
-        if(paginaActual ==0){
-            if (pos.y()>=1 && pos.y() <=2){
-                elemento = 4
-            }
+      
 
-            if (pos.y()>=4 && pos.y() <=5){
-                elemento = 3
-            }
-
-            if (pos.y()>=7 && pos.y() <=9){
-                elemento = 2
-            }
-
-            if (pos.y()>=11 && pos.y() <=13){
-                elemento = 1
-            }
-        }
-
-        if(paginaActual ==1){
-            if (pos.y()>=1 && pos.y() <=2){
-                elemento = 8
-            }
-
-            if (pos.y()>=4 && pos.y() <=5){
-                elemento = 7
-            }
-
-            if (pos.y()>=7 && pos.y() <=9){
-                elemento = 6
-            }
-
-            if (pos.y()>=11 && pos.y() <=13){
-                elemento = 5
-            }
-        }
-
-        return elemento
+        return region + paginaActual * 4
     }
     
 }
 
 
-object firstPage{
-    var property position = game.at(21, 0)
-    var property image = "menu1.png"
-    
-}
+
+
 
 
 // Maneja cual es la Tool Seleccionada actual

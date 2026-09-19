@@ -15,16 +15,11 @@ object tablero {
 }
 
 object orquestador {
-	var cosaActual = null
-
-	method actualizarObjeto(posicion) {
-		cosaActual = tablero.obtenerPosicion(posicion)
-	}
 
 	method colocar(posicion, elemento) {
-		self.actualizarObjeto(posicion)
 
-		if (cosaActual == null) {
+
+		if (tablero.obtenerPosicion(posicion) == null) {
 			elemento.position(posicion)
 			game.addVisual(elemento)
 			tablero.establecer(posicion, elemento)
@@ -32,8 +27,7 @@ object orquestador {
 	}
 
 	method quitar(posicion) {
-		self.actualizarObjeto(posicion)
-
+		const cosaActual = tablero.obtenerPosicion(posicion)
 		if (cosaActual != null) {
 			game.removeVisual(cosaActual)
 			tablero.quitarPosicion(posicion)
