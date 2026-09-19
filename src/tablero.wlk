@@ -21,13 +21,13 @@ object orquestador {
 		cosaActual = tablero.obtenerPosicion(posicion)
 	}
 
-	method colocar(posicion) {
+	method colocar(posicion, elemento) {
 		self.actualizarObjeto(posicion)
 
 		if (cosaActual == null) {
-			var cosa = new Personaje(position = posicion)
-			game.addVisual(cosa)
-			tablero.establecer(posicion, cosa)
+			elemento.position(posicion)
+			game.addVisual(elemento)
+			tablero.establecer(posicion, elemento)
 		}
 	}
 

@@ -1,5 +1,6 @@
 import wollok.game.*
 import tablero.*
+import elementos.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -10,11 +11,59 @@ program BuffetAlbertEinstein {
 	game.boardGround("fondo.png")
 
 	game.onClickDo({
-		pos => orquestador.colocar(pos)
+			pos => clickManager.clickHandler(pos)
 	})
 	game.onDoubleClickDo({
 		pos => orquestador.quitar(pos) 
 	})
 
 	game.start()
+}
+
+
+object clickManager {
+	method clickHandler(pos){
+		console.println(pos)
+		if (pos.x()> 20){
+			// Se hizo click en el menú
+			toolManager.chooseTool(pos)
+
+		}else{
+			orquestador.colocar(pos, toolManager.selectedTool())
+		}
+	}
+}
+
+
+object toolManager{
+	var selectedTool = "cinta"
+	method selectedTool() {
+		if(selectedTool == "cinta"){
+			return new Cinta()
+		}
+		if(selectedTool == "horno"){
+			return new Horno()
+		}
+
+		return null
+	}
+
+	method chooseTool(pos){
+		// Este método, depende donde se hizo click, establece la herramienta seleccionada
+		// a la clase correspondiente al elemento
+
+		// Guard clause: se hizo click fuera de las columnas de elementos
+		if (pos.x()>=25 || pos.x()<=22){
+		}
+
+		if (pos.y()>=1 && pos.y() <=2){
+			console.println("Choose Cinta")
+			selectedTool =  "cinta"
+		}
+
+		if (pos.y()>=4 && pos.y() <=5){
+			console.println("Choose Horno")
+			selectedTool = "horno"
+		}
+	}
 }
