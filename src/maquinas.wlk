@@ -37,3 +37,8 @@ class Cortadora inherits Maquina{
 class Ensambladora inherits Maquina{
 
 }
+
+class Dispensadora inherits Maquina{
+  // Dispensa un item cada un determinado tiempo
+}
+
