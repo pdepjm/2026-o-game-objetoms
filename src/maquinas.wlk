@@ -8,7 +8,9 @@ class Personaje {
   method image() = "pepitaa.png"
 }
 
-
+// Clase de máquina
+// Hay que agregar los métodos de rotar, de procesar, etc.
+// Tiene que haber una posicion de salida. Un "item actual" para tener el objeto que le toca procesar.
 class Maquina {
   var property position = game.origin()
 }

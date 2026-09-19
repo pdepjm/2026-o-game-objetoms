@@ -1,6 +1,6 @@
 import wollok.game.*
 import tablero.*
-import elementos.*
+import maquinas.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -10,11 +10,12 @@ program BuffetAlbertEinstein {
 
 	game.boardGround("fondo.png")
 
+	// Delegar Clicks al click Handler
 	game.onClickDo({
-			pos => clickManager.clickHandler(pos)
+		pos => clickManager.clickHandler(pos)
 	})
 	game.onDoubleClickDo({
-		pos => orquestador.quitar(pos) 
+		pos => clickManager.doubleClickHandler(pos) 
 	})
 
 	game.start()
@@ -22,6 +23,7 @@ program BuffetAlbertEinstein {
 
 
 object clickManager {
+	// Que hay que hacer en caso de que se haga click en una determinada parte de la pantalla
 	method clickHandler(pos){
 		console.println(pos)
 		if (pos.x()> 20){
@@ -32,12 +34,22 @@ object clickManager {
 			orquestador.colocar(pos, toolManager.selectedTool())
 		}
 	}
+
+	// Manejador del doble click
+	method doubleClickHandler(pos){
+		orquestador.quitar(pos) 
+	}
 }
 
 
 object toolManager{
+	// Tenemos dos motedos.
+	// selectedTool va a devolver una nueva instancia de la herramienta seleccionada.
+	// chooseTool va a validar el click y va a actualizar selectedTool segun corresponda.
+
 	var selectedTool = "cinta"
 	method selectedTool() {
+
 		if(selectedTool == "cinta"){
 			return new Cinta()
 		}

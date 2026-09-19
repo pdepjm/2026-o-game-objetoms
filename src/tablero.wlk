@@ -1,7 +1,7 @@
 // MANEJA EL DONDE
 
 import wollok.game.*
-import elementos.*
+import maquinas.*
 
 object tablero {
 	var contenido = new Dictionary()
