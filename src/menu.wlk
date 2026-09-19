@@ -20,6 +20,7 @@ object menu{
 		}
 
 		// se establecen lambdas que instancien las maquinas/herramientas.
+        // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento 
         if(paginaActual ==0){
             if (pos.y()>=1 && pos.y() <=2){
                 elemento = 4
