@@ -16,11 +16,11 @@ class Maquina {
   // indice: 0 = right, 1 = down, 2 = left, 3 = up
 
   const direcciones = ["right", "down", "left", "up"]
-  const indiceDireccion = Tools.currentRotation()
+  const direccion = Tools.currentRotation()
 
 
 
-  method image() = "maquinas/"+self.name()+"/"+direcciones.get(indiceDireccion) + ".gif"
+  method image() = "maquinas/"+self.name()+"/"+direcciones.get(direccion) + ".gif"
 
 }
 
@@ -63,18 +63,18 @@ object MachineManager{
 
   method maquinas() = herramientas
 
-	var selectedTool =  {r => new Cinta()}
+	var selectedTool =  {=> new Cinta()}
 
 	method initialize() {
-		herramientas.put(1, {r => new Cinta(indiceDireccion = r)})
-    herramientas.put(2, {r => new Ensambladora(indiceDireccion = r)})
-		herramientas.put(3, {r => new Horno(indiceDireccion = r)})
-    herramientas.put(4, {r => new Cortadora(indiceDireccion = r)})
-		herramientas.put(5, {r => new Freidora(indiceDireccion = r)})
-		herramientas.put(6, {r => new Dispensadora(indiceDireccion = r)})
+		herramientas.put(1, {=> new Cinta()})
+    herramientas.put(2, {=> new Ensambladora()})
+		herramientas.put(3, {=> new Horno()})
+    herramientas.put(4, {=> new Cortadora()})
+		herramientas.put(5, {=> new Freidora()})
+		herramientas.put(6, {=> new Dispensadora()})
 	}
 
-	method selectedTool(rotacionInicial) = selectedTool.apply(rotacionInicial)
+	method selectedTool() = selectedTool.apply()
 
 
     // TO-DO: Esto no es responsabilidad del MachineManager. Al hacer click en el menu, simo

@@ -34,7 +34,7 @@ object clickManager {
 				MachineManager.chooseTool(pos)
 
 			}else{
-				orquestador.colocar(pos, MachineManager.selectedTool(Tools.currentRotation()))
+				orquestador.colocar(pos, MachineManager.selectedTool())
 			}
 		}
 

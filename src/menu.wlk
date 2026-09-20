@@ -58,7 +58,7 @@ object menu{
         claves.forEach({clave =>
             if (clave > offset && clave <= offset + 4) {
                 // inicializar maquina para obtener los paramaetros (al finalizar la ejecucion no queda referenciada => garbage collector se lo lleva)
-                const maquina = MachineManager.maquinas().get(clave).apply(rotacionActual)
+                const maquina = MachineManager.maquinas().get(clave).apply()
                 const posicionEnPagina = clave - offset
                 const altura = posicionEnPagina * 3 - 2
 
