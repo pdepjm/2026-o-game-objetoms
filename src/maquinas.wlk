@@ -57,7 +57,7 @@ class Dispensadora inherits Maquina{
 // Maneja cual es la Machine Seleccionada actual
 object MachineManager{
 	// selectedTool va a devolver una nueva instancia de la herramienta seleccionada.
-	// chooseTool va a validar el click y va a actualizar selectedTool segun corresponda.
+	// chooseMachine va a validar el click y va a actualizar selectedTool segun corresponda.
 
 	const herramientas = new Dictionary()
 
@@ -77,8 +77,8 @@ object MachineManager{
 	method selectedTool() = selectedTool.apply()
 
 
-    // TO-DO: Esto no es responsabilidad del MachineManager. Al hacer click en el menu, simo
-	method chooseTool(pos){
+    // TO-DO: Esto no es responsabilidad del MachineManager. Al hacer click en el menu, el menu debe notificar la maquina seleccionada
+	method chooseMachine(pos){
 		const elemento = menu.elementoEn(pos)
 
 		if (herramientas.containsKey(elemento)) {

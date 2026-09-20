@@ -6,30 +6,29 @@ import maquinas.*
 object tablero {
 	var contenido = new Dictionary()
 
+	// métodos privados
 	method obtenerPosicion(posicion) = contenido.getOrElse(posicion, { => null})
 
 	method quitarPosicion(posicion) = contenido.remove(posicion)
 	method establecer(posicion, cosa) {
 		contenido.put(posicion, cosa)
 	}
-}
 
-object orquestador {
-
+	// métodos públicos
 	method colocar(posicion, elemento) {
 
-		if (tablero.obtenerPosicion(posicion) == null) {
+		if (self.obtenerPosicion(posicion) == null) {
 			elemento.position(posicion)
 			game.addVisual(elemento)
-			tablero.establecer(posicion, elemento)
+			self.establecer(posicion, elemento)
 		}
 	}
 
 	method quitar(posicion) {
-		const cosaActual = tablero.obtenerPosicion(posicion)
+		const cosaActual = self.obtenerPosicion(posicion)
 		if (cosaActual != null) {
 			game.removeVisual(cosaActual)
-			tablero.quitarPosicion(posicion)
+			self.quitarPosicion(posicion)
 		}
 	}
 }

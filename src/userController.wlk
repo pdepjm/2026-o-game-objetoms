@@ -10,6 +10,7 @@ object userController {
 	
 
 	method configurar() {
+		//hacer los bindings
 		game.onClickDo({ pos => clickManager.clickHandler(pos) })
 
 		keyboard.a().onPressDo({ => menu.prev() })
@@ -31,15 +32,15 @@ object clickManager {
 
 			if (pos.x().between(21, 24)){
 				// Se hizo click en el menú
-				MachineManager.chooseTool(pos)
+				MachineManager.chooseMachine(pos)
 
 			}else{
-				orquestador.colocar(pos, MachineManager.selectedTool())
+				tablero.colocar(pos, MachineManager.selectedTool())
 			}
 		}
 
 		if (selectedTool == "delete"){
-			orquestador.quitar(pos)
+			tablero.quitar(pos)
 		}
 	}
 
@@ -48,7 +49,7 @@ object clickManager {
 
 
 object Tools{
-	// Manejar las herramientas
+	// Manejar las herramientas Place, Delete y Edit
 
 	var currentRotation = 0
 	method currentRotation() = currentRotation
