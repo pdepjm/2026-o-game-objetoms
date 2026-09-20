@@ -37,10 +37,6 @@ object clickManager {
 			}
 		}
 
-		if(selectedTool == "rotate"){
-			tablero.obtenerPosicion(pos).rotar()
-		}
-
 		if (selectedTool == "delete"){
 			orquestador.quitar(pos)
 		}
