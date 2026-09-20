@@ -1,6 +1,7 @@
 // Maneja el que es cada cosa
 
 import wollok.game.*
+import userController.Tools
 
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.
@@ -8,43 +9,44 @@ import wollok.game.*
 class Maquina {
   var property position = game.origin()
 
+  method name() = "Maquina"
+
   // Las máquinas con orientación (ej: Cinta) lo redefinen; para el resto no hace nada.
   // indice: 0 = right, 1 = down, 2 = left, 3 = up
-  method orientar(indice) {}
+
+  const direcciones = ["right", "down", "left", "up"]
+  const indiceDireccion = Tools.currentRotation()
+
+
+
+  method image() = "maquinas/"+self.name()+"/"+direcciones.get(indiceDireccion) + ".gif"
+
 }
 
 class Cinta inherits Maquina{
-  const direcciones = ["right", "down", "left", "up"]
-  var indice = 0
+  override method name() = "Cinta"
 
-  method direccion() = direcciones.get(indice)
-
-  override method orientar(nuevoIndice) {
-    indice = nuevoIndice
-  }
-
-  method image() = "maquinas/Cinta/Cinta_" + self.direccion() + ".gif"
 }
 
 class Horno inherits Maquina{
-  method image() = "maquinas/horno.png"
+  override method name() = "Horno"
 }
 
 class Freidora inherits Maquina{
-  method image() = "maquinas/freidora.png"
+  override method name() = "Freidora"
 
 }
 
 class Cortadora inherits Maquina{
-  method image() = "maquinas/cortadora.png"
+  override method name() = "Cortadora"
 }
 
 class Ensambladora inherits Maquina{
-  method image() = "maquinas/ensambladora.png"
+  override method name() = "Ensambladora"
 }
 
 class Dispensadora inherits Maquina{
   // Dispensa un item cada un determinado tiempo
-  method image() = "maquinas/dispensadora.png"
+  override method name() = "Dispensadora"
 }
 

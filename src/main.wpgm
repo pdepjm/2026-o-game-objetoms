@@ -10,9 +10,12 @@ program BuffetAlbertEinstein {
 
 	game.boardGround("fondo.png")
 
-	game.addVisual(menu)
 
 	userController.configurar()
+	menu.renderItems()
+	game.addVisual(overlay)
+
+
 
 	game.start()
 }

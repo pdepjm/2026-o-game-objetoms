@@ -11,3 +11,24 @@ Es tu tarea automatizar todos los procesos del buffet.
 - Facundo Ramounat
 - Federico Scalise Giussani
 - Mateo Silva
+
+
+
+
+## KEYS
+R: Herramienta de rotacion
+P: Herramiente de Place
+D: Herreamienta de Delete
+E: Herramienta de Edit
+
+## TAMAÑOS
+
+- Gif: 50x50px
+- PNG: 100x100px
+- Overlay: 200x200px
+
+Todas las maquinas tienen que tener sus estaticos y animados con las 4 rotaciones con los nombres:
+- `down.png` y `down.gif`
+- `up.png` y `up.gif`
+- `left.png` y `left.gif`
+- `right.png` y `right.gif`

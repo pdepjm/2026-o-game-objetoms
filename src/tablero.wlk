@@ -18,7 +18,6 @@ object orquestador {
 
 	method colocar(posicion, elemento) {
 
-
 		if (tablero.obtenerPosicion(posicion) == null) {
 			elemento.position(posicion)
 			game.addVisual(elemento)
