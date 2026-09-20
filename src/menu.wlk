@@ -63,16 +63,27 @@ object toolManager{
 
 	var selectedTool =  {=> new Cinta()}
 
+	// Orientación con la que se crean las máquinas: 0 = right, 1 = down, 2 = left, 3 = up
+	var orientacion = 0
+
 	method initialize() {
-        herramientas.put(1, {=> new Cortadora()})
+		herramientas.put(1, {=> new Cinta()})
         herramientas.put(2, {=> new Ensambladora()})
 		herramientas.put(3, {=> new Horno()})
-		herramientas.put(4, {=> new Cinta()})
+        herramientas.put(4, {=> new Cortadora()})
 		herramientas.put(5, {=> new Freidora()})
 		herramientas.put(6, {=> new Dispensadora()})
 	}
 
-	method selectedTool() = selectedTool.apply()
+	method selectedTool() {
+		const maquina = selectedTool.apply()
+		maquina.orientar(orientacion)
+		return maquina
+	}
+
+	method rotar() {
+		orientacion = (orientacion + 1) % 4
+	}
 
 	method chooseTool(pos){
 		const elemento = menu.elementoEn(pos)
