@@ -44,6 +44,7 @@ object menu{
 
         // Dibuja la pagina actual del menu
         // si ya hay algo, vaciarlo
+        //TO-DO: delegar
         if (renderedItems.size() > 0) {
             renderedItems.forEach({item => game.removeVisual(item)})
             renderedItems = []
