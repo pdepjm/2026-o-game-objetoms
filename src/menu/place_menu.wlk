@@ -3,8 +3,8 @@ import src.userController.*
 
 object menu{
     var paginaActual = 0
-    var property tool_selected = 1
-
+    var property machine_selected = 1
+    var renderedItems = []
 
     // Resalta la herramienta seleccionada solo si pertenece a la pagina que se esta mostrando
 
@@ -35,44 +35,38 @@ object menu{
 
     // Se llama solo cuando la selección fue aceptada por MachineManager
     method seleccionar(tool){
-        tool_selected = tool
+        machine_selected = tool
     }
 
-    var renderedItems = []
+    method vaciarRenders() {
+        renderedItems.forEach({item => game.removeVisual(item)})
+        renderedItems = []
+    }
 
     method renderItems() {
-
         // Dibuja la pagina actual del menu
         // si ya hay algo, vaciarlo
-        //TO-DO: delegar
-        if (renderedItems.size() > 0) {
-            renderedItems.forEach({item => game.removeVisual(item)})
-            renderedItems = []
-        }
+        if (renderedItems.size() > 0) self.vaciarRenders()
 
         //dibujar los items de la pagina actual
-        const rotacionActual = Tools.currentRotation()
         const offset = paginaActual * 4
-        const claves = MachineManager.maquinas().keys().asList()
+        const claves = MachineManager.maquinas().keys().asList().filter({clave => clave.between(offset+1, offset+4)})
 
         //para cada item del diccionario, chequeamos estar dentro del offset segun el nro de pagina.
         claves.forEach({clave =>
-            if (clave > offset && clave <= offset + 4) {
-                // inicializar maquina para obtener los paramaetros (al finalizar la ejecucion no queda referenciada => garbage collector se lo lleva)
-                const maquina = MachineManager.maquinas().get(clave).apply()
-                const posicionEnPagina = clave - offset
-                const altura = posicionEnPagina * 3 - 2
+            // inicializar maquina para obtener los paramaetros (al finalizar la ejecucion no queda referenciada => garbage collector se lo lleva)
+            const maquina = MachineManager.maquinas().get(clave).apply()
+            const posicionEnPagina = clave - offset
+            const altura = posicionEnPagina * 3 - 2
 
-                const renderedMenuItem = new menuItem(
-                    name = maquina.name(),
-                    position = game.at(22, altura)
-                )
-                game.addVisual(renderedMenuItem)
-                renderedItems.add(renderedMenuItem)
-            }
+            const renderedMenuItem = new menuItem(
+                name = maquina.name(),
+                position = game.at(22, altura)
+            )
+            game.addVisual(renderedMenuItem)
+            renderedItems.add(renderedMenuItem)
         })
     }
-
 
 }
 
@@ -81,16 +75,15 @@ object menu{
 class menuItem{
     const direcciones = ["right", "down", "left", "up"]
     var property name = "item"
-    var property position = game.center() 
+    var property position = game.center()
     method image() =  "maquinas/"+self.name()+"/"+ direcciones.get(Tools.currentRotation()) + ".png"
-    
+
 }
 
 
 
 object overlay{
     // OVERLAY PARA LOS ELEMENTOS ACTIVOS
-    method position() = game.at(21,menu.tool_selected()*3-3)
+    method position() = game.at(21,menu.machine_selected()*3-3)
     method image() = "overlay.png"
 }
-

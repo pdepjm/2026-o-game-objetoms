@@ -2,7 +2,7 @@
 
 import wollok.game.*
 import userController.Tools
-import menu.*
+import menu.place_menu.*
 
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.

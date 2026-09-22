@@ -1,5 +1,5 @@
 import wollok.game.*
-import menu.*
+import menu.place_menu.*
 import userController.*
 
 program BuffetAlbertEinstein {
@@ -14,8 +14,6 @@ program BuffetAlbertEinstein {
 	userController.configurar()
 	menu.renderItems()
 	game.addVisual(overlay)
-
-
 
 	game.start()
 }

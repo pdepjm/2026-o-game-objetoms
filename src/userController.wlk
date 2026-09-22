@@ -2,7 +2,7 @@
 
 import wollok.game.*
 import tablero.*
-import menu.*
+import menu.place_menu.*
 import maquinas.*
 
 object userController {
