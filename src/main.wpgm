@@ -4,7 +4,7 @@ import userController.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
-	game.height(13)
+	game.height(14)
 	game.width(25)
 	game.cellSize(50)
 
@@ -12,7 +12,7 @@ program BuffetAlbertEinstein {
 
 
 	userController.configurar()
-	menu.renderItems()
+	place_menu.renderItems()
 	game.addVisual(overlay)
 
 	game.start()

@@ -79,11 +79,11 @@ object MachineManager{
 
     // TO-DO: Esto no es responsabilidad del MachineManager. Al hacer click en el menu, el menu debe notificar la maquina seleccionada
 	method chooseMachine(pos){
-		const elemento = menu.elementoEn(pos)
+		const elemento = place_menu.elementoEn(pos)
 
 		if (herramientas.containsKey(elemento)) {
 			selectedTool = herramientas.get(elemento)
-			menu.seleccionar(elemento)
+			place_menu.seleccionar(elemento)
 		}
 	}
 }

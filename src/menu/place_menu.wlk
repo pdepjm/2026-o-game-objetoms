@@ -1,7 +1,7 @@
 import maquinas.*
 import src.userController.*
 
-object menu{
+object place_menu{
     var paginaActual = 0
     var property machine_selected = 1
     var renderedItems = []
@@ -84,6 +84,6 @@ class menuItem{
 
 object overlay{
     // OVERLAY PARA LOS ELEMENTOS ACTIVOS
-    method position() = game.at(21,menu.machine_selected()*3-3)
+    method position() = game.at(21,place_menu.machine_selected()*3-3)
     method image() = "overlay.png"
 }
