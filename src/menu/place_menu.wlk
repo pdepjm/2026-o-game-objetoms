@@ -24,7 +24,7 @@ object place_menu{
         if (pos.y().between(1, 2)) elemento = 1
         if (pos.y().between(4, 5)) elemento = 2
         if (pos.y().between(7, 9)) elemento = 3
-        if (pos.y().between(10, 13)) elemento = 4
+        if (pos.y().between(10, 16)) elemento = 4
 
         // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento
 

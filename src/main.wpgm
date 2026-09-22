@@ -4,7 +4,7 @@ import userController.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
-	game.height(14)
+	game.height(16)
 	game.width(25)
 	game.cellSize(50)
 
