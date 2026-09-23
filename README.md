@@ -29,7 +29,7 @@ E: Herramienta de Edit
 - PNG: 100x100px
 - Overlay: 200x200px
 
-Todas las maquinas tienen que tener sus estaticos y animados con las 4 rotaciones con los nombres:
+Todas las machines tienen que tener sus estaticos y animados con las 4 rotaciones con los nombres:
 - `down.png` y `down.gif`
 - `up.png` y `up.gif`
 - `left.png` y `left.gif`

@@ -1,20 +1,20 @@
 // Traduce las entradas del usuario (clicks y teclas) a acciones del juego
 
 import wollok.game.*
-import tablero.*
-import menu.place_menu.*
-import maquinas.*
+import board.*
+import menu.placeMenu.*
+import machines.*
 
 object userController {
 
 	
 
-	method configurar() {
+	method setUp() {
 		//hacer los bindings
 		game.onClickDo({ pos => clickManager.clickHandler(pos) })
 
-		keyboard.a().onPressDo({ => place_menu.prev() })
-		keyboard.s().onPressDo({ => place_menu.next() })
+		keyboard.a().onPressDo({ => placeMenu.prev() })
+		keyboard.s().onPressDo({ => placeMenu.next() })
 		keyboard.r().onPressDo({ => Tools.rotate()})
 		keyboard.p().onPressDo({ => Tools.selectPlace()})
 		keyboard.d().onPressDo({ => Tools.selectDelete()})
@@ -32,15 +32,15 @@ object clickManager {
 
 			if (pos.x().between(21, 24)){
 				// Se hizo click en el menú
-				MachineManager.chooseMachine(pos)
+				machineManager.chooseMachine(pos)
 
 			}else{
-				tablero.colocar(pos, MachineManager.selectedTool())
+				board.push(pos, machineManager.selectedMachine())
 			}
 		}
 
 		if (selectedTool == "delete"){
-			tablero.quitar(pos)
+			board.pop(pos)
 		}
 	}
 
