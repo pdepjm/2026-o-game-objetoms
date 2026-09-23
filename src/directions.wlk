@@ -1,7 +1,9 @@
+// Este archivo maneja las direcciones de las maquinas
+
 object right {
-	method name() = "right"
-    method next() = down
-	method move(position) = position.right(1)
+	method name() = "right"		// Este metodo se utiliza para obtener las imagenes de las maquinas rotadas
+    method next() = down		// Este metodo se utiliza para rotar las maquinas que ya fueron colocadas
+	method move(position) = position.right(1)		// Es metodo esta pensado para dirigir los ingredientes hacia algun lugar
 }
 object down {
 	method name() = "down"

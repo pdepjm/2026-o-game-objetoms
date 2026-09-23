@@ -38,7 +38,9 @@ object board {
 		}
 	}
 
-	// Dentro del area de juego
+	// Verifica si el click esta dentro del tablero
 	method inBoard(pos) = pos.x().between(6, 20) && pos.y().between(1, 14)
+
+	// Verificar si hay una maquina en la posicion clickeada
 	method isThereAMachine(pos) = self.machineAt(pos) != null
 }
