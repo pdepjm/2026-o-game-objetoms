@@ -10,8 +10,8 @@ object userController {
 		//hacer los bindings
 		game.onClickDo({ pos => toolsManager.onClick(pos)})
 
-		keyboard.a().onPressDo({ => placeMenu.prev() })
-		keyboard.s().onPressDo({ => placeMenu.next() })
+		keyboard.q().onPressDo({ => placeMenu.prev() })
+		keyboard.e().onPressDo({ => placeMenu.next() })
 		keyboard.r().onPressDo({ => toolsManager.rotate()})
 		keyboard.p().onPressDo({ => toolsManager.selectedTool(place)})
 		keyboard.d().onPressDo({ => toolsManager.selectedTool(delete)})

@@ -16,12 +16,17 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 
 ## KEYS
-A: Primera pagina
-S: Segunda pagina
-R: Rotar piezas
-P: Herramiente de Place
-D: Herreamienta de Delete
-E: Herramienta de Edit
+**Q**: Pagina anterior
+
+**E**: Pagina siguiente
+
+**R**: Rotar piezas
+
+**P**: Herramiente de Place
+
+**D**: Herreamienta de Delete
+
+**E**: Herramienta de Edit
 
 ## TAMAÑOS
 
