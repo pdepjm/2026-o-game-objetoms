@@ -8,7 +8,7 @@ program BuffetAlbertEinstein {
 	game.width(25)
 	game.cellSize(50)
 
-	game.boardGround("fondo.png")
+	game.boardGround("fondo.gif")
 
 
 	userController.configurar()
