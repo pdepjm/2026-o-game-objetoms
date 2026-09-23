@@ -39,4 +39,7 @@ object board {
 			self.removePosition(position)
 		}
 	}
+
+	// Dentro del area de juego
+	method inBoard(pos) = pos.x().between(6, 20) && pos.y().between(1, 14)
 }

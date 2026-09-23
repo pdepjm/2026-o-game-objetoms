@@ -1,7 +1,7 @@
 // Maneja el que es cada cosa
 
 import wollok.game.*
-import userController.Tools
+import userTools.toolsManager
 import menu.placeMenu.*
 
 // Clase de máquina
@@ -16,7 +16,7 @@ class Maquina {
   // indice: 0 = right, 1 = down, 2 = left, 3 = up
 
   const direcciones = ["right", "down", "left", "up"]
-  const direccion = Tools.currentRotation()
+  const direccion = toolsManager.currentRotation()
 
 
 

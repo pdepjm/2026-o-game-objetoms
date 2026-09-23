@@ -1,3 +1,4 @@
+import src.userTools.*
 import machines.*
 import src.userController.*
 
@@ -59,7 +60,7 @@ object placeMenu{
             const positionEnPagina = clave - offset
             const altura = positionEnPagina * 3 - 2
 
-            const renderedMenuItem = new menuItem(
+            const renderedMenuItem = new MenuItem(
                 name = maquina.name(),
                 position = game.at(22, altura)
             )
@@ -72,11 +73,11 @@ object placeMenu{
 
 // items del menu
 
-class menuItem{
+class MenuItem{
     const direcciones = ["right", "down", "left", "up"]
     var property name = "item"
     var property position = game.center()
-    method image() =  "machines/"+self.name()+"/"+ direcciones.get(Tools.currentRotation()) + ".png"
+    method image() =  "machines/"+self.name()+"/"+ direcciones.get(toolsManager.currentRotation()) + ".png"
 
 }
 
