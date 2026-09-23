@@ -20,13 +20,28 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 **E**: Pagina siguiente
 
-**R**: Rotar piezas
+**P**: Herramienta de Place
 
-**P**: Herramiente de Place
-
-**D**: Herreamienta de Delete
+**X**: Herramienta de Delete
 
 **E**: Herramienta de Edit
+
+### Rotaciones
+**R**: Herramienta de Rotar
+
+> [!NOTE] 
+> La herramienta unicamente rota los objetos ya colocados
+
+**W**: Rotar hacia arriba
+
+**S**: Rotar hacia abajo
+
+**A**: Rotar hacia la izquierda
+
+**D**: Rotar hacia la derecha
+
+> [!NOTE]
+> Estas teclas solo rotan los objetos en el overlay, no los objetos ya colocados
 
 ## TAMAÑOS
 

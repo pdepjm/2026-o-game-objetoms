@@ -4,6 +4,7 @@ import wollok.game.*
 import board.*
 import menu.placeMenu.*
 import userTools.*
+import src.directions.*
 
 object userController {
 	method setUp() {
@@ -12,8 +13,18 @@ object userController {
 
 		keyboard.q().onPressDo({ => placeMenu.prev() })
 		keyboard.e().onPressDo({ => placeMenu.next() })
-		keyboard.r().onPressDo({ => toolsManager.rotate()})
 		keyboard.p().onPressDo({ => toolsManager.selectedTool(place)})
-		keyboard.d().onPressDo({ => toolsManager.selectedTool(delete)})
+		keyboard.x().onPressDo({ => toolsManager.selectedTool(delete)})
+
+
+		// ROTACIONES
+		
+		keyboard.r().onPressDo({ => toolsManager.selectedTool(rotate)})	// Rotacion una vez ya colocada
+
+		// Rotaciones antes de colocar
+		keyboard.w().onPressDo({ => toolsManager.currentDirection(up)})
+		keyboard.s().onPressDo({ => toolsManager.currentDirection(down)})
+		keyboard.a().onPressDo({ => toolsManager.currentDirection(left)})
+		keyboard.d().onPressDo({ => toolsManager.currentDirection(right)})
 	}
 }

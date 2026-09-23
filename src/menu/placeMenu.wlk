@@ -74,10 +74,9 @@ object placeMenu{
 // items del menu
 
 class MenuItem{
-    const direcciones = ["right", "down", "left", "up"]
     var property name = "item"
     var property position = game.center()
-    method image() =  "machines/"+self.name()+"/"+ direcciones.get(toolsManager.currentRotation()) + ".png"
+    method image() =  "machines/"+self.name()+"/"+ toolsManager.currentDirection().name() + ".png"
 
 }
 

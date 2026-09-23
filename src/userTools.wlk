@@ -1,20 +1,15 @@
 import machines.*
 import board.*
 import menu.menuManager.menuManager
+import directions.*
 
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete y Edit
-	var currentRotation = 0
-	method currentRotation() = currentRotation
-
 	var property selectedTool = place
 
-	method rotate(){
-		// al presionar la R, rotar la direccion default
-		currentRotation = (currentRotation +1) %4
-
-	}
+	// Direccion con la que se colocan las maquinas nuevas
+	var property currentDirection = right
 
 	// Metodo principal
 	method onClick(pos) {
@@ -40,4 +35,10 @@ object delete {
 }
 object edit {
 
+}
+object rotate {
+	method onClick(pos) {
+		if (board.isThereAMachine(pos))
+			board.machineAt(pos).rotate()
+	}
 }

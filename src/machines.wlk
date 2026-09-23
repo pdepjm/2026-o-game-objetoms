@@ -12,15 +12,15 @@ class Maquina {
 
   method name() = "Maquina"
 
-  // Las máquinas con orientación (ej: Belt) lo redefinen; para el resto no hace nada.
-  // indice: 0 = right, 1 = down, 2 = left, 3 = up
+  // Cada máquina guarda su propia dirección (un objeto de directions.wlk).
+  // Nace con la dirección seleccionada al momento de colocarla.
+  var direction = toolsManager.currentDirection()
 
-  const direcciones = ["right", "down", "left", "up"]
-  const direccion = toolsManager.currentRotation()
+  method rotate() {
+    direction = direction.next()
+  }
 
-
-
-  method image() = "machines/"+self.name()+"/"+direcciones.get(direccion) + ".gif"
+  method image() = "machines/"+self.name()+"/"+direction.name() + ".gif"
 
 }
 
