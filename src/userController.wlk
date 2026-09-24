@@ -11,8 +11,8 @@ object userController {
 		//hacer los bindings
 		game.onClickDo({ pos => toolsManager.onClick(pos)})
 
-		keyboard.q().onPressDo({ => placeMenu.prev() })
-		keyboard.e().onPressDo({ => placeMenu.next() })
+		keyboard.num1().onPressDo({ => placeMenu.prev() })
+		keyboard.num2().onPressDo({ => placeMenu.next() })
 		keyboard.p().onPressDo({ => toolsManager.selectedTool(place)})
 		keyboard.x().onPressDo({ => toolsManager.selectedTool(delete)})
 

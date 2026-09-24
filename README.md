@@ -16,9 +16,9 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 
 ## KEYS
-**Q**: Pagina anterior
+**1**: Pagina anterior
 
-**E**: Pagina siguiente
+**2**: Pagina siguiente
 
 **P**: Herramienta de Place
 
