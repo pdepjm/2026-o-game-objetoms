@@ -25,7 +25,7 @@ object toolsManager{
 
 object place {
     method onClick(pos) {
-		board.push(pos, machineManager.selectedMachine())
+		board.push(pos, machineManager.createMachine())
     }
 }
 object delete {

@@ -52,38 +52,38 @@ class Dispenser inherits Maquina{
 }
 
 
-
-
 // Maneja cual es la Machine Seleccionada actual
 object machineManager{
-	// selectedTool va a devolver una nueva instancia de la herramienta seleccionada.
-	// chooseMachine va a validar el click y va a actualizar selectedTool segun corresponda.
+	// El orden de la lista define el orden en el menú.
+	// Cada elemento es una lambda que crea una máquina nueva.
+	const machines = [
+		{ => new Belt() },
+		{ => new Assembler() },
+		{ => new Oven() },
+		{ => new CuttingMachine() },
+		{ => new Fryer() },
+		{ => new Dispenser() }
+	]
 
-	const machines = new Dictionary()
+	var selectedMachine = machines.first()
 
-  method machines() = machines
+	// Nueva instancia de la máquina seleccionada
+	method createMachine() = selectedMachine.apply()
 
-	var selectedMachine =  {=> new Belt()}
+	// La máquina seleccionada se identifica por su nombre
+	method selectedName() = self.createMachine().name()
 
-	method initialize() {
-		machines.put(1, {=> new Belt()})
-    machines.put(2, {=> new Assembler()})
-		machines.put(3, {=> new Oven()})
-    machines.put(4, {=> new CuttingMachine()})
-		machines.put(5, {=> new Fryer()})
-		machines.put(6, {=> new Dispenser()})
-	}
+	// Máquinas que se muestran en una página del menú (4 por página)
+	method machinesOfPage(page) = machines.drop(page * 4).take(4)
 
-	method selectedMachine() = selectedMachine.apply()
-
-
-    // TO-DO: Esto no es responsabilidad del machineManager. Al hacer click en el menu, el menu debe notificar la maquina seleccionada
+	// Selecciona la máquina del slot clickeado, si hay una en ese slot
 	method chooseMachine(pos){
-		const element = placeMenu.elementEn(pos)
+		const slot = placeMenu.slotAt(pos)
+		const pageMachines = self.machinesOfPage(placeMenu.currentPage())
 
-		if (machines.containsKey(element)) {
-			selectedMachine = machines.get(element)
-			placeMenu.seleccionar(element)
+		if (slot > 0 && slot <= pageMachines.size()) {
+			selectedMachine = pageMachines.get(slot - 1)
+			placeMenu.updateOverlay()
 		}
 	}
 }

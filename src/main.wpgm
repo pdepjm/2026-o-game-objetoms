@@ -13,7 +13,6 @@ program BuffetAlbertEinstein {
 
 	userController.setUp()
 	placeMenu.renderItems()
-	game.addVisual(overlay)
 
 	game.start()
 }

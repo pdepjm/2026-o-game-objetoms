@@ -4,10 +4,9 @@ import src.userController.*
 
 object placeMenu{
     var currentPage = 0
-    var property machineSelected = 1
     var renderedItems = []
 
-    // Resalta la herramienta seleccionada solo si pertenece a la pagina que se esta mostrando
+    method currentPage() = currentPage
 
     method prev(){
         currentPage = 0
@@ -19,24 +18,39 @@ object placeMenu{
         self.renderItems()
     }
 
-    method elementEn(pos){
-        var element = 0
+    // Slot (1 a 4) de la página actual donde se hizo click, 0 si no fue sobre un slot
+    method slotAt(pos){
+        var slot = 0
 
-        if (pos.y().between(1, 2)) element = 1
-        if (pos.y().between(4, 5)) element = 2
-        if (pos.y().between(7, 9)) element = 3
-        if (pos.y().between(10, 16)) element = 4
+        if (pos.y().between(1, 2)) slot = 1
+        if (pos.y().between(4, 5)) slot = 2
+        if (pos.y().between(7, 9)) slot = 3
+        if (pos.y().between(10, 16)) slot = 4
 
         // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento
 
-        if (element == 0) return 0
-
-        return element + currentPage * 4
+        return slot
     }
 
-    // Se llama solo cuando la selección fue aceptada por machineManager
-    method seleccionar(tool){
-        machineSelected = tool
+    // Slot (1 a 4) de la máquina seleccionada en la página actual, 0 si está en otra página
+    method selectedSlot() {
+        var slot = 0
+        var position = 0
+
+        machineManager.machinesOfPage(currentPage).forEach({ factory =>
+            position += 1
+            if (factory.apply().name() == machineManager.selectedName()) slot = position
+        })
+
+        return slot
+    }
+
+    // El overlay solo se dibuja si la máquina seleccionada está en la página que se ve
+    method updateOverlay() {
+        const inCurrentPage = self.selectedSlot() > 0
+
+        if (inCurrentPage && !game.hasVisual(overlay)) game.addVisual(overlay)
+        if (!inCurrentPage && game.hasVisual(overlay)) game.removeVisual(overlay)
     }
 
     method vaciarRenders() {
@@ -49,16 +63,13 @@ object placeMenu{
         // si ya hay algo, vaciarlo
         if (renderedItems.size() > 0) self.vaciarRenders()
 
-        //dibujar los items de la pagina actual
-        const offset = currentPage * 4
-        const claves = machineManager.machines().keys().asList().filter({clave => clave.between(offset+1, offset+4)})
+        var slot = 0
 
-        //para cada item del diccionario, chequeamos estar dentro del offset segun el nro de pagina.
-        claves.forEach({clave =>
+        machineManager.machinesOfPage(currentPage).forEach({ factory =>
+            slot += 1
             // inicializar maquina para obtener los paramaetros (al finalizar la ejecucion no queda referenciada => garbage collector se lo lleva)
-            const maquina = machineManager.machines().get(clave).apply()
-            const positionEnPagina = clave - offset
-            const altura = positionEnPagina * 3 - 2
+            const maquina = factory.apply()
+            const altura = slot * 3 - 2
 
             const renderedMenuItem = new MenuItem(
                 name = maquina.name(),
@@ -67,6 +78,8 @@ object placeMenu{
             game.addVisual(renderedMenuItem)
             renderedItems.add(renderedMenuItem)
         })
+
+        self.updateOverlay()
     }
 
 }
@@ -84,6 +97,6 @@ class MenuItem{
 
 object overlay{
     // OVERLAY PARA LOS ELEMENTOS ACTIVOS
-    method position() = game.at(21,placeMenu.machineSelected()*3-3)
+    method position() = game.at(21,placeMenu.selectedSlot()*3-3)
     method image() = "overlay.png"
 }
