@@ -1,0 +1,34 @@
+import src.directions.*
+describe "tests de directions" {
+
+  test "right se mueve una casilla a la derecha" {
+    assert.equals(game.at(1, 0), right.move(game.at(0, 0)))
+  }
+
+  test "down se mueve una casilla hacia abajo" {
+    assert.equals(game.at(0, -1), down.move(game.at(0, 0)))
+  }
+
+  test "left se mueve una casilla a la izquierda" {
+    assert.equals(game.at(-1, 0), left.move(game.at(0, 0)))
+  }
+
+  test "up se mueve una casilla hacia arriba" {
+    assert.equals(game.at(0, 1), up.move(game.at(0, 0)))
+  }
+
+  test "next rota en el orden right -> down -> left -> up -> right" {
+    assert.equals(down, right.next())
+    assert.equals(left, down.next())
+    assert.equals(up, left.next())
+    assert.equals(right, up.next())
+  }
+
+  test "name devuelve el nombre correcto de cada direccion" {
+    assert.equals("right", right.name())
+    assert.equals("down", down.name())
+    assert.equals("left", left.name())
+    assert.equals("up", up.name())
+  }
+
+}

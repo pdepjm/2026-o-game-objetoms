@@ -1,0 +1,53 @@
+import src.machines.*
+import src.userTools.*
+import src.directions.*
+
+describe "tests de Maquina" {
+
+  test "una Belt se llama Belt" {
+    assert.equals("Belt", new Belt().name())
+  }
+
+  test "una Oven se llama Oven" {
+    assert.equals("Oven", new Oven().name())
+  }
+
+  test "una Fryer se llama Fryer" {
+    assert.equals("Fryer", new Fryer().name())
+  }
+
+  test "una CuttingMachine se llama CuttingMachine" {
+    assert.equals("CuttingMachine", new CuttingMachine().name())
+  }
+
+  test "una Assembler se llama Assembler" {
+    assert.equals("Assembler", new Assembler().name())
+  }
+
+  test "una Dispenser se llama Dispenser" {
+    assert.equals("Dispenser", new Dispenser().name())
+  }
+
+  test "una maquina nace con la direccion actual del toolsManager" {
+    toolsManager.currentDirection(up)
+    const oven = new Oven()
+    assert.equals("machines/Oven/up.gif", oven.image())
+  }
+
+  test "rotate cambia la direccion de la maquina de right a down" {
+    toolsManager.currentDirection(right)
+    const belt = new Belt()
+    belt.rotate()
+    assert.equals("machines/Belt/down.gif", belt.image())
+  }
+
+  test "rotate no afecta a otras maquinas ya creadas" {
+    toolsManager.currentDirection(right)
+    const belt1 = new Belt()
+    const belt2 = new Belt()
+    belt1.rotate()
+    assert.equals("machines/Belt/down.gif", belt1.image())
+    assert.equals("machines/Belt/right.gif", belt2.image())
+  }
+
+}

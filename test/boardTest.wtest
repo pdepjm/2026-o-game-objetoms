@@ -1,0 +1,28 @@
+import src.board.*
+
+describe "tests de board" {
+
+  test "una posicion con x fuera del rango no esta en el tablero" {
+    assert.notThat(board.inBoard(game.at(5, 5)))
+    assert.notThat(board.inBoard(game.at(21, 5)))
+  }
+
+  test "una posicion con y fuera del rango no esta en el tablero" {
+    assert.notThat(board.inBoard(game.at(10, 0)))
+    assert.notThat(board.inBoard(game.at(10, 15)))
+  }
+
+  test "una posicion dentro del rango esta en el tablero" {
+    assert.that(board.inBoard(game.at(10, 5)))
+  }
+
+  test "los bordes del rango tambien cuentan como dentro del tablero" {
+    assert.that(board.inBoard(game.at(6, 1)))
+    assert.that(board.inBoard(game.at(20, 14)))
+  }
+
+  test "no hay maquina en una posicion vacia" {
+    assert.notThat(board.isThereAMachine(game.at(10, 5)))
+  }
+
+}
