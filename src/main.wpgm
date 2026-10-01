@@ -25,6 +25,7 @@ program BuffetAlbertEinstein {
 	// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
 	keyboard.num5().onPressDo({ => simulationEngine.toggle() })
 
+	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()
 
 

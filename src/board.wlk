@@ -22,7 +22,9 @@ object board {
 	//obtener la máquina de una posición (null si no hay)
 	method machineAt(position) = content.getOrElse(position, { => null})
 
-	//pushear elemento al tablero
+	//pushear elemento al tablero. La máquina queda registrada en el simulationEngine.
+	// OJO: push y pop no se deben usar con la simulación prendida, porque las máquinas
+	// ya calcularon a sus vecinas. El bloqueo de los clicks está en toolsManager.
 	method push(position, element) {
 		if (!self.isThereAMachine(position)) {
 			element.position(position)

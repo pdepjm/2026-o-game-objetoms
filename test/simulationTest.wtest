@@ -13,7 +13,7 @@ describe "tests de simulacion" {
   const secondBelt = new Belt()
 
   // pasos que tarda el dispenser en dispensar, según el intervalo que tenga
-  const dispenseSteps = (dispenser.intervalMs() / simulationEngine.tickMs()).roundUp()
+  const dispenseSteps = dispenser.intervalSteps()
 
   // pasos que tarda un item en recorrer una celda
   const cellSteps = animationEngine.pasosPorCelda()
@@ -23,101 +23,111 @@ describe "tests de simulacion" {
     board.push(game.at(5, 5), dispenser)
   }
 
+  method oneBelt() {
+    board.push(game.at(6, 5), firstBelt)
+  }
+
+  method twoBelts() {
+    self.oneBelt()
+    board.push(game.at(7, 5), secondBelt)
+  }
+
   method steps(amount) {
     amount.times({ _ => simulationEngine.step() })
   }
 
+  test "la simulacion arranca apagada" {
+    assert.notThat(simulationEngine.running())
+  }
+
   test "un dispenser no dispensa antes de cumplir su intervalo" {
-    board.push(game.at(6, 5), firstBelt)
+    self.oneBelt()
+    simulationEngine.run()
     self.steps(dispenseSteps - 1)
     assert.that(firstBelt.heldItems().isEmpty())
   }
 
   test "un dispenser dispensa al cumplir su intervalo" {
-    board.push(game.at(6, 5), firstBelt)
+    self.oneBelt()
+    simulationEngine.run()
     self.steps(dispenseSteps)
     assert.equals(1, firstBelt.heldItems().size())
   }
 
-  test "un dispenser sin maquina adelante espera y dispensa apenas puede" {
-    self.steps(dispenseSteps + 50)
-    board.push(game.at(6, 5), firstBelt)
-    self.steps(1)
-    assert.equals(1, firstBelt.heldItems().size())
+  test "un dispenser sin maquina adelante no dispensa" {
+    simulationEngine.run()
+    self.steps(dispenseSteps * 3)
+    assert.that(simulationEngine.allItems().isEmpty())
   }
 
   test "una belt no suelta el item mientras todavia esta llegando" {
-    board.push(game.at(6, 5), firstBelt)
-    board.push(game.at(7, 5), secondBelt)
+    self.twoBelts()
+    simulationEngine.run()
     self.steps(dispenseSteps + cellSteps - 1)
     assert.equals(1, firstBelt.heldItems().size())
     assert.that(secondBelt.heldItems().isEmpty())
   }
 
   test "una belt pasa el item a la siguiente cuando termino de llegar" {
-    board.push(game.at(6, 5), firstBelt)
-    board.push(game.at(7, 5), secondBelt)
+    self.twoBelts()
+    simulationEngine.run()
     self.steps(dispenseSteps + cellSteps)
     assert.that(firstBelt.heldItems().isEmpty())
     assert.equals(1, secondBelt.heldItems().size())
   }
 
   test "el item termina en la celda de la belt que lo tiene" {
-    board.push(game.at(6, 5), firstBelt)
+    self.oneBelt()
+    simulationEngine.run()
     self.steps(dispenseSteps + cellSteps)
     assert.equals(game.at(6, 5), firstBelt.heldItems().first().position())
   }
 
   test "una belt sin maquina adelante retiene el item y frena al dispenser" {
-    board.push(game.at(6, 5), firstBelt)
-    self.steps(dispenseSteps * 3)
+    self.oneBelt()
+    simulationEngine.run()
+    self.steps((dispenseSteps + cellSteps) * 3)
     assert.equals(1, simulationEngine.allItems().size())
   }
 
-  test "una maquina quitada del tablero deja de simularse" {
-    board.push(game.at(6, 5), firstBelt)
-    board.pop(game.at(5, 5))
-    self.steps(dispenseSteps)
-    assert.that(firstBelt.heldItems().isEmpty())
-  }
-
-  test "quitar una belt con un item se lleva el item" {
-    board.push(game.at(6, 5), firstBelt)
-    self.steps(dispenseSteps)
-    board.pop(game.at(6, 5))
-    assert.that(simulationEngine.allItems().isEmpty())
+  test "un dispenser frenado dispensa apenas se libera la belt" {
+    self.twoBelts()
+    simulationEngine.run()
+    self.steps((dispenseSteps + cellSteps) * 2)
+    assert.equals(1, firstBelt.heldItems().size())
+    assert.equals(1, secondBelt.heldItems().size())
   }
 
   test "allItems conoce los items de todas las maquinas" {
-    board.push(game.at(6, 5), firstBelt)
-    board.push(game.at(7, 5), secondBelt)
-    self.steps(dispenseSteps * 2)
+    self.twoBelts()
+    simulationEngine.run()
+    self.steps((dispenseSteps + cellSteps) * 2)
     assert.equals(2, simulationEngine.allItems().size())
   }
 
-  test "la simulacion arranca apagada y el tick no hace nada" {
-    board.push(game.at(6, 5), firstBelt)
+  test "con la simulacion apagada el tick no hace nada" {
+    self.oneBelt()
     dispenseSteps.times({ _ => simulationEngine.tick() })
     assert.that(simulationEngine.allItems().isEmpty())
   }
 
   test "con la simulacion prendida el tick avanza" {
-    board.push(game.at(6, 5), firstBelt)
-    simulationEngine.toggle()
+    self.oneBelt()
+    simulationEngine.run()
     dispenseSteps.times({ _ => simulationEngine.tick() })
     assert.equals(1, simulationEngine.allItems().size())
   }
 
   test "a velocidad x2 cada tick avanza dos pasos" {
-    board.push(game.at(6, 5), firstBelt)
-    simulationEngine.toggle()
+    self.oneBelt()
+    simulationEngine.run()
     simulationEngine.speed(2)
     (dispenseSteps / 2).roundUp().times({ _ => simulationEngine.tick() })
     assert.equals(1, simulationEngine.allItems().size())
   }
 
   test "apagar la simulacion borra todos los items" {
-    board.push(game.at(6, 5), firstBelt)
+    self.oneBelt()
     simulationEngine.toggle()
     self.steps(dispenseSteps)
     simulationEngine.toggle()
@@ -126,11 +136,47 @@ describe "tests de simulacion" {
   }
 
   test "apagar la simulacion reinicia el tiempo de los dispensers" {
-    board.push(game.at(6, 5), firstBelt)
+    self.oneBelt()
     simulationEngine.toggle()
     self.steps(dispenseSteps - 1)
+    simulationEngine.toggle()
     simulationEngine.toggle()
     self.steps(dispenseSteps - 1)
     assert.that(simulationEngine.allItems().isEmpty())
+  }
+
+  test "al volver a prender, las maquinas ven lo que se construyo con la simulacion apagada" {
+    simulationEngine.toggle()
+    simulationEngine.toggle()
+    self.oneBelt()
+    simulationEngine.toggle()
+    self.steps(dispenseSteps)
+    assert.equals(1, firstBelt.heldItems().size())
+  }
+
+  test "al volver a prender, una maquina rotada entrega hacia su nueva direccion" {
+    board.push(game.at(5, 4), firstBelt)
+    dispenser.rotate()
+    simulationEngine.run()
+    self.steps(dispenseSteps)
+    assert.equals(1, firstBelt.heldItems().size())
+  }
+
+  test "con la simulacion apagada se puede colocar una maquina" {
+    toolsManager.onClick(game.at(8, 8))
+    assert.that(board.isThereAMachine(game.at(8, 8)))
+  }
+
+  test "con la simulacion prendida no se puede colocar una maquina" {
+    simulationEngine.run()
+    toolsManager.onClick(game.at(8, 8))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+  }
+
+  test "con la simulacion prendida no se puede borrar una maquina" {
+    simulationEngine.run()
+    toolsManager.selectedTool(delete)
+    toolsManager.onClick(game.at(5, 5))
+    assert.that(board.isThereAMachine(game.at(5, 5)))
   }
 }

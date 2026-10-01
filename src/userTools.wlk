@@ -2,6 +2,7 @@ import machines.*
 import board.*
 import menu.menuManager.menuManager
 import directions.*
+import simulationEngine.*
 
 
 object toolsManager{
@@ -12,9 +13,11 @@ object toolsManager{
 	var property currentDirection = right
 
 	// Metodo principal
+	// Con la simulación prendida no se puede colocar, borrar ni rotar nada
 	method onClick(pos) {
-		if (board.inBoard(pos))
-			selectedTool.onClick(pos)
+		if (board.inBoard(pos)) {
+			if (!simulationEngine.running()) selectedTool.onClick(pos)
+		}
 		else if (menuManager.inToolsMenu(pos))
 			machineManager.chooseMachine(pos)
 	}

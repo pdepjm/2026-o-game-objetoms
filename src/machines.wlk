@@ -6,15 +6,33 @@ import menu.placeMenu.*
 import ingredientes.*
 import board.*
 import simulationEngine.*
+import animationEngine.*
 
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.
 // Las máquinas se pasan los items de mano en mano: cada una le pregunta a la
 // siguiente si puede recibir (canReceive) y se lo entrega (receive).
 // Cuántos items guarda cada máquina es asunto de cada subclase.
+//
+// Ciclo de vida de una máquina en la simulación:
+// - start(): al prender la simulación. Busca a su vecina y agenda lo que necesite.
+// - use(): cuando llega el paso que ella misma agendó en el simulationEngine.
+// - reset(): al apagar la simulación. Suelta los items que tenía.
 class Maquina {
 
+	// El simulationEngine la llama cuando llega el paso que la máquina agendó.
+	// Por defecto no hace nada: una máquina que nunca agenda, nunca se despierta.
 	method use() {}
+
+	// La máquina hacia la que apunta (null si no hay ninguna).
+	// Se calcula una sola vez al prender la simulación: con la simulación prendida
+	// no se puede editar el tablero, así que no cambia.
+	var next = null
+
+	// Se llama al prender la simulación
+	method start() {
+		next = self.nextMachine()
+	}
   	var property position = game.origin()
 
   	method name() = "Maquina"
@@ -33,12 +51,14 @@ class Maquina {
 		image = self.buildImage()
 	}
 
-	// La máquina hacia la que apunta (null si no hay ninguna)
+	// Busca en el tablero la máquina hacia la que apunta (null si no hay ninguna).
+	// Es una consulta cara con muchas máquinas: durante la simulación se usa next.
 	method nextMachine() = board.machineAt(direction.move(position))
 
-	// Por defecto una máquina no acepta items
+	// ¿Puede aceptar un item más? Por defecto una máquina no acepta items
 	method canReceive() = false
 
+	// Otra máquina le entrega un item. Sólo se llama si canReceive() dio true.
 	method receive(anItem) {}
 
 	// Items que tiene encima la máquina en este momento
@@ -47,25 +67,31 @@ class Maquina {
 	// Vuelve la máquina a su estado inicial (sin items), al apagar la simulación
 	method reset() {}
 
-	method canPush() = self.nextMachine() != null && self.nextMachine().canReceive()
+	// ¿Hay una máquina adelante y puede recibir?
+	method canPush() = next != null && next.canReceive()
 
+	// Le entrega el item a la máquina de adelante. Sólo se llama si canPush() dio true.
 	method push(anItem) {
-		self.nextMachine().receive(anItem)
+		next.receive(anItem)
 	}
 
 }
 
+// Cinta: lleva de a un item hacia la máquina a la que apunta
 class Belt inherits Maquina{
+  // el item que tiene encima (null si está vacía)
   var item = null
 
   override method name() = "Belt"
 
+  // Sólo acepta un item si está vacía
   override method canReceive() = item == null
 
-  // Toma el item y lo anima hacia su celda
+  // Toma el item, lo anima hacia su celda y pide que la despierten cuando termine de llegar
   override method receive(anItem) {
 	item = anItem
 	anItem.move(position)
+	simulationEngine.schedule(animationEngine.pasosPorCelda(), self)
   }
 
   override method heldItems() = if (item == null) [] else [item]
@@ -75,12 +101,16 @@ class Belt inherits Maquina{
   }
 
   // Cuando el item terminó de llegar, lo pasa a la siguiente máquina.
-  // Si la siguiente no puede recibir, el item espera acá.
+  // Si todavía no puede, el item espera acá y la cinta reintenta en el próximo paso.
   override method use() {
-	if (item != null && !item.moviendose() && self.canPush()) {
-		const outgoing = item
-		item = null
-		self.push(outgoing)
+	if (item != null) {
+		if (!item.moviendose() && self.canPush()) {
+			const outgoing = item
+			item = null
+			self.push(outgoing)
+		} else {
+			simulationEngine.schedule(1, self)
+		}
 	}
   }
 
@@ -107,24 +137,32 @@ class Dispenser inherits Maquina{
   // Dispensa un item cada un determinado tiempo
   override method name() = "Dispenser"
 
-  var elapsed = 0 // milisegundos de simulación desde el último dispense
   var item = { => new Carne() } // item a dispensar, instanciador de clase.
 
+  // tiempo de simulación entre un dispense y el siguiente
   method intervalMs() = 1000
 
-  override method reset() {
-	elapsed = 0
+  // el mismo intervalo, medido en pasos de simulación
+  method intervalSteps() = simulationEngine.stepsFor(self.intervalMs())
+
+  // Busca a su vecina (super) y agenda el primer dispense
+  override method start() {
+	super()
+	simulationEngine.schedule(self.intervalSteps(), self)
   }
 
-  // Si se cumplió el intervalo pero no hay a quién entregarle, espera sin perder el turno
+  // Se cumplió el intervalo: dispensa y agenda el próximo.
+  // Si no hay a quién entregarle, espera sin perder el turno y reintenta en el próximo paso.
   override method use(){
-	elapsed = (elapsed + simulationEngine.tickMs()).min(self.intervalMs())
-	if (elapsed >= self.intervalMs() && self.canPush()) {
-		elapsed = 0
+	if (self.canPush()) {
 		self.dispense()
+		simulationEngine.schedule(self.intervalSteps(), self)
+	} else {
+		simulationEngine.schedule(1, self)
 	}
   }
 
+  // Crea un item nuevo sobre el dispenser y se lo entrega a la máquina de adelante
   method dispense(){
 	const newItem = item.apply()
 	newItem.position(self.position())
