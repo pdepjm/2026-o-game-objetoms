@@ -16,9 +16,9 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 
 ## KEYS
-**1**: Pagina anterior
+**Q**: Pagina anterior
 
-**2**: Pagina siguiente
+**E**: Pagina siguiente
 
 **P**: Herramienta de Place
 
@@ -42,6 +42,14 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 > [!NOTE]
 > Estas teclas solo rotan los objetos en el overlay, no los objetos ya colocados
+
+### Simulación
+**1**: establece la velocidad en x1
+**2**: establece la velocidad en x2
+**3**: establece la velocidad en x3
+**5**: Inicia o termina la simulación
+
+
 
 ## TAMAÑOS
 
