@@ -5,14 +5,20 @@ import board.*
 import menu.placeMenu.*
 import userTools.*
 import src.directions.*
+import src.simulationEngine.*
 
 object userController {
 	method setUp() {
 		//hacer los bindings
 		game.onClickDo({ pos => toolsManager.onClick(pos)})
 
-		keyboard.num1().onPressDo({ => placeMenu.prev() })
-		keyboard.num2().onPressDo({ => placeMenu.next() })
+
+		keyboard.num1().onPressDo({ => simulationEngine.speed(1)})
+		keyboard.num2().onPressDo({ => simulationEngine.speed(2) })
+		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
+
+		keyboard.q().onPressDo({ => placeMenu.prev() })
+		keyboard.e().onPressDo({ => placeMenu.next() })
 		keyboard.p().onPressDo({ => toolsManager.selectedTool(place)})
 		keyboard.x().onPressDo({ => toolsManager.selectedTool(delete)})
 

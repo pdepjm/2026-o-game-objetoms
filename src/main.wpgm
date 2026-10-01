@@ -1,6 +1,9 @@
 import wollok.game.*
 import menu.placeMenu.*
 import userController.*
+import ingredientes.*
+import directions.*
+import simulationEngine.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -13,6 +16,18 @@ program BuffetAlbertEinstein {
 
 	userController.setUp()
 	placeMenu.renderItems()
+
+
+
+
+
+
+	// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
+	keyboard.num5().onPressDo({ => simulationEngine.toggle() })
+
+	simulationEngine.start()
+
+
 
 	game.start()
 }

@@ -1,5 +1,5 @@
 // Este archivo maneja las direcciones de las maquinas
-
+import wollok.game.*
 object right {
 	method name() = "right"		// Este metodo se utiliza para obtener las imagenes de las maquinas rotadas
     method next() = down		// Este metodo se utiliza para rotar las maquinas que ya fueron colocadas

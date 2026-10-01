@@ -2,6 +2,7 @@
 
 import wollok.game.*
 import machines.*
+import simulationEngine.*
 
 object board {
 	const content = new Dictionary()
@@ -27,13 +28,21 @@ object board {
 			element.position(position)
 			game.addVisual(element)
 			self.setPosition(position, element)
+			simulationEngine.addSimulatedObject(element)
 		}
 	}
 
 	// quitar elemento del tablero
 	method pop(position) {
 		if (self.isThereAMachine(position)) {
-			game.removeVisual(self.machineAt(position))
+			const machine = self.machineAt(position)
+			// los items que tenía encima la máquina se van con ella
+			machine.heldItems().forEach({ item =>
+				item.detener()
+				game.removeVisual(item)
+			})
+			simulationEngine.removeSimulatedObject(machine)
+			game.removeVisual(machine)
 			self.removePosition(position)
 		}
 	}

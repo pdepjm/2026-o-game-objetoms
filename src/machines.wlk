@@ -3,29 +3,86 @@
 import wollok.game.*
 import userTools.toolsManager
 import menu.placeMenu.*
+import ingredientes.*
+import board.*
+import simulationEngine.*
 
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.
-// Tiene que haber una position de salida. Un "item actual" para tener el objeto que le toca procesar.
+// Las máquinas se pasan los items de mano en mano: cada una le pregunta a la
+// siguiente si puede recibir (canReceive) y se lo entrega (receive).
+// Cuántos items guarda cada máquina es asunto de cada subclase.
 class Maquina {
-  var property position = game.origin()
 
-  method name() = "Maquina"
+	method use() {}
+  	var property position = game.origin()
 
-  // Cada máquina guarda su propia dirección (un objeto de directions.wlk).
-  // Nace con la dirección seleccionada al momento de colocarla.
-  var direction = toolsManager.currentDirection()
+  	method name() = "Maquina"
 
-  method rotate() {
-    direction = direction.next()
-  }
+	// Cada máquina guarda su propia dirección (un objeto de directions.wlk).
+	// Nace con la dirección seleccionada al momento de colocarla.
+	var direction = toolsManager.currentDirection()
 
-  method image() = "machines/"+self.name()+"/"+direction.name() + ".gif"
+	// La imagen se calcula sólo cuando cambia la dirección, no en cada frame
+	var property image = self.buildImage()
+
+	method buildImage() = "machines/"+self.name()+"/"+direction.name() + ".gif"
+
+	method rotate() {
+		direction = direction.next()
+		image = self.buildImage()
+	}
+
+	// La máquina hacia la que apunta (null si no hay ninguna)
+	method nextMachine() = board.machineAt(direction.move(position))
+
+	// Por defecto una máquina no acepta items
+	method canReceive() = false
+
+	method receive(anItem) {}
+
+	// Items que tiene encima la máquina en este momento
+	method heldItems() = []
+
+	// Vuelve la máquina a su estado inicial (sin items), al apagar la simulación
+	method reset() {}
+
+	method canPush() = self.nextMachine() != null && self.nextMachine().canReceive()
+
+	method push(anItem) {
+		self.nextMachine().receive(anItem)
+	}
 
 }
 
 class Belt inherits Maquina{
+  var item = null
+
   override method name() = "Belt"
+
+  override method canReceive() = item == null
+
+  // Toma el item y lo anima hacia su celda
+  override method receive(anItem) {
+	item = anItem
+	anItem.move(position)
+  }
+
+  override method heldItems() = if (item == null) [] else [item]
+
+  override method reset() {
+	item = null
+  }
+
+  // Cuando el item terminó de llegar, lo pasa a la siguiente máquina.
+  // Si la siguiente no puede recibir, el item espera acá.
+  override method use() {
+	if (item != null && !item.moviendose() && self.canPush()) {
+		const outgoing = item
+		item = null
+		self.push(outgoing)
+	}
+  }
 
 }
 
@@ -49,6 +106,31 @@ class Assembler inherits Maquina{
 class Dispenser inherits Maquina{
   // Dispensa un item cada un determinado tiempo
   override method name() = "Dispenser"
+
+  var elapsed = 0 // milisegundos de simulación desde el último dispense
+  var item = { => new Carne() } // item a dispensar, instanciador de clase.
+
+  method intervalMs() = 1000
+
+  override method reset() {
+	elapsed = 0
+  }
+
+  // Si se cumplió el intervalo pero no hay a quién entregarle, espera sin perder el turno
+  override method use(){
+	elapsed = (elapsed + simulationEngine.tickMs()).min(self.intervalMs())
+	if (elapsed >= self.intervalMs() && self.canPush()) {
+		elapsed = 0
+		self.dispense()
+	}
+  }
+
+  method dispense(){
+	const newItem = item.apply()
+	newItem.position(self.position())
+	game.addVisual(newItem)
+	self.push(newItem)
+  }
 }
 
 
