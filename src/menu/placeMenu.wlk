@@ -59,6 +59,8 @@ object placeMenu{
     }
 
     method renderItems() {
+
+        self.updateOverlay()
         // Dibuja la pagina actual del menu
         // si ya hay algo, vaciarlo
         if (renderedItems.size() > 0) self.vaciarRenders()
@@ -79,7 +81,7 @@ object placeMenu{
             renderedItems.add(renderedMenuItem)
         })
 
-        self.updateOverlay()
+        
     }
 
 }
