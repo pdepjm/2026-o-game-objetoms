@@ -28,13 +28,13 @@ object userController {
 
 		keyboard.q().onPressDo({ => placeMenu.prev() })
 		keyboard.e().onPressDo({ => placeMenu.next() })
-		keyboard.p().onPressDo({ => toolsManager.selectedTool(place)})
-		keyboard.x().onPressDo({ => toolsManager.selectedTool(delete)})
-
+		keyboard.p().onPressDo({ => toolsManager.select(place)})
+		keyboard.x().onPressDo({ => toolsManager.select(delete)})
+		keyboard.z().onPressDo({ => toolsManager.select(edit)})
 
 		// ROTACIONES
 		
-		keyboard.r().onPressDo({ => toolsManager.selectedTool(rotate)})	// Rotacion una vez ya colocada
+		keyboard.r().onPressDo({ => toolsManager.select(rotate)})	// Rotacion una vez ya colocada
 
 		// Rotaciones antes de colocar
 		keyboard.w().onPressDo({ => toolsManager.currentDirection(up)})

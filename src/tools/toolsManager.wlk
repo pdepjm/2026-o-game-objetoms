@@ -8,12 +8,15 @@ import tools.userTools.*
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete y Edit
-	var property selectedTool = place
+	var selectedTool = place
 
 	// Direccion con la que se colocan las maquinas nuevas
 	var currentDirection = right
 
 	method currentDirection() = currentDirection
+
+	// Metodo para seleccionar la herramienta que se esta usando
+	method select(tool) {selectedTool = tool}
 
 	// Al cambiar la dirección se actualizan las imágenes del menú, que la muestran.
 	// Así el menú no tiene que preguntar la dirección en cada frame (ver MenuItem).
