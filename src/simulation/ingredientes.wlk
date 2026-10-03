@@ -1,7 +1,7 @@
 // ACÁ SE DEFINEN LOS INGREDIENTES
 // Un ingrediente es toda parte indivisible de una receta.
 // Un ingrediente puede estar procesado o no.
-import animationEngine.*
+import simulation.animationEngine.*
 
 class Ingrediente{
     

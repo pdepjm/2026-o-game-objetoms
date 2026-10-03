@@ -15,7 +15,7 @@
 //   Por eso las máquinas pueden calcular a su vecina una sola vez, al prender.
 
 import wollok.game.*
-import animationEngine.*
+import simulation.animationEngine.*
 
 object simulationEngine{
     // todas las máquinas que están en el tablero

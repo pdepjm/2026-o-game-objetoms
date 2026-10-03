@@ -1,9 +1,9 @@
 import wollok.game.*
 import menu.placeMenu.*
-import userController.*
-import ingredientes.*
+import input.userController.*
+import simulation.ingredientes.*
 import directions.*
-import simulationEngine.*
+import simulation.simulationEngine.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")

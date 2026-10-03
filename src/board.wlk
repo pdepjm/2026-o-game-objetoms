@@ -1,8 +1,7 @@
 // MANEJA EL DONDE
 
 import wollok.game.*
-import machines.*
-import simulationEngine.*
+import simulation.simulationEngine.*
 
 // Posición fija en una celda (coordenadas enteras), para las cosas que no se mueven:
 // máquinas, items del menú, overlay.

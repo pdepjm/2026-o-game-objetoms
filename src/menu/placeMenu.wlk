@@ -1,7 +1,6 @@
-import src.userTools.*
-import machines.*
-import src.userController.*
-import src.board.CellPosition
+import tools.toolsManager.*
+import machines.machineManager.*
+import board.CellPosition
 
 object placeMenu{
     var currentPage = 0

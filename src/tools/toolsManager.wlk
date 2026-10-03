@@ -1,10 +1,10 @@
-import machines.*
 import board.*
-import menu.menuManager.menuManager
-import menu.placeMenu.placeMenu
+import machines.machineManager.*
+import menu.menuManager.*
+import menu.placeMenu.*
 import directions.*
-import simulationEngine.*
-
+import simulation.simulationEngine.*
+import tools.userTools.*
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete y Edit
@@ -30,28 +30,5 @@ object toolsManager{
 		}
 		else if (menuManager.inToolsMenu(pos))
 			machineManager.chooseMachine(pos)
-	}
-}
-
-// HERRAMIENTAS
-// Por el momento, todas las herramientas deben contener el metodo onClick
-
-object place {
-    method onClick(pos) {
-		board.push(pos, machineManager.createMachine())
-    }
-}
-object delete {
-    method onClick(pos) {
-        board.pop(pos)
-    }
-}
-object edit {
-
-}
-object rotate {
-	method onClick(pos) {
-		if (board.isThereAMachine(pos))
-			board.machineAt(pos).rotate()
 	}
 }

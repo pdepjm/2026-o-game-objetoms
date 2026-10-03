@@ -10,10 +10,10 @@
 // items cambien de cinta en el mismo paso. Sirve para comparar antes y después de un cambio.
 
 import wollok.game.*
-import src.machines.*
-import src.board.*
-import src.directions.*
-import src.simulationEngine.*
+import machines.machineTypes.*
+import board.*
+import directions.*
+import simulation.simulationEngine.*
 
 object stressTestBoard {
     // límites del tablero (los mismos que board.inBoard)

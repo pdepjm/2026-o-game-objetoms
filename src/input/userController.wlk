@@ -3,11 +3,12 @@
 import wollok.game.*
 import board.*
 import menu.placeMenu.*
-import userTools.*
-import src.directions.*
-import src.simulationEngine.*
-import src.stressTest.stressMeter.*
-import src.stressTest.stressTestBoard.*
+import tools.toolsManager.*
+import tools.userTools.*
+import directions.*
+import simulation.simulationEngine.*
+import stressTest.stressMeter.*
+import stressTest.stressTestBoard.*
 
 object userController {
 	method setUp() {

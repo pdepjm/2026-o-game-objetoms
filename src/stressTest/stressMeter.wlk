@@ -23,7 +23,7 @@
 // se cumple el intervalo), sus atrasos son los mismos que los de la simulación.
 
 import wollok.game.*
-import src.simulationEngine.*
+import simulation.simulationEngine.*
 
 object stressMeter {
     // se prende y apaga con la tecla M
