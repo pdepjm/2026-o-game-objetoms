@@ -34,6 +34,15 @@ describe "tests de Maquina" {
     assert.equals("machines/Oven/up.gif", oven.image())
   }
 
+  // Wollok inicializa los atributos al leerlos por primera vez: la máquina tiene que
+  // quedarse con la dirección que había al crearla, aunque después cambie
+  test "una maquina conserva la direccion con la que se creo aunque despues cambie la actual" {
+    toolsManager.currentDirection(up)
+    const oven = new Oven()
+    toolsManager.currentDirection(left)
+    assert.equals("machines/Oven/up.gif", oven.image())
+  }
+
   test "rotate cambia la direccion de la maquina de right a down" {
     toolsManager.currentDirection(right)
     const belt = new Belt()

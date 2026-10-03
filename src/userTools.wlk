@@ -1,6 +1,7 @@
 import machines.*
 import board.*
 import menu.menuManager.menuManager
+import menu.placeMenu.placeMenu
 import directions.*
 import simulationEngine.*
 
@@ -10,7 +11,16 @@ object toolsManager{
 	var property selectedTool = place
 
 	// Direccion con la que se colocan las maquinas nuevas
-	var property currentDirection = right
+	var currentDirection = right
+
+	method currentDirection() = currentDirection
+
+	// Al cambiar la dirección se actualizan las imágenes del menú, que la muestran.
+	// Así el menú no tiene que preguntar la dirección en cada frame (ver MenuItem).
+	method currentDirection(direction) {
+		currentDirection = direction
+		placeMenu.updateImages()
+	}
 
 	// Metodo principal
 	// Con la simulación prendida no se puede colocar, borrar ni rotar nada

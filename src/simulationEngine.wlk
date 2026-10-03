@@ -16,7 +16,6 @@
 
 import wollok.game.*
 import animationEngine.*
-import stressMeter.*
 
 object simulationEngine{
     // todas las máquinas que están en el tablero
@@ -43,6 +42,9 @@ object simulationEngine{
     // el juego arranca en modo construcción, con la simulación apagada
     var property running = false
 
+    // items creados desde que se prendió la simulación (ver addItem)
+    var itemCount = 0
+
     // Engancha el engine al reloj de Wollok Game. Se llama una sola vez, desde el main.
     method start(){
         game.onTick(tickMs, "simulacion", {self.tick()})
@@ -50,10 +52,8 @@ object simulationEngine{
 
     // Lo llama Wollok Game cada tickMs. A velocidad x2 o x3 ejecuta 2 o 3 pasos seguidos,
     // así el resultado es el mismo que a x1, sólo que llega antes.
-    // También le avisa al medidor de carga, que mide el tiempo real entre ticks.
     method tick(){
         if (running) speed.times({ _ => self.step() })
-        stressMeter.measure()
     }
 
     // Un paso de simulación: se despiertan las máquinas agendadas y avanzan las animaciones.
@@ -105,8 +105,19 @@ object simulationEngine{
             game.removeVisual(item)
         })
         simulatedObjects.forEach({ machine => machine.reset() })
-        stressMeter.resetItems()
+        itemCount = 0
     }
+
+    // Un item nuevo entra al tablero (lo crea, por ejemplo, un Dispenser).
+    // El engine es el que saca los items al apagar la simulación (stop),
+    // así que también es el que los pone: así sabe cuántos se crearon.
+    method addItem(item) {
+        game.addVisual(item)
+        itemCount += 1
+    }
+
+    // Cantidad de items creados desde que se prendió la simulación
+    method itemCount() = itemCount
 
     // Todos los items que hay en el tablero (cada uno está en alguna máquina)
     method allItems() = simulatedObjects.flatMap({ machine => machine.heldItems() })

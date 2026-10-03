@@ -7,7 +7,6 @@ import ingredientes.*
 import board.*
 import simulationEngine.*
 import animationEngine.*
-import stressMeter.*
 
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.
@@ -19,6 +18,10 @@ import stressMeter.*
 // - start(): al prender la simulación. Busca a su vecina y agenda lo que necesite.
 // - use(): cuando llega el paso que ella misma agendó en el simulationEngine.
 // - reset(): al apagar la simulación. Suelta los items que tenía.
+//
+// Cuando la de adelante está llena, una máquina no pregunta en cada paso: se anota
+// (waitForNext) y se duerme. Por eso TODA máquina que se libere tiene que llamar a
+// wakeWaiting(), o las que esperan no se despiertan nunca.
 class Maquina {
 	// Máquinas que quisieron entregarle un item y no pudieron porque estaba llena.
 	// Se quedan dormidas hasta que esta máquina se libere y las despierte.
@@ -62,6 +65,15 @@ class Maquina {
 
 	method buildImage() = "machines/"+self.name()+"/"+direction.name() + ".gif"
 
+	// OJO: Wollok inicializa los atributos recién la primera vez que se leen, no al crear
+	// el objeto. Sin esto, una máquina toma la dirección que esté seleccionada cuando alguien
+	// la lee por primera vez, y no la que había al crearla. Calcular la imagen acá lee
+	// direction, y así queda fijada en el momento de crear la máquina.
+	override method initialize() {
+		super()
+		image = self.buildImage()
+	}
+
 	method rotate() {
 		direction = direction.next()
 		image = self.buildImage()
@@ -93,6 +105,12 @@ class Maquina {
 		next.receive(anItem)
 	}
 
+	// No pudo entregar: se anota en la de adelante para que la despierte cuando se libere.
+	// Si no hay máquina adelante, no hay a quién esperar: se queda dormida sin gastar nada.
+	method waitForNext() {
+		if (next != null) next.addWaiting(self)
+	}
+
 }
 
 // Cinta: lleva de a un item hacia la máquina a la que apunta
@@ -108,7 +126,8 @@ class Belt inherits Maquina{
   // Toma el item, lo anima hacia su celda y pide que la despierten cuando termine de llegar
   override method receive(anItem) {
 	item = anItem
-	anItem.move(position)
+	// viene siempre de una celda vecina: ya se sabe cuántos pasos lleva (ver moveInSteps)
+	anItem.moveInSteps(position, animationEngine.pasosPorCelda())
 	simulationEngine.schedule(animationEngine.pasosPorCelda(), self)
   }
 
@@ -121,8 +140,7 @@ class Belt inherits Maquina{
 
   // Cuando el item terminó de llegar, lo pasa a la siguiente máquina y despierta
   // a las que esperaban para entregarle algo.
-  // Si la siguiente está llena, se anota para que le avise y se duerme.
-  // Si no hay siguiente, se queda con el item para siempre sin gastar nada.
+  // Si no puede entregarlo, espera a la de adelante (ver waitForNext).
   override method use() {
 	if (item != null) {
 		if (item.moviendose()) {
@@ -132,8 +150,8 @@ class Belt inherits Maquina{
 			item = null
 			self.push(outgoing)
 			self.wakeWaiting()
-		} else if (next != null) {
-			next.addWaiting(self)
+		} else {
+			self.waitForNext()
 		}
 	}
   }
@@ -176,13 +194,13 @@ class Dispenser inherits Maquina{
   }
 
   // Se cumplió el intervalo: dispensa y agenda el próximo.
-  // Si la de adelante está llena, se anota para que le avise y se duerme.
+  // Si no puede entregar, espera a la de adelante (ver waitForNext).
   override method use(){
 	if (self.canPush()) {
 		self.dispense()
 		simulationEngine.schedule(self.intervalSteps(), self)
-	} else if (next != null) {
-		next.addWaiting(self)
+	} else {
+		self.waitForNext()
 	}
   }
 
@@ -190,9 +208,8 @@ class Dispenser inherits Maquina{
   method dispense(){
 	const newItem = item.apply()
 	newItem.position(self.position())
-	game.addVisual(newItem)
+	simulationEngine.addItem(newItem)
 	self.push(newItem)
-	stressMeter.itemCreated()
   }
 }
 

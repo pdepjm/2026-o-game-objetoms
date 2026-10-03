@@ -6,7 +6,8 @@ import menu.placeMenu.*
 import userTools.*
 import src.directions.*
 import src.simulationEngine.*
-import src.stressMeter.*
+import src.stressTest.stressMeter.*
+import src.stressTest.stressTestBoard.*
 
 object userController {
 	method setUp() {
@@ -18,8 +19,11 @@ object userController {
 		keyboard.num2().onPressDo({ => simulationEngine.speed(2) })
 		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
 
-		// Medidor de carga: escribe en la terminal cuánto tarda cada tick
+		// PRUEBAS DE CARGA (ver la carpeta stressTest)
+		// M: medidor de carga, escribe en la terminal cuánto tarda cada tick
 		keyboard.m().onPressDo({ => stressMeter.toggle() })
+		// L: llena el tablero con una serpiente de cintas
+		keyboard.l().onPressDo({ => stressTestBoard.fill() })
 
 		keyboard.q().onPressDo({ => placeMenu.prev() })
 		keyboard.e().onPressDo({ => placeMenu.next() })

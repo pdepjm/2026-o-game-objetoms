@@ -49,7 +49,32 @@ Es tu tarea automatizar todos los procesos del buffet.
 **3**: establece la velocidad en x3
 **5**: Inicia o termina la simulación
 
-**M**: Prende o apaga el medidor de carga (escribe en la terminal, cada segundo, la cantidad de items y cuánto tarda cada tick)
+### Pruebas de carga
+**M**: Prende o apaga el medidor de carga. Escribe en la terminal, cada segundo, la cantidad de items y cuánto tarda cada tick
+
+**L**: Llena el tablero con una "serpiente" de cintas que arranca en un dispenser (sólo con la simulación apagada)
+
+Cómo probar el rendimiento:
+1. Correr el juego: `wollok run src.main.BuffetAlbertEinstein --skipValidations -p ./`
+2. Tocar **M** para prender el medidor
+3. Tocar **L** para llenar el tablero, y esperar a que la terminal muestre `tick` cerca de 100 ms (después de llenar, el juego se pone al día durante unos segundos)
+4. Tocar **5** para iniciar la simulación y mirar cómo cambian los números a medida que aparecen items
+
+Cada línea del medidor se ve así:
+```
+items=20 | tick=100 ms (ideal 100) | max=171 ms | x1 | SOBRECARGADO
+```
+- `tick`: tiempo promedio entre ticks del último segundo. Lo ideal es 100 ms
+- `max`: el tick más lento del último segundo. Si es alto, en pantalla se ven tirones
+- Estado (según `max`): `ok` hasta 140 ms, `justo` hasta 150 ms, `SOBRECARGADO` más de 150 ms
+
+> [!NOTE]
+> Aun con el tablero vacío, `max` ronda los 125 ms: Wollok sólo dispara un tick cuando dibuja un frame (cada ~17 ms), así que esa diferencia es normal.
+
+> [!NOTE]
+> La serpiente es el peor caso a propósito: con un solo dispenser regular, todos los items cambian de cinta en el mismo paso. Sirve para comparar antes y después de un cambio, no como una partida real.
+
+El código de las pruebas de carga está en `src/stressTest`.
 
 
 
