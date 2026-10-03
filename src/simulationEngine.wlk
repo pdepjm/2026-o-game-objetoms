@@ -21,8 +21,14 @@ object simulationEngine{
     // todas las máquinas que están en el tablero
     const simulatedObjects = []
 
-    // paso de simulación -> lista de máquinas que hay que despertar en ese paso
-    const agenda = new Dictionary()
+    // Cantidad de casilleros de la agenda. Tiene que ser mayor que la demora
+    // más larga que se agende (hoy, el dispenser: 10 pasos).
+    const slotCount = 16
+
+    // La agenda es una lista de casilleros que se usa en ronda: las máquinas a despertar
+    // en el paso p están en el casillero p % slotCount.
+    // Es una lista y no un Dictionary porque el Dictionary es mucho más lento.
+    const agenda = (1..slotCount).map({ _ => [] })
 
     // número del último paso ejecutado. Nunca se reinicia, sólo crece.
     var currentStep = 0
@@ -51,10 +57,11 @@ object simulationEngine{
     // Los tests llaman a step() directo para avanzar sin depender del tiempo real.
     method step(){
         currentStep += 1
-        if (agenda.containsKey(currentStep)) {
-            const due = agenda.get(currentStep)
-            // se saca de la agenda antes de despertar, porque una máquina puede volver a agendarse
-            agenda.remove(currentStep)
+        const slot = agenda.get(currentStep % slotCount)
+        if (!slot.isEmpty()) {
+            // Se copia y se vacía antes de despertar, porque una máquina puede volver a agendarse
+            const due = slot.copy()
+            slot.clear()
             due.forEach({ machine => machine.use() })
         }
         animationEngine.tick()
@@ -63,9 +70,10 @@ object simulationEngine{
     // Agenda que a la máquina se le mande use() dentro de esa cantidad de pasos.
     // Como mínimo es 1: nunca se despierta a nadie en el mismo paso en que agenda.
     method schedule(steps, machine){
-        const step = currentStep + steps.max(1)
-        if (!agenda.containsKey(step)) agenda.put(step, [])
-        agenda.get(step).add(machine)
+        const delay = steps.max(1)
+        if (delay >= slotCount)
+            self.error("No se puede agendar a más de " + (slotCount - 1) + " pasos")
+        agenda.get((currentStep + delay) % slotCount).add(machine)
     }
 
     // Cantidad de pasos de simulación que equivalen a esos milisegundos
@@ -88,7 +96,7 @@ object simulationEngine{
     // Se vacía la agenda para que nadie se despierte con un item que ya no existe.
     method stop(){
         running = false
-        agenda.clear()
+        agenda.forEach({ slot => slot.clear() })
         self.allItems().forEach({ item =>
             item.detener()
             game.removeVisual(item)
@@ -108,5 +116,8 @@ object simulationEngine{
     method removeSimulatedObject(thing){
         simulatedObjects.remove(thing)
     }
+
+    // Cantidad de despertares agendados (para tests)
+    method pendingWakeUps() = agenda.sum({ slot => slot.size() })
 
 }

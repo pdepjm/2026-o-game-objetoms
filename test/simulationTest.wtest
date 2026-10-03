@@ -179,4 +179,25 @@ describe "tests de simulacion" {
     toolsManager.onClick(game.at(5, 5))
     assert.that(board.isThereAMachine(game.at(5, 5)))
   }
+
+  test "una belt trabada no se vuelve a agendar" {
+    self.oneBelt()
+    simulationEngine.run()
+    self.steps((dispenseSteps + cellSteps) * 3)
+    // la belt no tiene a quién entregar y el dispenser espera a la belt: nadie agendado
+    assert.equals(0, simulationEngine.pendingWakeUps())
+  }
+
+  test "una belt trabada despierta al dispenser cuando se libera" {
+    self.twoBelts()
+    simulationEngine.run()
+    self.steps((dispenseSteps + cellSteps) * 4)
+    assert.equals(1, firstBelt.heldItems().size())
+    assert.equals(1, secondBelt.heldItems().size())
+    assert.equals(0, simulationEngine.pendingWakeUps())
+  }
+
+  test "no se puede agendar más lejos que la cantidad de casilleros" {
+    assert.throwsException({ simulationEngine.schedule(100, firstBelt) })
+  }
 }

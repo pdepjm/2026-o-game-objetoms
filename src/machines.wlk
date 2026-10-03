@@ -19,6 +19,21 @@ import animationEngine.*
 // - use(): cuando llega el paso que ella misma agendó en el simulationEngine.
 // - reset(): al apagar la simulación. Suelta los items que tenía.
 class Maquina {
+	// Máquinas que quisieron entregarle un item y no pudieron porque estaba llena.
+	// Se quedan dormidas hasta que esta máquina se libere y las despierte.
+	const waiting = []
+
+	// Otra máquina se anota para que la despierten cuando haya lugar.
+	// No hace falta revisar repetidos: una máquina anotada no hace nada hasta que la despierten.
+	method addWaiting(machine) { waiting.add(machine) }
+
+	// Se llama cuando la máquina se libera: despierta a todas las que esperaban.
+	method wakeWaiting() {
+		if (!waiting.isEmpty()) {
+			waiting.forEach({ machine => simulationEngine.schedule(1, machine) })
+			waiting.clear()
+		}
+	}
 
 	// El simulationEngine la llama cuando llega el paso que la máquina agendó.
 	// Por defecto no hace nada: una máquina que nunca agenda, nunca se despierta.
@@ -65,7 +80,9 @@ class Maquina {
 	method heldItems() = []
 
 	// Vuelve la máquina a su estado inicial (sin items), al apagar la simulación
-	method reset() {}
+	method reset() {
+		waiting.clear()
+	}
 
 	// ¿Hay una máquina adelante y puede recibir?
 	method canPush() = next != null && next.canReceive()
@@ -97,19 +114,25 @@ class Belt inherits Maquina{
   override method heldItems() = if (item == null) [] else [item]
 
   override method reset() {
+	super()
 	item = null
   }
 
-  // Cuando el item terminó de llegar, lo pasa a la siguiente máquina.
-  // Si todavía no puede, el item espera acá y la cinta reintenta en el próximo paso.
+  // Cuando el item terminó de llegar, lo pasa a la siguiente máquina y despierta
+  // a las que esperaban para entregarle algo.
+  // Si la siguiente está llena, se anota para que le avise y se duerme.
+  // Si no hay siguiente, se queda con el item para siempre sin gastar nada.
   override method use() {
 	if (item != null) {
-		if (!item.moviendose() && self.canPush()) {
+		if (item.moviendose()) {
+			simulationEngine.schedule(1, self)
+		} else if (self.canPush()) {
 			const outgoing = item
 			item = null
 			self.push(outgoing)
-		} else {
-			simulationEngine.schedule(1, self)
+			self.wakeWaiting()
+		} else if (next != null) {
+			next.addWaiting(self)
 		}
 	}
   }
@@ -152,13 +175,13 @@ class Dispenser inherits Maquina{
   }
 
   // Se cumplió el intervalo: dispensa y agenda el próximo.
-  // Si no hay a quién entregarle, espera sin perder el turno y reintenta en el próximo paso.
+  // Si la de adelante está llena, se anota para que le avise y se duerme.
   override method use(){
 	if (self.canPush()) {
 		self.dispense()
 		simulationEngine.schedule(self.intervalSteps(), self)
-	} else {
-		simulationEngine.schedule(1, self)
+	} else if (next != null) {
+		next.addWaiting(self)
 	}
   }
 
