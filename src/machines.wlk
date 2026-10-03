@@ -7,6 +7,7 @@ import ingredientes.*
 import board.*
 import simulationEngine.*
 import animationEngine.*
+import stressMeter.*
 
 // Clase de máquina
 // Hay que agregar los métodos de rotar, de procesar, etc.
@@ -191,6 +192,7 @@ class Dispenser inherits Maquina{
 	newItem.position(self.position())
 	game.addVisual(newItem)
 	self.push(newItem)
+	stressMeter.itemCreated()
   }
 }
 

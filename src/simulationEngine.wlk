@@ -16,6 +16,7 @@
 
 import wollok.game.*
 import animationEngine.*
+import stressMeter.*
 
 object simulationEngine{
     // todas las máquinas que están en el tablero
@@ -49,8 +50,10 @@ object simulationEngine{
 
     // Lo llama Wollok Game cada tickMs. A velocidad x2 o x3 ejecuta 2 o 3 pasos seguidos,
     // así el resultado es el mismo que a x1, sólo que llega antes.
+    // También le avisa al medidor de carga, que mide el tiempo real entre ticks.
     method tick(){
         if (running) speed.times({ _ => self.step() })
+        stressMeter.measure()
     }
 
     // Un paso de simulación: se despiertan las máquinas agendadas y avanzan las animaciones.
@@ -102,6 +105,7 @@ object simulationEngine{
             game.removeVisual(item)
         })
         simulatedObjects.forEach({ machine => machine.reset() })
+        stressMeter.resetItems()
     }
 
     // Todos los items que hay en el tablero (cada uno está en alguna máquina)

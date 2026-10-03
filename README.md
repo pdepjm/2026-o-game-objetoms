@@ -49,6 +49,8 @@ Es tu tarea automatizar todos los procesos del buffet.
 **3**: establece la velocidad en x3
 **5**: Inicia o termina la simulación
 
+**M**: Prende o apaga el medidor de carga (escribe en la terminal, cada segundo, la cantidad de items y cuánto tarda cada tick)
+
 
 
 ## TAMAÑOS
