@@ -1,10 +1,11 @@
 import wollok.game.*
-import src.machines.*
-import src.userTools.*
+import src.machines.machineTypes.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
 import src.directions.*
 import src.board.*
-import src.simulationEngine.*
-import src.animationEngine.*
+import src.simulation.simulationEngine.*
+import src.simulation.animationEngine.*
 
 describe "tests de simulacion" {
 
@@ -175,7 +176,7 @@ describe "tests de simulacion" {
 
   test "con la simulacion prendida no se puede borrar una maquina" {
     simulationEngine.run()
-    toolsManager.selectedTool(delete)
+    toolsManager.select(delete)
     toolsManager.onClick(game.at(5, 5))
     assert.that(board.isThereAMachine(game.at(5, 5)))
   }
