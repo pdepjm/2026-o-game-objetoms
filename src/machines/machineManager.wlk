@@ -1,7 +1,6 @@
 // Catálogo de máquinas y máquina seleccionada
 
 import machines.machineTypes.*
-import menu.placeMenu.*
 
 // Maneja cual es la Machine Seleccionada actual
 object machineManager{
@@ -27,14 +26,8 @@ object machineManager{
 	// Máquinas que se muestran en una página del menú (4 por página)
 	method machinesOfPage(page) = machines.drop(page * 4).take(4)
 
-	// Selecciona la máquina del slot clickeado, si hay una en ese slot
-	method chooseMachine(pos){
-		const slot = placeMenu.slotAt(pos)
-		const pageMachines = self.machinesOfPage(placeMenu.currentPage())
-
-		if (slot > 0 && slot <= pageMachines.size()) {
-			selectedMachine = pageMachines.get(slot - 1)
-			placeMenu.updateOverlay()
-		}
+	// Selecciona una máquina del catálogo (una de las lambdas de machines)
+	method select(factory) {
+		selectedMachine = factory
 	}
 }

@@ -2,7 +2,7 @@
 
 import wollok.game.*
 import board.*
-import menu.placeMenu.*
+import menu.menuManager.*
 import tools.toolsManager.*
 import tools.userTools.*
 import directions.*
@@ -20,20 +20,23 @@ object userController {
 		keyboard.num2().onPressDo({ => simulationEngine.speed(2) })
 		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
 
+		// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
+		keyboard.num5().onPressDo({ => simulationEngine.toggle() })
+
 		// PRUEBAS DE CARGA (ver la carpeta stressTest)
 		// M: medidor de carga, escribe en la terminal cuánto tarda cada tick
 		keyboard.m().onPressDo({ => stressMeter.toggle() })
 		// L: llena el tablero con una serpiente de cintas
 		keyboard.l().onPressDo({ => stressTestBoard.fill() })
 
-		keyboard.q().onPressDo({ => placeMenu.prev() })
-		keyboard.e().onPressDo({ => placeMenu.next() })
+		keyboard.q().onPressDo({ => menuManager.prevPage() })
+		keyboard.e().onPressDo({ => menuManager.nextPage() })
 		keyboard.p().onPressDo({ => toolsManager.select(place)})
 		keyboard.x().onPressDo({ => toolsManager.select(delete)})
 		keyboard.z().onPressDo({ => toolsManager.select(edit)})
 
 		// ROTACIONES
-		
+
 		keyboard.r().onPressDo({ => toolsManager.select(rotate)})	// Rotacion una vez ya colocada
 
 		// Rotaciones antes de colocar
