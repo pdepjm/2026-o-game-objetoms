@@ -8,3 +8,6 @@ log
 
 # Dependencies
 node_modules
+
+# Benchmark local (tarda minutos, no va al repo ni al CI)
+test/zzBench.wtest

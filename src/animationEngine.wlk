@@ -73,13 +73,21 @@ mixin Animado {
 	method destinoFinal() = if (self.moviendose()) destino else position
 
 	// Empieza a moverse hacia esa posición. La cantidad de pasos depende de la distancia.
-	// El avance por paso (dx, dy) se calcula acá una sola vez, no en cada paso.
 	method move(pos) {
+		self.moveInSteps(pos, (position.distance(pos) * animationEngine.pasosPorCelda()).roundUp().max(1))
+	}
+
+	// Igual que move, pero quien llama ya sabe cuántos pasos lleva el movimiento
+	// (por ejemplo, una cinta le pasa un item a la vecina: siempre es una celda).
+	// RENDIMIENTO: calcular la distancia (con raíz cuadrada) era ~1/3 del costo de move,
+	// y move se llama en cada entrega entre cintas.
+	// El avance por paso (dx, dy) se calcula acá una sola vez, no en cada paso.
+	method moveInSteps(pos, steps) {
 		// si ya se estaba moviendo, ya está en la lista de animados: sólo cambia de destino
 		if (!self.moviendose()) animationEngine.animar(self)
 		destino = new PosicionSuave(x = pos.x(), y = pos.y())
 		paso = 0
-		totalPasos = (position.distance(destino) * animationEngine.pasosPorCelda()).roundUp().max(1)
+		totalPasos = steps
 		dx = (destino.x() - position.x()) / totalPasos
 		dy = (destino.y() - position.y()) / totalPasos
 	}
@@ -98,8 +106,11 @@ mixin Animado {
 			destino = null
 			animationEngine.avisarLlegada()
 		} else {
-			position.x(position.x() + dx)
-			position.y(position.y() + dy)
+			// RENDIMIENTO: goRight/goUp (de MutablePosition) suman directo sobre x e y.
+			// Son 2 mensajes en vez de 6 (leer x, sumar, guardar x, lo mismo con y),
+			// y esto se ejecuta para cada item que se mueve, en cada paso.
+			position.goRight(dx)
+			position.goUp(dy)
 		}
 	}
 

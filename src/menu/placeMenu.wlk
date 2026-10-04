@@ -1,6 +1,7 @@
 import src.userTools.*
 import machines.*
 import src.userController.*
+import src.board.CellPosition
 
 object placeMenu{
     var currentPage = 0
@@ -45,10 +46,15 @@ object placeMenu{
         return slot
     }
 
-    // El overlay solo se dibuja si la máquina seleccionada está en la página que se ve
+    // El overlay solo se dibuja si la máquina seleccionada está en la página que se ve.
+    // Se llama sólo cuando cambia algo (al elegir una máquina o cambiar de página),
+    // y acá se le fija la posición al overlay. selectedSlot() es caro (crea máquinas
+    // para comparar nombres), así que NO hay que llamarlo desde algo que se dibuja.
     method updateOverlay() {
-        const inCurrentPage = self.selectedSlot() > 0
+        const slot = self.selectedSlot()
+        const inCurrentPage = slot > 0
 
+        if (inCurrentPage) overlay.moveToSlot(slot)
         if (inCurrentPage && !game.hasVisual(overlay)) game.addVisual(overlay)
         if (!inCurrentPage && game.hasVisual(overlay)) game.removeVisual(overlay)
     }
@@ -75,30 +81,59 @@ object placeMenu{
 
             const renderedMenuItem = new MenuItem(
                 name = maquina.name(),
-                position = game.at(22, altura)
+                position = new CellPosition(x = 22, y = altura)
             )
+            renderedMenuItem.updateImage()
             game.addVisual(renderedMenuItem)
             renderedItems.add(renderedMenuItem)
         })
 
-        
+
+    }
+
+    // Actualiza la imagen de los items del menú. Lo llama toolsManager cuando cambia
+    // la dirección (W/A/S/D), que es lo único que cambia esas imágenes.
+    method updateImages() {
+        renderedItems.forEach({ item => item.updateImage() })
     }
 
 }
 
-// items del menu
+// items del menú
 
+// RENDIMIENTO: todo lo que Wollok Game le pide a un visual en cada frame (image y position)
+// tiene que ser un dato ya guardado, no algo que se calcule. Se dibuja ~60 veces por segundo.
 class MenuItem{
     var property name = "item"
     var property position = game.center()
-    method image() =  "machines/"+self.name()+"/"+ toolsManager.currentDirection().name() + ".png"
 
+    // La imagen se guarda y se recalcula sólo cuando cambia la dirección (ver updateImage).
+    // Antes se armaba el texto en cada frame.
+    // Sin setter: desde afuera sólo se le puede pedir que se actualice (updateImage).
+    var image = null
+
+    method image() = image
+
+    method updateImage() {
+        image = "machines/" + name + "/" + toolsManager.currentDirection().name() + ".png"
+    }
 }
 
 
 
 object overlay{
     // OVERLAY PARA LOS ELEMENTOS ACTIVOS
-    method position() = game.at(21,placeMenu.selectedSlot()*3-3)
+    // RENDIMIENTO: antes la posición se calculaba en cada frame con placeMenu.selectedSlot(),
+    // que crea varias máquinas: sólo el overlay costaba ~12 ms por frame (de 17 disponibles).
+    // Ahora la posición se guarda y placeMenu.updateOverlay() la cambia cuando hace falta.
+    // Sin setter: desde afuera sólo se lo puede mover a un slot (moveToSlot).
+    var position = new CellPosition(x = 21, y = 0)
+
+    method position() = position
     method image() = "overlay.png"
+
+    // Se ubica al lado del slot (1 a 4) de la máquina seleccionada
+    method moveToSlot(slot) {
+        position = new CellPosition(x = 21, y = slot * 3 - 3)
+    }
 }

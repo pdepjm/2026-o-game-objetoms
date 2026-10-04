@@ -1,0 +1,48 @@
+import wollok.game.*
+import src.machines.*
+import src.board.*
+import src.directions.*
+import src.userTools.*
+import src.simulationEngine.*
+import src.stressTest.stressTestBoard.*
+
+describe "tests del tablero de prueba de carga" {
+
+  method imageAt(x, y) = board.machineAt(game.at(x, y)).image()
+
+  test "empieza con un dispenser hacia la derecha en la esquina" {
+    stressTestBoard.fill()
+    assert.equals("machines/Dispenser/right.gif", self.imageAt(5, 1))
+  }
+
+  test "las filas impares van a la derecha y suben al final" {
+    stressTestBoard.fill()
+    assert.equals("machines/Belt/right.gif", self.imageAt(10, 3))
+    assert.equals("machines/Belt/up.gif", self.imageAt(19, 3))
+  }
+
+  test "las filas pares van a la izquierda y suben al final" {
+    stressTestBoard.fill()
+    assert.equals("machines/Belt/left.gif", self.imageAt(10, 2))
+    assert.equals("machines/Belt/up.gif", self.imageAt(5, 2))
+  }
+
+  test "llena todas las casillas del tablero" {
+    stressTestBoard.fill()
+    (5..19).forEach({ x => (1..13).forEach({ y =>
+      assert.that(board.isThereAMachine(game.at(x, y)))
+    }) })
+  }
+
+  test "no cambia la direccion que tenia elegida el jugador" {
+    toolsManager.currentDirection(down)
+    stressTestBoard.fill()
+    assert.equals(down, toolsManager.currentDirection())
+  }
+
+  test "con la simulacion prendida no toca el tablero" {
+    simulationEngine.run()
+    stressTestBoard.fill()
+    assert.notThat(board.isThereAMachine(game.at(5, 1)))
+  }
+}

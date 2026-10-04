@@ -1,4 +1,5 @@
 import src.board.*
+import src.machines.*
 
 describe "tests de board" {
 
@@ -23,6 +24,44 @@ describe "tests de board" {
 
   test "no hay maquina en una posicion vacia" {
     assert.notThat(board.isThereAMachine(game.at(10, 5)))
+  }
+
+  // Por un bug de Wollok, una casilla creada sin machine = null explícito devolvía
+  // un "null" que no era == null, y todas las casillas parecían ocupadas
+  test "ninguna casilla del tablero vacio esta ocupada" {
+    (5..19).forEach({ x => (1..13).forEach({ y =>
+      assert.notThat(board.isThereAMachine(game.at(x, y)))
+    }) })
+  }
+
+  test "una maquina colocada se encuentra en su posicion" {
+    const belt = new Belt()
+    board.push(game.at(10, 5), belt)
+    assert.equals(belt, board.machineAt(game.at(10, 5)))
+  }
+
+  test "una maquina quitada ya no esta en su posicion" {
+    board.push(game.at(10, 5), new Belt())
+    board.pop(game.at(10, 5))
+    assert.notThat(board.isThereAMachine(game.at(10, 5)))
+  }
+
+  test "no se puede colocar una maquina donde ya hay otra" {
+    const first = new Belt()
+    board.push(game.at(10, 5), first)
+    board.push(game.at(10, 5), new Oven())
+    assert.equals(first, board.machineAt(game.at(10, 5)))
+  }
+
+  // por ejemplo, una cinta del borde que apunta hacia afuera busca a su vecina ahí
+  test "fuera del tablero no hay maquina y no da error" {
+    assert.equals(null, board.machineAt(game.at(20, 5)))
+    assert.equals(null, board.machineAt(game.at(10, 14)))
+    assert.equals(null, board.machineAt(game.at(-1, -1)))
+  }
+
+  test "no se puede colocar una maquina fuera del tablero" {
+    assert.throwsException({ board.push(game.at(20, 5), new Belt()) })
   }
 
 }

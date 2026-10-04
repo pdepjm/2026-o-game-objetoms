@@ -18,7 +18,26 @@ import animationEngine.*
 // - start(): al prender la simulación. Busca a su vecina y agenda lo que necesite.
 // - use(): cuando llega el paso que ella misma agendó en el simulationEngine.
 // - reset(): al apagar la simulación. Suelta los items que tenía.
+//
+// Cuando la de adelante está llena, una máquina no pregunta en cada paso: se anota
+// (waitForNext) y se duerme. Por eso TODA máquina que se libere tiene que llamar a
+// wakeWaiting(), o las que esperan no se despiertan nunca.
 class Maquina {
+	// Máquinas que quisieron entregarle un item y no pudieron porque estaba llena.
+	// Se quedan dormidas hasta que esta máquina se libere y las despierte.
+	const waiting = []
+
+	// Otra máquina se anota para que la despierten cuando haya lugar.
+	// No hace falta revisar repetidos: una máquina anotada no hace nada hasta que la despierten.
+	method addWaiting(machine) { waiting.add(machine) }
+
+	// Se llama cuando la máquina se libera: despierta a todas las que esperaban.
+	method wakeWaiting() {
+		if (!waiting.isEmpty()) {
+			waiting.forEach({ machine => simulationEngine.schedule(1, machine) })
+			waiting.clear()
+		}
+	}
 
 	// El simulationEngine la llama cuando llega el paso que la máquina agendó.
 	// Por defecto no hace nada: una máquina que nunca agenda, nunca se despierta.
@@ -46,6 +65,15 @@ class Maquina {
 
 	method buildImage() = "machines/"+self.name()+"/"+direction.name() + ".gif"
 
+	// OJO: Wollok inicializa los atributos recién la primera vez que se leen, no al crear
+	// el objeto. Sin esto, una máquina toma la dirección que esté seleccionada cuando alguien
+	// la lee por primera vez, y no la que había al crearla. Calcular la imagen acá lee
+	// direction, y así queda fijada en el momento de crear la máquina.
+	override method initialize() {
+		super()
+		image = self.buildImage()
+	}
+
 	method rotate() {
 		direction = direction.next()
 		image = self.buildImage()
@@ -65,7 +93,9 @@ class Maquina {
 	method heldItems() = []
 
 	// Vuelve la máquina a su estado inicial (sin items), al apagar la simulación
-	method reset() {}
+	method reset() {
+		waiting.clear()
+	}
 
 	// ¿Hay una máquina adelante y puede recibir?
 	method canPush() = next != null && next.canReceive()
@@ -73,6 +103,12 @@ class Maquina {
 	// Le entrega el item a la máquina de adelante. Sólo se llama si canPush() dio true.
 	method push(anItem) {
 		next.receive(anItem)
+	}
+
+	// No pudo entregar: se anota en la de adelante para que la despierte cuando se libere.
+	// Si no hay máquina adelante, no hay a quién esperar: se queda dormida sin gastar nada.
+	method waitForNext() {
+		if (next != null) next.addWaiting(self)
 	}
 
 }
@@ -90,26 +126,32 @@ class Belt inherits Maquina{
   // Toma el item, lo anima hacia su celda y pide que la despierten cuando termine de llegar
   override method receive(anItem) {
 	item = anItem
-	anItem.move(position)
+	// viene siempre de una celda vecina: ya se sabe cuántos pasos lleva (ver moveInSteps)
+	anItem.moveInSteps(position, animationEngine.pasosPorCelda())
 	simulationEngine.schedule(animationEngine.pasosPorCelda(), self)
   }
 
   override method heldItems() = if (item == null) [] else [item]
 
   override method reset() {
+	super()
 	item = null
   }
 
-  // Cuando el item terminó de llegar, lo pasa a la siguiente máquina.
-  // Si todavía no puede, el item espera acá y la cinta reintenta en el próximo paso.
+  // Cuando el item terminó de llegar, lo pasa a la siguiente máquina y despierta
+  // a las que esperaban para entregarle algo.
+  // Si no puede entregarlo, espera a la de adelante (ver waitForNext).
   override method use() {
 	if (item != null) {
-		if (!item.moviendose() && self.canPush()) {
+		if (item.moviendose()) {
+			simulationEngine.schedule(1, self)
+		} else if (self.canPush()) {
 			const outgoing = item
 			item = null
 			self.push(outgoing)
+			self.wakeWaiting()
 		} else {
-			simulationEngine.schedule(1, self)
+			self.waitForNext()
 		}
 	}
   }
@@ -152,13 +194,13 @@ class Dispenser inherits Maquina{
   }
 
   // Se cumplió el intervalo: dispensa y agenda el próximo.
-  // Si no hay a quién entregarle, espera sin perder el turno y reintenta en el próximo paso.
+  // Si no puede entregar, espera a la de adelante (ver waitForNext).
   override method use(){
 	if (self.canPush()) {
 		self.dispense()
 		simulationEngine.schedule(self.intervalSteps(), self)
 	} else {
-		simulationEngine.schedule(1, self)
+		self.waitForNext()
 	}
   }
 
@@ -166,7 +208,7 @@ class Dispenser inherits Maquina{
   method dispense(){
 	const newItem = item.apply()
 	newItem.position(self.position())
-	game.addVisual(newItem)
+	simulationEngine.addItem(newItem)
 	self.push(newItem)
   }
 }
