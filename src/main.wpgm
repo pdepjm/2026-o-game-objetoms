@@ -1,9 +1,9 @@
 import wollok.game.*
-import menu.placeMenu.*
-import userController.*
-import ingredientes.*
+import menu.menuManager.*
+import input.userController.*
+import simulation.ingredientes.*
 import directions.*
-import simulationEngine.*
+import simulation.simulationEngine.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -15,15 +15,7 @@ program BuffetAlbertEinstein {
 
 
 	userController.setUp()
-	placeMenu.renderItems()
-
-
-
-
-
-
-	// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
-	keyboard.num5().onPressDo({ => simulationEngine.toggle() })
+	menuManager.setUp()
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()

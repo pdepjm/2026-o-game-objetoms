@@ -2,12 +2,13 @@
 
 import wollok.game.*
 import board.*
-import menu.placeMenu.*
-import userTools.*
-import src.directions.*
-import src.simulationEngine.*
-import src.stressTest.stressMeter.*
-import src.stressTest.stressTestBoard.*
+import menu.menuManager.*
+import tools.toolsManager.*
+import tools.userTools.*
+import directions.*
+import simulation.simulationEngine.*
+import stressTest.stressMeter.*
+import stressTest.stressTestBoard.*
 
 object userController {
 	method setUp() {
@@ -19,21 +20,24 @@ object userController {
 		keyboard.num2().onPressDo({ => simulationEngine.speed(2) })
 		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
 
+		// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
+		keyboard.num5().onPressDo({ => simulationEngine.toggle() })
+
 		// PRUEBAS DE CARGA (ver la carpeta stressTest)
 		// M: medidor de carga, escribe en la terminal cuánto tarda cada tick
 		keyboard.m().onPressDo({ => stressMeter.toggle() })
 		// L: llena el tablero con una serpiente de cintas
 		keyboard.l().onPressDo({ => stressTestBoard.fill() })
 
-		keyboard.q().onPressDo({ => placeMenu.prev() })
-		keyboard.e().onPressDo({ => placeMenu.next() })
-		keyboard.p().onPressDo({ => toolsManager.selectedTool(place)})
-		keyboard.x().onPressDo({ => toolsManager.selectedTool(delete)})
-
+		keyboard.q().onPressDo({ => menuManager.prevPage() })
+		keyboard.e().onPressDo({ => menuManager.nextPage() })
+		keyboard.p().onPressDo({ => toolsManager.select(place)})
+		keyboard.x().onPressDo({ => toolsManager.select(delete)})
+		keyboard.z().onPressDo({ => toolsManager.select(edit)})
 
 		// ROTACIONES
-		
-		keyboard.r().onPressDo({ => toolsManager.selectedTool(rotate)})	// Rotacion una vez ya colocada
+
+		keyboard.r().onPressDo({ => toolsManager.select(rotate)})	// Rotacion una vez ya colocada
 
 		// Rotaciones antes de colocar
 		keyboard.w().onPressDo({ => toolsManager.currentDirection(up)})

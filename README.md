@@ -24,7 +24,10 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 **X**: Herramienta de Delete
 
-**E**: Herramienta de Edit
+**Z**: Herramienta de Edit
+
+> [!NOTE]
+> El juego arranca sin ninguna herramienta elegida. Volver a tocar la tecla de la herramienta activa la deselecciona.
 
 ### Rotaciones
 **R**: Herramienta de Rotar
@@ -88,4 +91,4 @@ Todas las machines tienen que tener sus estaticos y animados con las 4 rotacione
 - `down.png` y `down.gif`
 - `up.png` y `up.gif`
 - `left.png` y `left.gif`
-- `right.png` y `right.gif`
+- `right.png` y `right.gif`

@@ -1,9 +1,9 @@
 import wollok.game.*
-import src.machines.*
+import src.machines.machineTypes.*
 import src.board.*
 import src.directions.*
-import src.userTools.*
-import src.simulationEngine.*
+import src.tools.toolsManager.*
+import src.simulation.simulationEngine.*
 import src.stressTest.stressTestBoard.*
 
 describe "tests del tablero de prueba de carga" {

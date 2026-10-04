@@ -1,5 +1,5 @@
-import src.machines.*
-import src.userTools.*
+import src.machines.machineTypes.*
+import src.tools.toolsManager.*
 import src.directions.*
 
 describe "tests de Maquina" {

@@ -1,22 +1,49 @@
-import src.userTools.*
-import machines.*
-import src.userController.*
-import src.board.CellPosition
+import tools.toolsManager.*
+import machines.machineManager.*
+import menu.menuManager.*
 
 object placeMenu{
     var currentPage = 0
     var renderedItems = []
 
+    // Sólo se dibuja mientras es el panel activo (herramienta place)
+    var visible = false
+
     method currentPage() = currentPage
 
+    // Mensajes que le manda menuManager
+
+    method show() {
+        visible = true
+        self.renderItems()
+    }
+
+    method hide() {
+        visible = false
+        self.vaciarRenders()
+        if (game.hasVisual(overlay)) game.removeVisual(overlay)
+    }
+
+    // Selecciona la máquina del slot clickeado, si hay una en ese slot
+    method onClick(pos) {
+        const slot = self.slotAt(pos)
+        const pageMachines = machineManager.machinesOfPage(currentPage)
+
+        if (slot > 0 && slot <= pageMachines.size()) {
+            machineManager.select(pageMachines.get(slot - 1))
+            self.updateOverlay()
+        }
+    }
+
+    // Cambiar de página sólo redibuja si el panel se está viendo
     method prev(){
         currentPage = 0
-        self.renderItems()
+        if (visible) self.renderItems()
     }
 
     method next(){
         currentPage = 1
-        self.renderItems()
+        if (visible) self.renderItems()
     }
 
     // Slot (1 a 4) de la página actual donde se hizo click, 0 si no fue sobre un slot
@@ -81,7 +108,7 @@ object placeMenu{
 
             const renderedMenuItem = new MenuItem(
                 name = maquina.name(),
-                position = new CellPosition(x = 22, y = altura)
+                position = menuManager.interactiveZone().at(1, altura - 1)
             )
             renderedMenuItem.updateImage()
             game.addVisual(renderedMenuItem)
@@ -127,13 +154,13 @@ object overlay{
     // que crea varias máquinas: sólo el overlay costaba ~12 ms por frame (de 17 disponibles).
     // Ahora la posición se guarda y placeMenu.updateOverlay() la cambia cuando hace falta.
     // Sin setter: desde afuera sólo se lo puede mover a un slot (moveToSlot).
-    var position = new CellPosition(x = 21, y = 0)
+    var position = menuManager.interactiveZone().at(0, -1)
 
     method position() = position
     method image() = "overlay.png"
 
     // Se ubica al lado del slot (1 a 4) de la máquina seleccionada
     method moveToSlot(slot) {
-        position = new CellPosition(x = 21, y = slot * 3 - 3)
+        position = menuManager.interactiveZone().at(0, slot * 3 - 4)
     }
 }

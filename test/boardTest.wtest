@@ -1,5 +1,5 @@
 import src.board.*
-import src.machines.*
+import src.machines.machineTypes.*
 
 describe "tests de board" {
 
