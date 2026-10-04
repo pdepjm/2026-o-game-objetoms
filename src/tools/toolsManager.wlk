@@ -6,15 +6,19 @@ import tools.userTools.*
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete, Edit y Rotate
-	var selectedTool = place
+	// Arranca sin ninguna herramienta elegida (null): hay que elegir una con P, Z, X o R
+	var selectedTool = null
 
 	method selectedTool() = selectedTool
 
 	// Único punto de entrada para cambiar de herramienta (teclas de userController).
 	// Los menús se enteran por menuManager.
 	method select(tool) {
-		selectedTool = tool
-		menuManager.toolChanged(tool)
+		if (tool != selectedTool)
+			selectedTool = tool
+		else
+			selectedTool = null
+		menuManager.toolChanged(selectedTool)
 	}
 
 	// Direccion con la que se colocan las maquinas nuevas
@@ -32,8 +36,8 @@ object toolsManager{
 	// Metodo principal
 	// Con la simulación prendida no se puede colocar, borrar ni rotar nada
 	method onClick(pos) {
-		if (board.inBoard(pos) && selectedTool != null) {
-			if (!simulationEngine.running()) selectedTool.onClick(pos)
+		if (board.inBoard(pos)) {
+			if (selectedTool != null && !simulationEngine.running()) selectedTool.onClick(pos)
 		}
 		else if (menuManager.inInteractiveMenu(pos))
 			menuManager.onClick(pos)

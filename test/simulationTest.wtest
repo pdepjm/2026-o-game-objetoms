@@ -164,11 +164,13 @@ describe "tests de simulacion" {
   }
 
   test "con la simulacion apagada se puede colocar una maquina" {
+    toolsManager.select(place)
     toolsManager.onClick(game.at(8, 8))
     assert.that(board.isThereAMachine(game.at(8, 8)))
   }
 
   test "con la simulacion prendida no se puede colocar una maquina" {
+    toolsManager.select(place)
     simulationEngine.run()
     toolsManager.onClick(game.at(8, 8))
     assert.notThat(board.isThereAMachine(game.at(8, 8)))

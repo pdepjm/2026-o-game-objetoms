@@ -26,6 +26,9 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 **Z**: Herramienta de Edit
 
+> [!NOTE]
+> El juego arranca sin ninguna herramienta elegida. Volver a tocar la tecla de la herramienta activa la deselecciona.
+
 ### Rotaciones
 **R**: Herramienta de Rotar
 
