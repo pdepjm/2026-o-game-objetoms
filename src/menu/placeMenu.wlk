@@ -46,21 +46,32 @@ object placeMenu{
         if (visible) self.renderItems()
     }
 
-    // Slot (1 a 4) de la página actual donde se hizo click, 0 si no fue sobre un slot
+
+    // GETTERS DE POSICIONES DE LOS SLOTS 
+    /* 
+        El metodo calcular el desplazamiento dentro de la zona elegida. Es decir, si el slot = 4,
+        entonces rowOffset devuelve 1. Ese 1 representa cuanto se debe mover en Y para dibujar la
+        maquina en el menu.
+
+        Este cambio provoca que el 1er slot, sea el mas alto.
+    */
+    method rowOffset(slot) = (4 - slot) * 3 + 1
+
+    // Devuelve el numero de slot en el que se clickeo, responde a ¿En qué slot cayó este click?
     method slotAt(pos){
         var slot = 0
 
-        if (pos.y().between(1, 2)) slot = 1
-        if (pos.y().between(4, 5)) slot = 2
-        if (pos.y().between(7, 9)) slot = 3
-        if (pos.y().between(10, 16)) slot = 4
+        if (pos.y().between(10, 16)) slot = 1
+        if (pos.y().between(7, 9)) slot = 2
+        if (pos.y().between(4, 5)) slot = 3
+        if (pos.y().between(1, 2)) slot = 4
 
         // TO-DO Esto podria ponerse en el objeto de cada pagina, para mantener encapsulamiento
 
         return slot
     }
 
-    // Slot (1 a 4) de la máquina seleccionada en la página actual, 0 si está en otra página
+    // Es utilizado para actualizar el overlay, responde a ¿En qué slot está la máquina que tengo elegida?
     method selectedSlot() {
         var slot = 0
         var position = 0
@@ -72,6 +83,8 @@ object placeMenu{
 
         return slot
     }
+
+    // -------------------------------------------------------------
 
     // El overlay solo se dibuja si la máquina seleccionada está en la página que se ve.
     // Se llama sólo cuando cambia algo (al elegir una máquina o cambiar de página),
@@ -86,11 +99,18 @@ object placeMenu{
         if (!inCurrentPage && game.hasVisual(overlay)) game.removeVisual(overlay)
     }
 
+
+
+    // DIBUJAR LAS MAQUINAS EN EL MENU
+    
+    // Remueve de la pantalla todos los items dibujados hasta ese momento
     method vaciarRenders() {
         renderedItems.forEach({item => game.removeVisual(item)})
         renderedItems = []
     }
 
+    // Renderiza en pantalla las maquinas que pertenecen a la pagina
+    // Para cambiar el orden de las maquinas, modificar el orden de la lista "machines" (machineManager).
     method renderItems() {
 
         self.updateOverlay()
@@ -104,11 +124,10 @@ object placeMenu{
             slot += 1
             // inicializar maquina para obtener los paramaetros (al finalizar la ejecucion no queda referenciada => garbage collector se lo lleva)
             const maquina = factory.apply()
-            const altura = slot * 3 - 2
 
             const renderedMenuItem = new MenuItem(
                 name = maquina.name(),
-                position = menuManager.interactiveZone().at(1, altura - 1)
+                position = menuManager.interactiveZone().at(1, self.rowOffset(slot))
             )
             renderedMenuItem.updateImage()
             game.addVisual(renderedMenuItem)
@@ -154,13 +173,14 @@ object overlay{
     // que crea varias máquinas: sólo el overlay costaba ~12 ms por frame (de 17 disponibles).
     // Ahora la posición se guarda y placeMenu.updateOverlay() la cambia cuando hace falta.
     // Sin setter: desde afuera sólo se lo puede mover a un slot (moveToSlot).
-    var position = menuManager.interactiveZone().at(0, -1)
+    var position = menuManager.interactiveZone().origin()
 
     method position() = position
     method image() = "overlay.png"
 
-    // Se ubica al lado del slot (1 a 4) de la máquina seleccionada
+    // Se ubica al lado del slot (1 a 4) de la máquina seleccionada: una fila más abajo
+    // que el ítem, porque el overlay mide 4 filas y el ítem 2 (queda centrado)
     method moveToSlot(slot) {
-        position = menuManager.interactiveZone().at(0, slot * 3 - 4)
+        position = menuManager.interactiveZone().at(0, placeMenu.rowOffset(slot) - 1)
     }
 }

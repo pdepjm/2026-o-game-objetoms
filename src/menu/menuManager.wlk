@@ -46,7 +46,7 @@ object menuManager {
     const interactiveZone = new Zone(
         minX = 21,
         maxX = 24,
-        minY = 1,
+        minY = 0,
         maxY = 14
     )
 

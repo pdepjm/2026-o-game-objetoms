@@ -17,7 +17,7 @@ object editMenu{
 
 // Por ahora sólo dice "Info"; más adelante va a mostrar la información de la máquina
 object infoText {
-	const position = menuManager.interactiveZone().at(1, 12)
+	const position = menuManager.interactiveZone().at(1, 13)
 
 	method position() = position
 	method text() = "Info"

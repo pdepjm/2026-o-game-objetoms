@@ -12,8 +12,14 @@ import src.directions.*
 
 describe "tests de menuManager" {
 
-  // lo que hay dibujado en la primera posición de la zona interactiva (el primer ítem de place)
-  method firstSlotVisuals() = game.getObjectsIn(new CellPosition(x = 22, y = 1))
+  // Los slots del panel de place se dibujan de arriba hacia abajo: el 1º es el de más arriba
+  // (y 10) y el 4º el de más abajo (y 1). Las máquinas se dibujan en x 22.
+  method slotY(slot) = [10, 7, 4, 1].get(slot - 1)
+
+  // lo que hay dibujado en un slot del panel
+  method slotVisuals(slot) = game.getObjectsIn(new CellPosition(x = 22, y = self.slotY(slot)))
+
+  method menuIsEmpty() = [1, 2, 3, 4].all({ slot => self.slotVisuals(slot).isEmpty() })
 
   // el juego arranca sin herramienta: para probar place hay que elegirla
   method startWithPlace() {
@@ -26,7 +32,7 @@ describe "tests de menuManager" {
     assert.equals(null, toolsManager.selectedTool())
     assert.notThat(game.hasVisual(overlay))
     assert.notThat(game.hasVisual(infoText))
-    assert.that(self.firstSlotVisuals().isEmpty())
+    assert.that(self.menuIsEmpty())
   }
 
   test "al arrancar la barra de herramientas muestra la imagen por defecto" {
@@ -36,10 +42,11 @@ describe "tests de menuManager" {
 
   test "sin herramienta elegida los clicks no hacen nada" {
     menuManager.setUp()
+    const selectedBefore = machineManager.selectedName()
     toolsManager.onClick(game.at(8, 8))
     toolsManager.onClick(game.at(22, 8))
     assert.notThat(board.isThereAMachine(game.at(8, 8)))
-    assert.equals("Belt", machineManager.selectedName())
+    assert.equals(selectedBefore, machineManager.selectedName())
   }
 
   test "elegir place muestra el panel de máquinas" {
@@ -54,7 +61,7 @@ describe "tests de menuManager" {
     toolsManager.select(place)
     assert.equals(null, toolsManager.selectedTool())
     assert.notThat(game.hasVisual(overlay))
-    assert.that(self.firstSlotVisuals().isEmpty())
+    assert.that(self.menuIsEmpty())
     assert.equals("tools/default.png", toolBar.image())
   }
 
@@ -80,7 +87,7 @@ describe "tests de menuManager" {
     toolsManager.select(edit)
     assert.that(game.hasVisual(infoText))
     assert.notThat(game.hasVisual(overlay))
-    assert.that(self.firstSlotVisuals().isEmpty())
+    assert.that(self.menuIsEmpty())
   }
 
   test "volver a place saca el texto Info y vuelve a dibujar las máquinas" {
@@ -89,7 +96,7 @@ describe "tests de menuManager" {
     toolsManager.select(place)
     assert.notThat(game.hasVisual(infoText))
     assert.that(game.hasVisual(overlay))
-    assert.equals(1, self.firstSlotVisuals().size())
+    assert.equals(1, self.slotVisuals(1).size())
   }
 
   test "con delete o rotate la zona interactiva queda vacía" {
@@ -105,53 +112,97 @@ describe "tests de menuManager" {
   test "cambiar la dirección actualiza las imágenes del panel activo" {
     self.startWithPlace()
     toolsManager.currentDirection(up)
-    assert.equals("machines/Belt/up.png", self.firstSlotVisuals().first().image())
+    const names = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().name() })
+    const images = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().image() })
+    assert.equals(names.map({ name => "machines/" + name + "/up.png" }), images)
   }
 
   test "cambiar de página con el panel de edit no dibuja máquinas" {
     menuManager.setUp()
     toolsManager.select(edit)
     menuManager.nextPage()
-    assert.that(self.firstSlotVisuals().isEmpty())
+    assert.that(self.menuIsEmpty())
   }
 
   test "cambiar de página sin herramienta no dibuja máquinas" {
     menuManager.setUp()
     menuManager.nextPage()
-    assert.that(self.firstSlotVisuals().isEmpty())
+    assert.that(self.menuIsEmpty())
   }
 
-  test "los ítems del panel de place se dibujan en x 22 y en y 1, 4, 7 y 10" {
+  // ORDEN DE LOS SLOTS: la 1ª máquina de la página va arriba
+
+  test "los slots se dibujan en x 22 y en y 10, 7, 4 y 1" {
     self.startWithPlace()
-    const sizes = [1, 4, 7, 10].map({ y => game.getObjectsIn(new CellPosition(x = 22, y = y)).size() })
+    const sizes = [10, 7, 4, 1].map({ y => game.getObjectsIn(new CellPosition(x = 22, y = y)).size() })
     assert.equals([1, 1, 1, 1], sizes)
   }
 
-  test "el overlay se ubica al lado del slot elegido" {
-    self.startWithPlace()
-    assert.equals(new CellPosition(x = 21, y = 0), overlay.position())
-    toolsManager.onClick(game.at(22, 8))
-    assert.equals(new CellPosition(x = 21, y = 6), overlay.position())
+  test "slotAt devuelve el slot según la fila clickeada (el 1 es el de arriba)" {
+    const slots = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14].map({ y => placeMenu.slotAt(game.at(22, y)) })
+    assert.equals([0, 4, 4, 0, 3, 3, 0, 2, 2, 2, 1, 1], slots)
   }
 
-  test "cambiar de página con el panel de place muestra las máquinas de la otra página" {
+  test "al clickear cada máquina dibujada se elige esa máquina" {
     self.startWithPlace()
-    menuManager.nextPage()
-    assert.equals("machines/Fryer/right.png", self.firstSlotVisuals().first().image())
-    assert.notThat(game.hasVisual(overlay))
+    const drawn = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().name() })
+    const chosen = [1, 2, 3, 4].map({ slot =>
+      toolsManager.onClick(self.slotVisuals(slot).first().position())
+      machineManager.selectedName()
+    })
+    assert.equals(drawn, chosen)
+  }
+
+  test "el overlay queda al lado de la máquina elegida, una fila más abajo que el ítem" {
+    self.startWithPlace()
+    const overlayRows = [1, 2, 3, 4].map({ slot =>
+      toolsManager.onClick(self.slotVisuals(slot).first().position())
+      overlay.position().y()
+    })
+    assert.equals([9, 6, 3, 0], overlayRows)
+  }
+
+  test "el overlay arranca al lado de la primera máquina" {
+    self.startWithPlace()
+    assert.equals(new CellPosition(x = 21, y = 9), overlay.position())
   }
 
   test "un click en la zona interactiva con place elige la máquina del slot" {
     self.startWithPlace()
     toolsManager.onClick(game.at(22, 8))
-    assert.equals("Oven", machineManager.selectedName())
+    assert.equals(self.slotVisuals(2).first().name(), machineManager.selectedName())
+    assert.equals(new CellPosition(x = 21, y = 6), overlay.position())
     assert.that(game.hasVisual(overlay))
+  }
+
+  test "la última página llena los slots desde arriba y deja libres los de abajo" {
+    self.startWithPlace()
+    menuManager.nextPage()
+    const sizes = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).size() })
+    assert.equals([1, 1, 0, 0], sizes)
+    assert.notThat(game.hasVisual(overlay))
+  }
+
+  test "clickear un slot libre de la última página no cambia la máquina elegida" {
+    self.startWithPlace()
+    const selectedBefore = machineManager.selectedName()
+    menuManager.nextPage()
+    toolsManager.onClick(game.at(22, 4))
+    assert.equals(selectedBefore, machineManager.selectedName())
   }
 
   test "un click en la zona interactiva con edit no cambia la máquina elegida" {
     menuManager.setUp()
     toolsManager.select(edit)
+    const selectedBefore = machineManager.selectedName()
     toolsManager.onClick(game.at(22, 8))
-    assert.equals("Belt", machineManager.selectedName())
+    assert.equals(selectedBefore, machineManager.selectedName())
+  }
+
+  // ZONAS
+
+  test "la zona interactiva va de la fila 0 a la 14: la fila 15 es de la barra de herramientas" {
+    const results = [0, 14, 15].map({ y => menuManager.inInteractiveMenu(game.at(22, y)) })
+    assert.equals([true, true, false], results)
   }
 }

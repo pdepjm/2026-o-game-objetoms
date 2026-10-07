@@ -8,11 +8,11 @@ object machineManager{
 	// Cada elemento es una lambda que crea una máquina nueva.
 	const machines = [
 		{ => new Belt() },
+		{ => new Dispenser() },
 		{ => new Assembler() },
 		{ => new Oven() },
 		{ => new CuttingMachine() },
-		{ => new Fryer() },
-		{ => new Dispenser() }
+		{ => new Fryer() }
 	]
 
 	var selectedMachine = machines.first()
