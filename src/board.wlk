@@ -63,9 +63,13 @@ object board {
 	method push(position, element) {
 		if (!self.inBoard(position))
 			self.error("No se puede colocar una máquina fuera del tablero: " + position)
+
 		if (!self.isThereAMachine(position)) {
 			// se guarda como CellPosition para que dibujarla sea barato (ver CellPosition)
-			element.position(new CellPosition(x = position.x(), y = position.y()))
+			element.position(new CellPosition(
+				x = position.x() + element.offsetX(), 	// Mueve el dibujo de lugar (Es para el Automatic Arm que es mas grande)
+				y = position.y() + element.offsetY())
+			)
 			game.addVisual(element)
 			self.setPosition(position, element)
 			simulationEngine.addSimulatedObject(element)

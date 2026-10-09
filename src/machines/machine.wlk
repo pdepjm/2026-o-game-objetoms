@@ -36,6 +36,10 @@ class Maquina {
 		}
 	}
 
+	// Sirven para desplazar la imagen antes de colocarla (Por ahora solo para el Automatic Arm, ver implementacion en Board)
+	method offsetX() = 0
+	method offsetY() = 0
+
 	// El simulationEngine la llama cuando llega el paso que la máquina agendó.
 	// Por defecto no hace nada: una máquina que nunca agenda, nunca se despierta.
 	method use() {}

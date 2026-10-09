@@ -104,3 +104,11 @@ class Dispenser inherits Maquina{
 	self.push(newItem)
   }
 }
+
+class AutomaticArm inherits Maquina {
+  // Esto es momentaneo, para probar las animaciones
+  override method name() = "AutomaticArm"
+  override method buildImage() = "machines/AutomaticArm/down_to_right.gif"
+  override method offsetX() = -1
+  override method offsetY() = -1
+}

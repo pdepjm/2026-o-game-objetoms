@@ -9,6 +9,7 @@ object machineManager{
 	const machines = [
 		{ => new Belt() },
 		{ => new Dispenser() },
+		{ => new AutomaticArm()},
 		{ => new Assembler() },
 		{ => new Oven() },
 		{ => new CuttingMachine() },
