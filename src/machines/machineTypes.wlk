@@ -5,6 +5,8 @@ import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import simulation.ingredientes.*
 import wollok.game.*
+import directions.*
+import board.*
 
 
 // Cinta: lleva de a un item hacia la máquina a la que apunta
@@ -107,29 +109,135 @@ class Dispenser inherits Maquina{
   }
 }
 
-class AutomaticArm inherits Maquina {
-  // Esto es momentaneo, para probar las animaciones
+// Brazo automático: agarra el item que le llega de un lado y lo deja del lado contrario.
+// No rota: siempre se coloca mirando hacia abajo, y gira solo según de dónde le llegue el item.
+// Se anima con FrameAnimated (PNG por frame) y no con GIFs: ver animationEngine.wlk.
+//
+// Cuando le llega un item desde el lado S:
+// 1. Si no está mirando hacia S, gira hacia ahí (animación rotate).
+// 2. Lo agarra y gira hacia el lado contrario (animación catch), llevando el item.
+// 3. Lo entrega a la máquina de esa celda. Si está llena, espera a que lo despierte.
+// Mientras tiene un item no acepta otro.
+//
+// MOMENTÁNEO: entregar del lado contrario es para probar el brazo hasta que tenga su lógica.
+//
+// OJO: las animaciones terminan dentro del tick del animationEngine, y ahí no se puede
+// mover un item (se agregaría a la lista que se está recorriendo). Por eso al terminar
+// cada animación el brazo sólo se agenda, y el paso siguiente lo hace en use().
+class AutomaticArm inherits FrameAnimated and Maquina {
+  // Frames que hay en cada carpeta de animación (los genera assets/machines/gifToFrames.py)
+  const rotateFrames = 7
+  const catchFrames = 28
+
+  var item = null       // el item que está moviendo (null si está libre)
+  var from = null       // lado del que vino el item
+  var grabbed = false   // ¿ya lo llevó al lado contrario?
+  var facing = down     // hacia dónde está mirando ahora (no cambia direction: el brazo no rota)
+
   override method name() = "AutomaticArm"
-  override method buildImage() = "machines/"+self.name()+"/"+direction.name() + "_game.png"
   override method offsetX() = -1
   override method offsetY() = -1
 
+  // Siempre se coloca mirando hacia abajo, sin importar la dirección elegida
   override method initialize() {
+    direction = down
     super()
-    game.schedule(2000, {self.play()})
   }
 
-  method play() {
-    const default = "machines/"+self.name()+"/"+direction.name() + "_game.png"
-    const replaceToRotateGif = "machines/"+self.name()+"/"+direction.name()+"_to_"+direction.invert()+"_rotate.gif"
-    const replaceToCatchGif = "machines/"+self.name()+"/"+direction.invert()+"_to_"+direction.name()+"_catch.gif"
-    
-    self.image(replaceToRotateGif)
-    game.schedule(630, {
-      self.image(replaceToCatchGif)
-      game.schedule(2730, {
-        self.image(default)
-      })
+  // No rota, ni con la herramienta de rotar ni en el menú
+  override method rotate() {}
+  override method menuImage(aDirection) = super(down)
+
+  // Quieto, mirando hacia donde quedó
+  override method staticImage() = "machines/"+self.name()+"/"+facing.name() + "_game.png"
+
+  // Al prender la simulación sigue quieto: sólo se anima cuando le llega un item
+  override method runningImage() = self.staticImage()
+
+  // Una animación del brazo, por ejemplo armAnimation(down, up, "rotate", rotateFrames)
+  method armAnimation(fromSide, toSide, kind, frameCount) =
+    new FrameAnimation(path = "machines/"+self.name()+"/"+fromSide.name()+"_to_"+toSide.name()+"_"+kind, frameCount = frameCount)
+
+  override method canReceive() = item == null
+
+  override method heldItems() = if (item == null) [] else [item]
+
+  override method receive(anItem) {
+    item = anItem
+    from = self.sideOf(anItem.destinoFinal())
+    grabbed = false
+    self.continueWork()
+  }
+
+  // Lado del brazo en el que está esa posición (una celda vecina)
+  method sideOf(aPosition) {
+    const cell = self.cell()
+    return if (aPosition.x() > cell.x()) right
+      else if (aPosition.x() < cell.x()) left
+      else if (aPosition.y() > cell.y()) up
+      else down
+  }
+
+  // Lo despierta el engine al terminar cada animación, o cuando se libera la máquina de entrega
+  override method use() {
+    self.continueWork()
+  }
+
+  // Hace lo que falta con el item que tiene: girar hacia él, llevarlo, o entregarlo
+  method continueWork() {
+    if (item != null) {
+      if (grabbed) self.deliver()
+      else if (facing == from) self.carry()
+      else self.turnToItem()
+    }
+  }
+
+  // Gira hacia el lado del que vino el item
+  method turnToItem() {
+    self.play(self.armAnimation(facing, from, "rotate", rotateFrames), {
+      facing = from
+      simulationEngine.schedule(1, self)
     })
+  }
+
+  // Lo agarra y gira hacia el lado contrario. El item viaja a la otra celda mientras tanto.
+  method carry() {
+    const to = from.invert()
+    item.moveInSteps(to.move(self.cell()), catchFrames)
+    self.play(self.armAnimation(from, to, "catch", catchFrames), {
+      facing = to
+      grabbed = true
+      self.image(self.staticImage())
+      simulationEngine.schedule(1, self)
+    })
+  }
+
+  // Se lo entrega a la máquina de la celda contraria. Se busca acá y no al prender
+  // la simulación (como next) porque depende de por dónde llegó el item.
+  // Si está llena, espera a que lo despierte; si no hay máquina, se queda con el item.
+  method deliver() {
+    const target = board.machineAt(facing.move(self.cell()))
+    if (target != null) {
+      if (target.canReceive()) {
+        const outgoing = item
+        item = null
+        from = null
+        grabbed = false
+        target.receive(outgoing)
+        self.wakeWaiting()
+      } else {
+        target.addWaiting(self)
+      }
+    }
+  }
+
+  // Al apagar la simulación corta la animación y vuelve a quedar quieto mirando hacia abajo
+  override method reset() {
+    self.stopAnimation()
+    item = null
+    from = null
+    grabbed = false
+    facing = down
+    super()
   }
 }

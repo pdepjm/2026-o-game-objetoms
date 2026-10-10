@@ -1,0 +1,124 @@
+# AutomaticArm
+
+Guía para modificar las imágenes del brazo automático. Es un **caso especial**: no sigue la convención del resto de las máquinas (`<direccion>_menu.png`, `<direccion>_game.png` y `<direccion>.gif`, ver [`assets/README.md`](../../README.md)).
+
+Lo que tiene de distinto:
+
+- Ocupa **3x3 celdas**: sus imágenes del tablero son de **150x150**.
+- **No rota**: ni con la herramienta de rotar ni con W/A/S/D en el menú. Siempre se coloca mirando hacia abajo (`down`).
+- **No usa `.gif`**: sus animaciones son carpetas de PNG, uno por frame.
+- **Al prender la simulación sigue quieto**: sólo se anima cuando le llega un ingrediente.
+
+## Cómo funciona en el juego
+
+1. Se coloca mirando hacia abajo (`down_game.png`), sin importar la dirección elegida.
+2. Cuando una máquina vecina (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente desde el lado `S`:
+   1. Si no está mirando hacia `S`, **gira hacia ese lado**: animación `<hacia donde mira>_to_<S>_rotate`.
+   2. **Lo agarra y gira hacia el lado contrario**: animación `<S>_to_<contrario de S>_catch`. El ingrediente viaja con la pinza hasta la celda contraria.
+   3. **Lo entrega a la máquina de la celda contraria** y queda quieto mirando hacia ahí (`<contrario de S>_game.png`).
+3. Mientras tiene un ingrediente no acepta otro. Si la máquina de la celda contraria está llena, espera a que se libere; si no hay ninguna máquina, se queda con el ingrediente.
+4. Al apagar la simulación suelta lo que tenía y vuelve a mirar hacia abajo.
+
+Por ejemplo, con una cinta a la izquierda y otra a la derecha:
+
+```
+ [Belt →] [ Brazo ] [Belt →]
+```
+
+`down_to_left_rotate` → `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
+
+> [!NOTE]
+> Entregar del lado contrario es **momentáneo**, para poder probar el brazo hasta que tenga su lógica definitiva (ver la clase `AutomaticArm` en `src/machines/machineTypes.wlk`).
+
+### Las celdas alrededor del brazo
+
+El brazo se dibuja sobre 3x3 celdas, pero en el tablero **ocupa sólo la del centro** (la celda donde se hizo click). Por eso:
+
+- Las máquinas que le entregan y reciben ingredientes van en las celdas vecinas, aunque queden debajo de su dibujo.
+- En el código, `position` es la esquina del dibujo (corrida con `offsetX()` y `offsetY()`, que valen `-1`), y `cell()` es la celda del centro. Para cualquier cálculo sobre el tablero se usa `cell()`.
+
+Si se cambia el tamaño de las imágenes, hay que cambiar también `offsetX()` y `offsetY()`.
+
+## Qué hay en la carpeta
+
+| Archivo | Tamaño | Para qué se usa |
+|---|---|---|
+| `<dir>_game.png` | 150x150 | El brazo quieto mirando hacia `<dir>`. Se usan los 4: es la pose en la que queda después de entregar |
+| `down_menu.png` | 100x100 | El brazo en el menú de máquinas (siempre éste, porque no rota) |
+| `left_menu.png`, `right_menu.png`, `up_menu.png` | — | **No se usan** (el brazo no rota). Se pueden borrar |
+| `<desde>_to_<hasta>_rotate/` | 150x150 cada PNG | Girar de `<desde>` a `<hasta>`: **7 frames** (`0.png` a `6.png`) |
+| `<desde>_to_<hasta>_catch/` | 150x150 cada PNG | Agarrar y girar de `<desde>` a `<hasta>`: **28 frames** (`0.png` a `27.png`) |
+
+`<dir>`, `<desde>` y `<hasta>` son siempre `up`, `down`, `left` o `right`.
+
+### Qué animaciones se usan hoy
+
+- **`_rotate`: las 12.** El brazo puede estar mirando hacia cualquier lado cuando le llega un ingrediente desde cualquier otro.
+- **`_catch`: sólo las 4 entre lados opuestos** (`down_to_up`, `up_to_down`, `left_to_right`, `right_to_left`), porque siempre entrega del lado contrario. Las de 90° (`down_to_left`, etc.) quedan listas para cuando el brazo pueda entregar hacia un costado.
+
+### Para que no se vean saltos
+
+Una animación empieza donde terminó la anterior, así que tienen que coincidir:
+
+- el **primer frame** de `<X>_to_<S>_rotate` con `<X>_game.png`;
+- el **último frame** de `<X>_to_<S>_rotate` con el **primer frame** de `<S>_to_<T>_catch`;
+- el **último frame** de `<S>_to_<T>_catch` con `<T>_game.png`.
+
+## Por qué frames y no GIFs
+
+Wollok carga cada GIF una sola vez y todos los brazos que lo muestran comparten la misma animación: la segunda vez no arranca desde el principio (aparece a la mitad, o congelada en el último frame). Con un PNG por frame, cada brazo lleva su propio frame. Ver `FrameAnimated` en `src/simulation/animationEngine.wlk`.
+
+El juego muestra **un frame por paso de simulación** (100 ms a x1), así que respeta la pausa y la velocidad x2/x3.
+
+## Modificar una animación
+
+Los GIFs originales ya no están en el repo: **las carpetas de frames son la fuente**. Hay dos formas de cambiar una animación:
+
+- **Editando los PNG de la carpeta** directamente (respetando la cantidad y la numeración: `0.png`, `1.png`, ...).
+- **Desde un GIF nuevo**, con `gifToFrames.py`. Parado en `assets/`:
+  ```bash
+  python3 machines/gifToFrames.py machines/AutomaticArm/down_to_up_catch.gif
+  ```
+  Genera (o reemplaza) la carpeta con el mismo nombre del GIF, remuestreada a 100 ms por frame para que dure lo mismo que el GIF. Después **borrar el GIF de la carpeta**: el juego no lo usa, pero lo cargaría igual al arrancar.
+
+Si cambia la cantidad de frames:
+
+1. **Todas las direcciones de un mismo tipo tienen que tener la misma cantidad** (el código usa un solo número para todos los `_rotate` y otro para todos los `_catch`).
+2. Actualizar `rotateFrames` / `catchFrames` en la clase `AutomaticArm` (`src/machines/machineTypes.wlk`) y las mismas constantes en `test/animationTest.wtest`.
+3. Correr los tests:
+   ```bash
+   wollok test --skipValidations -p ./
+   ```
+
+### Hacer las otras direcciones
+
+Las imágenes de cada dirección son la misma imagen girada. Girando 90° en sentido horario, las direcciones pasan así: `down → left → up → right → down`. Al girar una animación se giran **las dos** direcciones del nombre:
+
+| Original | 90° horario | 180° | 270° horario |
+|---|---|---|---|
+| `down_to_up` | `left_to_right` | `up_to_down` | `right_to_left` |
+| `down_to_left` | `left_to_up` | `up_to_right` | `right_to_down` |
+| `down_to_right` | `left_to_down` | `up_to_left` | `right_to_up` |
+
+> [!WARNING]
+> `machines/assetGenerator.py` sirve para los `<dir>_game.png`, pero **no** para las animaciones `_to_`: sólo cambia la última dirección del nombre, así que generaría archivos con el nombre equivocado.
+
+## Agregar una animación nueva
+
+Por ejemplo, una animación `drop` para soltar el ingrediente:
+
+1. Crear las carpetas `<desde>_to_<hasta>_drop/` (150x150), todas con la misma cantidad de frames.
+2. En la clase `AutomaticArm`, agregar la cantidad de frames (`const dropFrames = ...`) y reproducirla con:
+   ```wollok
+   self.play(self.armAnimation(desde, hasta, "drop", dropFrames), { ... })
+   ```
+   El bloque se ejecuta cuando termina la animación.
+
+> [!WARNING]
+> El bloque del final se ejecuta mientras el `animationEngine` avanza las animaciones: ahí **no se puede mover un ingrediente** (`move`/`moveInSteps`). Si hace falta, el brazo se agenda con `simulationEngine.schedule(1, self)` y lo hace en `use()`, como hacen `turnToItem` y `carry`.
+
+## Cosas a tener en cuenta
+
+- **Nombres exactos:** el código arma las rutas con el nombre (`"machines/AutomaticArm/" + desde + "_to_" + hasta + "_" + tipo + "/" + frame + ".png"`). Si un nombre no coincide, el juego no encuentra la imagen.
+- **Animaciones cortas:** cada frame es una imagen más que el juego carga al arrancar. Hoy son 420 frames (24 carpetas).
+- **Velocidad:** cada ingrediente tarda unos 3,5 s en pasar por el brazo (0,7 s de giro y 2,8 s de catch), contra 0,5 s de una cinta. Las máquinas que lo alimentan van a juntar ingredientes en cola.

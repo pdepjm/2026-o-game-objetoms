@@ -122,11 +122,12 @@ object placeMenu{
 
         machineManager.machinesOfPage(currentPage).forEach({ factory =>
             slot += 1
-            // inicializar maquina para obtener los paramaetros (al finalizar la ejecucion no queda referenciada => garbage collector se lo lleva)
+            // una máquina de muestra: da el nombre y la imagen del menú (queda guardada en el MenuItem)
             const maquina = factory.apply()
 
             const renderedMenuItem = new MenuItem(
                 name = maquina.name(),
+                machine = maquina,
                 position = menuManager.interactiveZone().at(1, self.rowOffset(slot))
             )
             renderedMenuItem.updateImage()
@@ -153,6 +154,10 @@ class MenuItem{
     var property name = "item"
     var property position = game.center()
 
+    // Una máquina del tipo que muestra: es la que sabe qué imagen va en el menú
+    // (por ejemplo, el brazo automático no rota y muestra siempre la misma).
+    const machine
+
     // La imagen se guarda y se recalcula sólo cuando cambia la dirección (ver updateImage).
     // Antes se armaba el texto en cada frame.
     // Sin setter: desde afuera sólo se le puede pedir que se actualice (updateImage).
@@ -161,7 +166,7 @@ class MenuItem{
     method image() = image
 
     method updateImage() {
-        image = "machines/" + name + "/" + toolsManager.currentDirection().name() + "_menu.png"
+        image = machine.menuImage(toolsManager.currentDirection())
     }
 }
 

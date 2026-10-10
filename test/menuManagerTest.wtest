@@ -109,12 +109,21 @@ describe "tests de menuManager" {
     assert.notThat(game.hasVisual(overlay))
   }
 
+  // el brazo automático no rota: su imagen del menú no cambia (ver el test siguiente)
   test "cambiar la dirección actualiza las imágenes del panel activo" {
     self.startWithPlace()
     toolsManager.currentDirection(up)
-    const names = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().name() })
-    const images = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().image() })
-    assert.equals(names.map({ name => "machines/" + name + "/up_menu.png" }), images)
+    const items = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first() })
+      .filter({ item => item.name() != "AutomaticArm" })
+    assert.equals(items.map({ item => "machines/" + item.name() + "/up_menu.png" }), items.map({ item => item.image() }))
+  }
+
+  test "cambiar la dirección no cambia la imagen del brazo automático en el menú" {
+    self.startWithPlace()
+    toolsManager.currentDirection(up)
+    const arm = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first() })
+      .find({ item => item.name() == "AutomaticArm" })
+    assert.equals("machines/AutomaticArm/down_menu.png", arm.image())
   }
 
   test "cambiar de página con el panel de edit no dibuja máquinas" {

@@ -1,6 +1,7 @@
 import src.machines.machineTypes.*
 import src.tools.toolsManager.*
 import src.directions.*
+import wollok.game.*
 
 describe "tests de Maquina" {
 
@@ -31,7 +32,7 @@ describe "tests de Maquina" {
   test "una maquina nace con la direccion actual del toolsManager" {
     toolsManager.currentDirection(up)
     const oven = new Oven()
-    assert.equals("machines/Oven/up.gif", oven.image())
+    assert.equals("machines/Oven/up_game.png", oven.image())
   }
 
   // Wollok inicializa los atributos al leerlos por primera vez: la máquina tiene que
@@ -40,14 +41,14 @@ describe "tests de Maquina" {
     toolsManager.currentDirection(up)
     const oven = new Oven()
     toolsManager.currentDirection(left)
-    assert.equals("machines/Oven/up.gif", oven.image())
+    assert.equals("machines/Oven/up_game.png", oven.image())
   }
 
   test "rotate cambia la direccion de la maquina de right a down" {
     toolsManager.currentDirection(right)
     const belt = new Belt()
     belt.rotate()
-    assert.equals("machines/Belt/down.gif", belt.image())
+    assert.equals("machines/Belt/down_game.png", belt.image())
   }
 
   test "rotate no afecta a otras maquinas ya creadas" {
@@ -55,8 +56,38 @@ describe "tests de Maquina" {
     const belt1 = new Belt()
     const belt2 = new Belt()
     belt1.rotate()
-    assert.equals("machines/Belt/down.gif", belt1.image())
-    assert.equals("machines/Belt/right.gif", belt2.image())
+    assert.equals("machines/Belt/down_game.png", belt1.image())
+    assert.equals("machines/Belt/right_game.png", belt2.image())
+  }
+
+  test "una maquina recien creada se ve quieta" {
+    toolsManager.currentDirection(right)
+    assert.equals("machines/Belt/right_game.png", new Belt().image())
+  }
+
+  test "al prender la simulacion una maquina pasa a la imagen animada" {
+    toolsManager.currentDirection(right)
+    const belt = new Belt()
+    belt.start()
+    assert.equals("machines/Belt/right.gif", belt.image())
+  }
+
+  test "al apagar la simulacion una maquina vuelve a la imagen quieta" {
+    toolsManager.currentDirection(right)
+    const belt = new Belt()
+    belt.start()
+    belt.reset()
+    assert.equals("machines/Belt/right_game.png", belt.image())
+  }
+
+  test "la imagen del menu depende de la direccion elegida" {
+    assert.equals("machines/Belt/up_menu.png", new Belt().menuImage(up))
+  }
+
+  test "la celda de una maquina comun es su posicion" {
+    const belt = new Belt()
+    belt.position(game.at(7, 4))
+    assert.equals(game.at(7, 4), belt.cell())
   }
 
 }

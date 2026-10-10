@@ -1,4 +1,5 @@
-// Acá va todo lo que tiene que ver con mover cosas suavemente entre celdas.
+// Acá va todo lo que se anima paso a paso: objetos que se mueven suavemente entre celdas
+// (mixin Animado) y objetos que cambian de imagen cuadro por cuadro (mixin FrameAnimated).
 // No tiene reloj propio: el simulationEngine le avisa cuándo avanzar (una vez por paso),
 // así la pausa y la velocidad x2/x3 afectan a las animaciones sin hacer nada extra.
 
@@ -18,13 +19,18 @@ object animationEngine {
 	// Las máquinas también lo usan para saber cuándo termina de llegar un item.
 	const property pasosPorCelda = 5
 
-	// Los objetos que se están moviendo en este momento (los que están quietos no están acá).
+	// Los objetos que se están animando en este momento (los que están quietos no están acá).
+	// Cualquier objeto puede estar acá si entiende avanzar() y animando().
 	// Es una lista y no un conjunto a propósito: copiar o agregar a un conjunto compara
 	// cada elemento contra todos los demás, y con muchos items eso era lo más lento del juego.
 	var animados = []
 
-	// ¿algún objeto llegó a destino durante este tick?
+	// ¿algún objeto terminó su animación durante este tick?
 	var algunoLlego = false
+
+	// ¿se están avanzando los animados en este momento? (ver FrameAnimated.play)
+	var ticking = false
+	method ticking() = ticking
 
 	// Empieza a animar un objeto. Quien llama se asegura de no agregarlo dos veces.
 	method animar(obj) { animados.add(obj) }
@@ -32,15 +38,17 @@ object animationEngine {
 	// Saca a un objeto que se detuvo antes de llegar (por ejemplo, porque se borró)
 	method terminar(obj) { animados.remove(obj) }
 
-	// Un objeto avisa que llegó a destino. No se saca de la lista en el momento,
+	// Un objeto avisa que terminó su animación. No se saca de la lista en el momento,
 	// porque se está recorriendo: se limpia al final del tick.
 	method avisarLlegada() { algunoLlego = true }
 
-	// Avanza un paso a todos los que se están moviendo y después saca a los que llegaron.
+	// Avanza un paso a todos los que se están animando y después saca a los que terminaron.
 	method tick() {
+		ticking = true
 		animados.forEach({ o => o.avanzar() })
+		ticking = false
 		if (algunoLlego) {
-			animados = animados.filter({ o => o.moviendose() })
+			animados = animados.filter({ o => o.animando() })
 			algunoLlego = false
 		}
 	}
@@ -68,6 +76,9 @@ mixin Animado {
 	}
 
 	method moviendose() = destino !== null
+
+	// Lo pregunta el animationEngine para saber si sigue en la lista de animados
+	method animando() = self.moviendose()
 
 	// Dónde va a terminar: el destino si se está moviendo, o donde está parado
 	method destinoFinal() = if (self.moviendose()) destino else position
@@ -118,5 +129,78 @@ mixin Animado {
 	method detener() {
 		if (self.moviendose()) animationEngine.terminar(self)
 		destino = null
+	}
+}
+
+// Una animación cuadro por cuadro: la lista de imágenes que se muestran, una por paso.
+// Los frames son PNG numerados dentro de una carpeta (path/0.png, path/1.png, ...),
+// y se generan desde un GIF con assets/machines/gifToFrames.py.
+// Las rutas se arman una sola vez al crearla, no en cada paso.
+class FrameAnimation {
+	const path			// carpeta de los frames, por ejemplo "machines/AutomaticArm/down_to_up_catch"
+	const frameCount	// cantidad de PNG que hay en la carpeta
+
+	const property frames = (0 .. frameCount - 1).map({ i => path + "/" + i + ".png" })
+
+	method size() = frameCount
+}
+
+// Mixin para cualquier objeto visual que se anime cambiando de imagen (por ejemplo, una máquina).
+// Se usa en vez de un GIF porque Wollok comparte cada GIF entre todos los objetos que lo
+// muestran: la segunda vez no arranca desde el principio. Acá cada objeto lleva su propio frame.
+// Como avanza con el animationEngine, respeta la pausa y la velocidad de la simulación,
+// y sólo se anima con la simulación prendida.
+// No combinar con Animado en un mismo objeto: los dos definen avanzar().
+mixin FrameAnimated {
+	var animation = null	// la animación que se está mostrando (null si no hay ninguna)
+	var frame = 0			// frame que se está mostrando
+	var onFinish = null		// bloque que se ejecuta al terminar (null si no hay)
+
+	method animando() = animation !== null
+
+	// El objeto que lo usa tiene que saber cambiar su imagen (por ejemplo, con var property image)
+	method image(newImage)
+
+	// Empieza a mostrar la animación desde el primer frame. Si ya había otra, la reemplaza.
+	// Al terminar se ejecuta afterBlock, que puede encadenar otra animación con play.
+	method play(anAnimation, afterBlock) {
+		// si ya se estaba animando, ya está en la lista de animados
+		if (!self.animando()) animationEngine.animar(self)
+		animation = anAnimation
+		// Si se llama fuera del tick (por ejemplo desde use(), que en cada paso corre antes
+		// que las animaciones), el tick que viene no tiene que saltear el primer frame.
+		// Si se llama dentro del tick (encadenada desde el bloque del final), ese tick ya pasó.
+		frame = if (animationEngine.ticking()) 0 else -1
+		onFinish = afterBlock
+		self.image(animation.frames().first())
+	}
+
+	// Un paso de animación: muestra el frame siguiente.
+	// El último frame se ve un paso entero, y recién en el paso siguiente termina.
+	method avanzar() {
+		frame += 1
+		if (frame < animation.size()) {
+			self.image(animation.frames().get(frame))
+		} else {
+			const next = onFinish
+			onFinish = null
+			// Mientras corre el bloque sigue "animando", así si encadena otra animación con
+			// play no se vuelve a anotar en la lista (ya está, y se la está recorriendo).
+			if (next !== null) next.apply()
+			// Si el bloque no arrancó otra animación (frame se habría vuelto a 0), terminó.
+			// Encadenada desde acá, play siempre deja frame en 0: el tick está corriendo.
+			if (frame >= animation.size()) {
+				animation = null
+				animationEngine.avisarLlegada()
+			}
+		}
+	}
+
+	// Corta la animación donde esté, sin ejecutar el bloque del final
+	// (se usa al apagar la simulación o al borrar el objeto).
+	method stopAnimation() {
+		if (self.animando()) animationEngine.terminar(self)
+		animation = null
+		onFinish = null
 	}
 }

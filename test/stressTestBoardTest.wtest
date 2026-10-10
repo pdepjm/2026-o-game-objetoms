@@ -12,19 +12,19 @@ describe "tests del tablero de prueba de carga" {
 
   test "empieza con un dispenser hacia la derecha en la esquina" {
     stressTestBoard.fill()
-    assert.equals("machines/Dispenser/right.gif", self.imageAt(5, 1))
+    assert.equals("machines/Dispenser/right_game.png", self.imageAt(5, 1))
   }
 
   test "las filas impares van a la derecha y suben al final" {
     stressTestBoard.fill()
-    assert.equals("machines/Belt/right.gif", self.imageAt(10, 3))
-    assert.equals("machines/Belt/up.gif", self.imageAt(19, 3))
+    assert.equals("machines/Belt/right_game.png", self.imageAt(10, 3))
+    assert.equals("machines/Belt/up_game.png", self.imageAt(19, 3))
   }
 
   test "las filas pares van a la izquierda y suben al final" {
     stressTestBoard.fill()
-    assert.equals("machines/Belt/left.gif", self.imageAt(10, 2))
-    assert.equals("machines/Belt/up.gif", self.imageAt(5, 2))
+    assert.equals("machines/Belt/left_game.png", self.imageAt(10, 2))
+    assert.equals("machines/Belt/up_game.png", self.imageAt(5, 2))
   }
 
   test "llena todas las casillas del tablero" {

@@ -40,6 +40,10 @@ class Maquina {
 	method offsetX() = 0
 	method offsetY() = 0
 
+	// La celda del tablero que ocupa. Es position sin el desplazamiento del dibujo:
+	// para casi todas las máquinas son iguales, pero no para las que se dibujan corridas.
+	method cell() = game.at(position.x() - self.offsetX(), position.y() - self.offsetY())
+
 	// El simulationEngine la llama cuando llega el paso que la máquina agendó.
 	// Por defecto no hace nada: una máquina que nunca agenda, nunca se despierta.
 	method use() {}
@@ -49,9 +53,10 @@ class Maquina {
 	// no se puede editar el tablero, así que no cambia.
 	var next = null
 
-	// Se llama al prender la simulación
+	// Se llama al prender la simulación: busca a su vecina y pasa a la imagen animada
 	method start() {
 		next = self.nextMachine()
+		image = self.runningImage()
 	}
   	var property position = game.origin()
 
@@ -61,10 +66,18 @@ class Maquina {
 	// Nace con la dirección seleccionada al momento de colocarla.
 	var direction = toolsManager.currentDirection()
 
-	// La imagen se calcula sólo cuando cambia la dirección, no en cada frame
-	var property image = self.buildImage()
+	// La imagen se calcula sólo cuando cambia, no en cada frame.
+	// Con la simulación apagada se ve quieta (staticImage) y prendida, animada (runningImage).
+	var property image = self.staticImage()
 
-	method buildImage() = "machines/"+self.name()+"/"+direction.name() + ".gif"
+	// La máquina apagada: al colocarla, rotarla y con la simulación apagada
+	method staticImage() = "machines/"+self.name()+"/"+direction.name() + "_game.png"
+
+	// La máquina andando: mientras la simulación está prendida
+	method runningImage() = "machines/"+self.name()+"/"+direction.name() + ".gif"
+
+	// La imagen del menú de máquinas, según la dirección elegida para colocarla
+	method menuImage(aDirection) = "machines/"+self.name()+"/"+aDirection.name() + "_menu.png"
 
 	// OJO: Wollok inicializa los atributos recién la primera vez que se leen, no al crear
 	// el objeto. Sin esto, una máquina toma la dirección que esté seleccionada cuando alguien
@@ -72,17 +85,18 @@ class Maquina {
 	// direction, y así queda fijada en el momento de crear la máquina.
 	override method initialize() {
 		super()
-		image = self.buildImage()
+		image = self.staticImage()
 	}
 
+	// Sólo se rota con la simulación apagada (ver toolsManager), así que la imagen es la quieta
 	method rotate() {
 		direction = direction.next()
-		image = self.buildImage()
+		image = self.staticImage()
 	}
 
 	// Busca en el tablero la máquina hacia la que apunta (null si no hay ninguna).
 	// Es una consulta cara con muchas máquinas: durante la simulación se usa next.
-	method nextMachine() = board.machineAt(direction.move(position))
+	method nextMachine() = board.machineAt(direction.move(self.cell()))
 
 	// ¿Puede aceptar un item más? Por defecto una máquina no acepta items
 	method canReceive() = false
@@ -93,9 +107,10 @@ class Maquina {
 	// Items que tiene encima la máquina en este momento
 	method heldItems() = []
 
-	// Vuelve la máquina a su estado inicial (sin items), al apagar la simulación
+	// Vuelve la máquina a su estado inicial (sin items y quieta), al apagar la simulación
 	method reset() {
 		waiting.clear()
+		image = self.staticImage()
 	}
 
 	// ¿Hay una máquina adelante y puede recibir?
