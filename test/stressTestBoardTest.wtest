@@ -1,5 +1,6 @@
 import wollok.game.*
-import src.machines.machineTypes.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
 import src.board.*
 import src.directions.*
 import src.tools.toolsManager.*

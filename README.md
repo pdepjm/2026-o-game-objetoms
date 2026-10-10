@@ -83,13 +83,13 @@ El código de las pruebas de carga está en `src/stressTest`.
 
 ## TAMAÑOS
 
-- Máquina en el tablero (`<direccion>.gif` y `<direccion>_game.png`): 50x50px
+- Máquina en el tablero (`<direccion>_game.png` y su animación): 50x50px
 - Máquina en el menú (`<direccion>_menu.png`): 100x100px
 - Overlay: 200x200px
 
 Todas las machines tienen que tener, para cada una de las 4 rotaciones (`up`, `down`, `left`, `right`):
 - `<direccion>_menu.png` (100x100): la imagen del menú
-- `<direccion>_game.png` (mismo tamaño que el gif): la máquina quieta, con la simulación apagada
-- `<direccion>.gif`: la máquina andando, con la simulación prendida
+- `<direccion>_game.png` (mismo tamaño que su animación): la máquina quieta
+- su animación: `<direccion>.gif` en las máquinas con GIF (cinta, horno), o carpetas de frames `<direccion>_<accion>/` en las frame a frame (dispenser, cortadora, ensambladora, brazo)
 
 Hay máquinas con su propia convención (por ejemplo, `AutomaticArm`). La guía completa y la lista de casos especiales está en [`assets/README.md`](assets/README.md).

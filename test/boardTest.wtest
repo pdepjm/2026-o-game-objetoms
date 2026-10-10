@@ -1,5 +1,6 @@
 import src.board.*
-import src.machines.machineTypes.*
+import src.machines.types.belt.*
+import src.machines.types.oven.*
 
 describe "tests de board" {
 

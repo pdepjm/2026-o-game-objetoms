@@ -1,6 +1,12 @@
 // Catálogo de máquinas y máquina seleccionada
 
-import machines.machineTypes.*
+import machines.types.belt.*
+import machines.types.dispenser.*
+import machines.types.automaticArm.*
+import machines.types.assembler.*
+import machines.types.oven.*
+import machines.types.cuttingMachine.*
+import machines.types.fryer.*
 
 // Maneja cual es la Machine Seleccionada actual
 object machineManager{

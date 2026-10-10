@@ -24,10 +24,11 @@ assets/
 │       └── <ingredient>_<state>.png
 ├── machines/
 │   └── <MachineName>/
-│       ├── up_menu.png    up_game.png    up.gif
-│       ├── down_menu.png  down_game.png  down.gif
-│       ├── left_menu.png  left_game.png  left.gif
-│       └── right_menu.png right_game.png right.gif
+│       ├── <dir>_menu.png
+│       ├── <dir>_game.png
+│       ├── <dir>.gif               (sólo las máquinas con GIF)
+│       └── <dir>_<accion>/         (sólo las máquinas frame a frame)
+│           └── 0.png, 1.png, ...
 └── tools/
     ├── default.png
     └── <tool>_selected.png
@@ -39,8 +40,8 @@ Cada celda del juego mide **50x50 px** (`game.cellSize(50)`) y el tablero es de 
 
 | Imagen | Formato | Tamaño | Qué ocupa |
 |---|---|---|---|
-| Máquina en el tablero, apagada | `_game.png` | 50x50 (igual que su `.gif`) | 1 celda |
-| Máquina en el tablero, andando | `.gif` | 50x50 | 1 celda |
+| Máquina en el tablero, quieta | `_game.png` | 50x50 (igual que su animación) | 1 celda |
+| Máquina en el tablero, andando | `.gif` o carpeta de frames `.png` | 50x50 | 1 celda |
 | Máquina en el menú | `_menu.png` | 100x100 | 2x2 celdas |
 | Ingrediente | `.png` | 50x50 | 1 celda |
 | Barra de herramientas | `.png` | 200x50 | 4x1 celdas |
@@ -50,7 +51,7 @@ Cada celda del juego mide **50x50 px** (`game.cellSize(50)`) y el tablero es de 
 
 ## `machines/`
 
-Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la carpeta debe ser igual al `name()` de la clase** (ver `src/machines/machineTypes.wlk`):
+Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la carpeta debe ser igual al `name()` de la clase** (ver `src/machines/types/`):
 
 | Clase | Carpeta |
 |---|---|
@@ -62,20 +63,30 @@ Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la
 | `Dispenser` | `machines/Dispenser/` |
 | `AutomaticArm` | `machines/AutomaticArm/` (caso especial, ver abajo) |
 
-Dentro de la carpeta van **3 imágenes por cada una de las 4 direcciones** (`up`, `down`, `left`, `right`), con estos nombres exactos:
+Hay **dos tipos de máquinas**, según cómo se animan. Todas tienen, para cada una de las 4 direcciones (`up`, `down`, `left`, `right`):
 
 | Archivo | Tamaño | Cuándo se ve |
 |---|---|---|
 | `<direccion>_menu.png` | **100x100** | En el menú de máquinas |
-| `<direccion>_game.png` | **El mismo que su `.gif`** (50x50) | En el tablero con la simulación **apagada**: la máquina quieta, en su pose por defecto |
-| `<direccion>.gif` | 50x50 | En el tablero con la simulación **prendida**: la máquina andando |
+| `<direccion>_game.png` | **El mismo que su animación** (50x50) | En el tablero, quieta: con la simulación apagada, y en las frame a frame también mientras no hacen nada |
 
-Por ejemplo, para una máquina hacia arriba: `up_menu.png`, `up_game.png` y `up.gif`.
+Y además, según el tipo:
 
-Las máquinas empiezan apagadas: al colocarlas y rotarlas se ven con su `_game.png`. Al prender la simulación (tecla **5**) pasan a su `.gif`, y al apagarla vuelven al `_game.png`.
+| Tipo | Animación | Cuándo se anima | Máquinas |
+|---|---|---|---|
+| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida | `Belt`, `Oven` |
+| **Frame a frame** | Una carpeta `<direccion>_<accion>/` con `0.png`, `1.png`, ... por cada acción | Sólo cuando la máquina hace algo (por ejemplo, el dispenser al dispensar) | `Dispenser`, `CuttingMachine`, `Assembler`, `AutomaticArm` |
+
+Por ejemplo:
+- una cinta hacia arriba tiene `up_menu.png`, `up_game.png` y `up.gif`;
+- un dispenser hacia la derecha tiene `right_menu.png`, `right_game.png` y la carpeta `right_dispense/`.
+
+Todas las máquinas empiezan quietas: al colocarlas y rotarlas se ven con su `_game.png`. Al prender la simulación (tecla **5**) las de GIF pasan a su `.gif`, y las frame a frame siguen quietas hasta que hacen algo. Al apagarla, todas vuelven al `_game.png`.
+
+Que una máquina use GIF lo define su clase (`override method runningImage() = self.gifImage()`, ver por ejemplo `src/machines/types/belt.wlk`). Por defecto, una máquina es frame a frame.
 
 > [!IMPORTANT]
-> El `_game.png` y el `.gif` de una misma dirección tienen que tener **el mismo tamaño** y la máquina en la misma posición: si no, al prender y apagar la simulación la máquina "salta". Lo más fácil es exportar el `_game.png` desde el primer frame del `.gif`.
+> El `_game.png` y la animación de una misma dirección tienen que tener **el mismo tamaño** y la máquina en la misma posición: si no, al empezar y terminar la animación la máquina "salta". Lo más fácil es exportar el `_game.png` desde el primer frame de la animación.
 
 ### Casos especiales
 
@@ -101,7 +112,11 @@ python3 machines/assetGenerator.py machines/Oven/up_menu.png machines/Oven/up_ga
 
 ### Animaciones cuadro por cuadro
 
-Si una máquina tiene que mostrar una animación en un momento puntual (por ejemplo, el brazo cuando agarra un item), **no se usa el GIF directo**: Wollok comparte cada GIF entre todos los objetos que lo muestran, y la segunda vez no arranca desde el principio. En su lugar, el GIF se convierte en una carpeta de PNG, uno por frame, y se anima con `FrameAnimated` (ver `src/simulation/animationEngine.wlk`).
+Las máquinas frame a frame muestran una animación en un momento puntual (por ejemplo, el brazo cuando agarra un item), y para eso **no se usa el GIF directo**: Wollok comparte cada GIF entre todos los objetos que lo muestran, y la segunda vez no arranca desde el principio. En su lugar, la animación es una carpeta de PNG, uno por frame, que se reproduce con `MachineAnimator` (ver `src/machines/machineClasses.wlk`).
+
+En el código, una animación de acción se arma con `self.actionAnimation("<accion>", <cantidad de frames>)`, que usa la carpeta `machines/<MachineName>/<direccion>_<accion>/`.
+
+Si la animación se hizo como GIF, se convierte en carpeta de frames con:
 
 ```bash
 python3 machines/gifToFrames.py machines/<MachineName>/<animacion>.gif
@@ -113,12 +128,12 @@ Cada GIF genera una carpeta con su mismo nombre (`down_to_up_catch.gif` → `dow
 |---|---|
 | `--ms` | milisegundos entre frames (por defecto 100, un paso de simulación) |
 
-> Cada frame es una imagen más que el juego carga al arrancar: conviene que las animaciones sean cortas.
+> Cada frame es una imagen más que el juego carga al arrancar: conviene que las animaciones sean cortas (de 6 a 10 frames, menos de 1 segundo). Después de convertir un GIF, borrarlo de la carpeta: el juego no lo usa, pero lo cargaría igual.
 
 ### Agregar una máquina nueva
 
-1. Crear la carpeta `machines/<MachineName>/` con las 12 imágenes: `_menu.png`, `_game.png` y `.gif` para cada dirección.
-2. Crear la clase en `src/machines/machineTypes.wlk` con `override method name() = "<MachineName>"`.
+1. Crear la carpeta `machines/<MachineName>/` con `_menu.png` y `_game.png` para cada dirección, y su animación: `.gif` o carpetas de frames, según el tipo.
+2. Crear la clase en su propio archivo, `src/machines/types/<machineName>.wlk`, con `override method name() = "<MachineName>"`. Si es una máquina con GIF, agregar también `override method runningImage() = self.gifImage()`.
 3. Agregarla a la lista de `src/machines/machineManager.wlk` (el orden de la lista es el orden del menú).
 
 ## `tools/`

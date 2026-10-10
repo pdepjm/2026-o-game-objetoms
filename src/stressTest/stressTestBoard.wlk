@@ -10,7 +10,8 @@
 // items cambien de cinta en el mismo paso. Sirve para comparar antes y después de un cambio.
 
 import wollok.game.*
-import machines.machineTypes.*
+import machines.types.belt.*
+import machines.types.dispenser.*
 import board.*
 import directions.*
 import simulation.simulationEngine.*

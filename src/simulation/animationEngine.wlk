@@ -1,5 +1,6 @@
 // Acá va todo lo que se anima paso a paso: objetos que se mueven suavemente entre celdas
-// (mixin Animado) y objetos que cambian de imagen cuadro por cuadro (mixin FrameAnimated).
+// (mixin Animado) y máquinas que cambian de imagen cuadro por cuadro (MachineAnimator,
+// en machines/machineClasses.wlk).
 // No tiene reloj propio: el simulationEngine le avisa cuándo avanzar (una vez por paso),
 // así la pausa y la velocidad x2/x3 afectan a las animaciones sin hacer nada extra.
 
@@ -28,7 +29,7 @@ object animationEngine {
 	// ¿algún objeto terminó su animación durante este tick?
 	var algunoLlego = false
 
-	// ¿se están avanzando los animados en este momento? (ver FrameAnimated.play)
+	// ¿se están avanzando los animados en este momento? (ver play en MachineAnimator)
 	var ticking = false
 	method ticking() = ticking
 
@@ -145,62 +146,4 @@ class FrameAnimation {
 	method size() = frameCount
 }
 
-// Mixin para cualquier objeto visual que se anime cambiando de imagen (por ejemplo, una máquina).
-// Se usa en vez de un GIF porque Wollok comparte cada GIF entre todos los objetos que lo
-// muestran: la segunda vez no arranca desde el principio. Acá cada objeto lleva su propio frame.
-// Como avanza con el animationEngine, respeta la pausa y la velocidad de la simulación,
-// y sólo se anima con la simulación prendida.
-// No combinar con Animado en un mismo objeto: los dos definen avanzar().
-mixin FrameAnimated {
-	var animation = null	// la animación que se está mostrando (null si no hay ninguna)
-	var frame = 0			// frame que se está mostrando
-	var onFinish = null		// bloque que se ejecuta al terminar (null si no hay)
 
-	method animando() = animation !== null
-
-	// El objeto que lo usa tiene que saber cambiar su imagen (por ejemplo, con var property image)
-	method image(newImage)
-
-	// Empieza a mostrar la animación desde el primer frame. Si ya había otra, la reemplaza.
-	// Al terminar se ejecuta afterBlock, que puede encadenar otra animación con play.
-	method play(anAnimation, afterBlock) {
-		// si ya se estaba animando, ya está en la lista de animados
-		if (!self.animando()) animationEngine.animar(self)
-		animation = anAnimation
-		// Si se llama fuera del tick (por ejemplo desde use(), que en cada paso corre antes
-		// que las animaciones), el tick que viene no tiene que saltear el primer frame.
-		// Si se llama dentro del tick (encadenada desde el bloque del final), ese tick ya pasó.
-		frame = if (animationEngine.ticking()) 0 else -1
-		onFinish = afterBlock
-		self.image(animation.frames().first())
-	}
-
-	// Un paso de animación: muestra el frame siguiente.
-	// El último frame se ve un paso entero, y recién en el paso siguiente termina.
-	method avanzar() {
-		frame += 1
-		if (frame < animation.size()) {
-			self.image(animation.frames().get(frame))
-		} else {
-			const next = onFinish
-			onFinish = null
-			// Mientras corre el bloque sigue "animando", así si encadena otra animación con
-			// play no se vuelve a anotar en la lista (ya está, y se la está recorriendo).
-			if (next !== null) next.apply()
-			// Si el bloque no arrancó otra animación (frame se habría vuelto a 0), terminó.
-			// Encadenada desde acá, play siempre deja frame en 0: el tick está corriendo.
-			if (frame >= animation.size()) {
-				animation = null
-				animationEngine.avisarLlegada()
-			}
-		}
-	}
-
-	// Corta la animación donde esté, sin ejecutar el bloque del final
-	// (se usa al apagar la simulación o al borrar el objeto).
-	method stopAnimation() {
-		if (self.animando()) animationEngine.terminar(self)
-		animation = null
-		onFinish = null
-	}
-}

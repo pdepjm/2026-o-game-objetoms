@@ -1,9 +1,14 @@
-import src.machines.machineTypes.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.assembler.*
+import src.machines.types.oven.*
+import src.machines.types.cuttingMachine.*
+import src.machines.types.fryer.*
 import src.tools.toolsManager.*
 import src.directions.*
 import wollok.game.*
 
-describe "tests de Maquina" {
+describe "tests de Machine" {
 
   test "una Belt se llama Belt" {
     assert.equals("Belt", new Belt().name())
@@ -70,6 +75,13 @@ describe "tests de Maquina" {
     const belt = new Belt()
     belt.start()
     assert.equals("machines/Belt/right.gif", belt.image())
+  }
+
+  test "al prender la simulacion una maquina sin gif sigue quieta" {
+    toolsManager.currentDirection(right)
+    const dispenser = new Dispenser()
+    dispenser.start()
+    assert.equals("machines/Dispenser/right_game.png", dispenser.image())
   }
 
   test "al apagar la simulacion una maquina vuelve a la imagen quieta" {

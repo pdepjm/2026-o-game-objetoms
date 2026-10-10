@@ -1,12 +1,12 @@
 # AutomaticArm
 
-Guía para modificar las imágenes del brazo automático. Es un **caso especial**: no sigue la convención del resto de las máquinas (`<direccion>_menu.png`, `<direccion>_game.png` y `<direccion>.gif`, ver [`assets/README.md`](../../README.md)).
+Guía para modificar las imágenes del brazo automático. Es una máquina **frame a frame** (ver [`assets/README.md`](../../README.md)), pero es un **caso especial**: no sigue la convención `<direccion>_<accion>/` del resto.
 
 Lo que tiene de distinto:
 
 - Ocupa **3x3 celdas**: sus imágenes del tablero son de **150x150**.
 - **No rota**: ni con la herramienta de rotar ni con W/A/S/D en el menú. Siempre se coloca mirando hacia abajo (`down`).
-- **No usa `.gif`**: sus animaciones son carpetas de PNG, uno por frame.
+- **Sus animaciones van de una dirección a otra**: las carpetas se llaman `<desde>_to_<hasta>_<accion>/`, en vez de `<direccion>_<accion>/`.
 - **Al prender la simulación sigue quieto**: sólo se anima cuando le llega un ingrediente.
 
 ## Cómo funciona en el juego
@@ -28,7 +28,7 @@ Por ejemplo, con una cinta a la izquierda y otra a la derecha:
 `down_to_left_rotate` → `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
 
 > [!NOTE]
-> Entregar del lado contrario es **momentáneo**, para poder probar el brazo hasta que tenga su lógica definitiva (ver la clase `AutomaticArm` en `src/machines/machineTypes.wlk`).
+> Entregar del lado contrario es **momentáneo**, para poder probar el brazo hasta que tenga su lógica definitiva (ver la clase `AutomaticArm` en `src/machines/types/automaticArm.wlk`).
 
 ### Las celdas alrededor del brazo
 
@@ -66,7 +66,7 @@ Una animación empieza donde terminó la anterior, así que tienen que coincidir
 
 ## Por qué frames y no GIFs
 
-Wollok carga cada GIF una sola vez y todos los brazos que lo muestran comparten la misma animación: la segunda vez no arranca desde el principio (aparece a la mitad, o congelada en el último frame). Con un PNG por frame, cada brazo lleva su propio frame. Ver `FrameAnimated` en `src/simulation/animationEngine.wlk`.
+Wollok carga cada GIF una sola vez y todos los brazos que lo muestran comparten la misma animación: la segunda vez no arranca desde el principio (aparece a la mitad, o congelada en el último frame). Con un PNG por frame, cada brazo lleva su propio frame. Ver `MachineAnimator` en `src/machines/machineClasses.wlk`.
 
 El juego muestra **un frame por paso de simulación** (100 ms a x1), así que respeta la pausa y la velocidad x2/x3.
 
@@ -84,7 +84,7 @@ Los GIFs originales ya no están en el repo: **las carpetas de frames son la fue
 Si cambia la cantidad de frames:
 
 1. **Todas las direcciones de un mismo tipo tienen que tener la misma cantidad** (el código usa un solo número para todos los `_rotate` y otro para todos los `_catch`).
-2. Actualizar `rotateFrames` / `catchFrames` en la clase `AutomaticArm` (`src/machines/machineTypes.wlk`) y las mismas constantes en `test/animationTest.wtest`.
+2. Actualizar `rotateFrames` / `catchFrames` en la clase `AutomaticArm` (`src/machines/types/automaticArm.wlk`) y las mismas constantes en `test/animationTest.wtest`.
 3. Correr los tests:
    ```bash
    wollok test --skipValidations -p ./
@@ -108,11 +108,13 @@ Las imágenes de cada dirección son la misma imagen girada. Girando 90° en sen
 Por ejemplo, una animación `drop` para soltar el ingrediente:
 
 1. Crear las carpetas `<desde>_to_<hasta>_drop/` (150x150), todas con la misma cantidad de frames.
-2. En la clase `AutomaticArm`, agregar la cantidad de frames (`const dropFrames = ...`) y reproducirla con:
+2. En la clase `AutomaticArm`, agregar la cantidad de frames (`const dropFrames = ...`) y, en el grupo de dibujo, un método que la reproduzca, como `showTurn` y `showCatch`:
    ```wollok
-   self.play(self.armAnimation(desde, hasta, "drop", dropFrames), { ... })
+   method showDrop(fromSide, toSide, afterBlock) {
+     self.play(self.armAnimation(fromSide, toSide, "drop", dropFrames), afterBlock)
+   }
    ```
-   El bloque se ejecuta cuando termina la animación.
+   La lógica del brazo (grupo de trabajo) llama a `showDrop(...)`, y el bloque se ejecuta cuando termina la animación.
 
 > [!WARNING]
 > El bloque del final se ejecuta mientras el `animationEngine` avanza las animaciones: ahí **no se puede mover un ingrediente** (`move`/`moveInSteps`). Si hace falta, el brazo se agenda con `simulationEngine.schedule(1, self)` y lo hace en `use()`, como hacen `turnToItem` y `carry`.
