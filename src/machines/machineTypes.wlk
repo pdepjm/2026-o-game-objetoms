@@ -4,6 +4,8 @@ import machines.machine.*
 import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import simulation.ingredientes.*
+import wollok.game.*
+
 
 // Cinta: lleva de a un item hacia la máquina a la que apunta
 class Belt inherits Maquina{
@@ -108,7 +110,26 @@ class Dispenser inherits Maquina{
 class AutomaticArm inherits Maquina {
   // Esto es momentaneo, para probar las animaciones
   override method name() = "AutomaticArm"
-  override method buildImage() = "machines/AutomaticArm/down_to_right.gif"
+  override method buildImage() = "machines/"+self.name()+"/"+direction.name() + "_game.png"
   override method offsetX() = -1
   override method offsetY() = -1
+
+  override method initialize() {
+    super()
+    game.schedule(2000, {self.play()})
+  }
+
+  method play() {
+    const default = "machines/"+self.name()+"/"+direction.name() + "_game.png"
+    const replaceToRotateGif = "machines/"+self.name()+"/"+direction.name()+"_to_"+direction.invert()+"_rotate.gif"
+    const replaceToCatchGif = "machines/"+self.name()+"/"+direction.invert()+"_to_"+direction.name()+"_catch.gif"
+    
+    self.image(replaceToRotateGif)
+    game.schedule(630, {
+      self.image(replaceToCatchGif)
+      game.schedule(2730, {
+        self.image(default)
+      })
+    })
+  }
 }

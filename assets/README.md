@@ -64,21 +64,21 @@ Dentro de la carpeta van las 4 rotaciones de la máquina, cada una en `.png` y e
 
 | Rotación | Archivos |
 |---|---|
-| Hacia arriba | `up.png` y `up.gif` |
-| Hacia abajo | `down.png` y `down.gif` |
-| Hacia la izquierda | `left.png` y `left.gif` |
-| Hacia la derecha | `right.png` y `right.gif` |
+| Hacia arriba | `up_menu.png` y `up.gif` |
+| Hacia abajo | `down_menu.png` y `down.gif` |
+| Hacia la izquierda | `left_menu.png` y `left.gif` |
+| Hacia la derecha | `right_menu.png` y `right.gif` |
 
 - El **`.gif`** (50x50) es el que se ve sobre el tablero, y puede estar animado.
-- El **`.png`** (100x100) es el que se ve en el menú de máquinas.
+- El **`_menu.png`** (100x100) es el que se ve en el menú de máquinas.
 
 ### Generar las rotaciones
 
-Con una sola dirección alcanza para obtener las otras tres: `machines/assetGenerator.py` deduce la dirección por el nombre del archivo (`up.png`, `right.gif`, etc.) y genera las que faltan, tanto para `.png` como para `.gif` (incluso animados).
+Con una sola dirección alcanza para obtener las otras tres: `machines/assetGenerator.py` deduce la dirección por el nombre del archivo (`up_menu.png`, `right.gif`, etc.) y genera las que faltan, tanto para `.png` como para `.gif` (incluso animados).
 
 ```bash
 pip3 install Pillow
-python3 machines/assetGenerator.py machines/Oven/up.png machines/Oven/up.gif
+python3 machines/assetGenerator.py machines/Oven/up_menu.png machines/Oven/up.gif
 ```
 
 | Opción | Qué hace |

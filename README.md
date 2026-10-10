@@ -88,7 +88,7 @@ El código de las pruebas de carga está en `src/stressTest`.
 - Overlay: 200x200px
 
 Todas las machines tienen que tener sus estaticos y animados con las 4 rotaciones con los nombres:
-- `down.png` y `down.gif`
-- `up.png` y `up.gif`
-- `left.png` y `left.gif`
-- `right.png` y `right.gif`
+- `down_menu.png` y `down.gif`
+- `up_menu.png` y `up.gif`
+- `left_menu.png` y `left.gif`
+- `right_menu.png` y `right.gif`

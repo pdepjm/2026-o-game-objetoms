@@ -114,7 +114,7 @@ describe "tests de menuManager" {
     toolsManager.currentDirection(up)
     const names = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().name() })
     const images = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().image() })
-    assert.equals(names.map({ name => "machines/" + name + "/up.png" }), images)
+    assert.equals(names.map({ name => "machines/" + name + "/up_menu.png" }), images)
   }
 
   test "cambiar de página con el panel de edit no dibuja máquinas" {

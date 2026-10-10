@@ -161,7 +161,7 @@ class MenuItem{
     method image() = image
 
     method updateImage() {
-        image = "machines/" + name + "/" + toolsManager.currentDirection().name() + ".png"
+        image = "machines/" + name + "/" + toolsManager.currentDirection().name() + "_menu.png"
     }
 }
 
