@@ -1,7 +1,7 @@
 import wollok.game.*
 import menu.menuManager.*
 import input.userController.*
-import simulation.ingredientes.*
+import food.ingredientes.*
 import directions.*
 import simulation.simulationEngine.*
 

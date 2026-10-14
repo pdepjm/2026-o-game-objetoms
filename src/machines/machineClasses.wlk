@@ -7,6 +7,12 @@ import simulation.simulationEngine.*
 import simulation.animationEngine.*
 
 // Clase de máquina
+//
+//	METODOS A REESCRIBIR PARA INSTANCIAR MAQUINA
+//	- Name()
+//	- Use()
+//	- Receive()	
+//
 // Hay que agregar los métodos de rotar, de procesar, etc.
 // Las máquinas se pasan los items de mano en mano: cada una le pregunta a la
 // siguiente si puede recibir (canReceive) y se lo entrega (receive).
@@ -20,6 +26,8 @@ import simulation.animationEngine.*
 // Cuando la de adelante está llena, una máquina no pregunta en cada paso: se anota
 // (waitForNext) y se duerme. Por eso TODA máquina que se libere tiene que llamar a
 // wakeWaiting(), o las que esperan no se despiertan nunca.
+
+
 
 
 // Reproduce animaciones frame a frame (carpetas de PNG, ver FrameAnimation) con el animationEngine.
@@ -163,6 +171,12 @@ class Machine inherits MachineSprite{
 	// Nace con la dirección seleccionada al momento de colocarla.
 	var direction = toolsManager.currentDirection()
 
+	var heldItem = null	// Por defecto no tiene ningun item
+
+
+	// ----------- ABS -----------------
+	method use()
+
 
 	// ----------- DIRECCION -----------
 	override method direction() = direction
@@ -193,10 +207,6 @@ class Machine inherits MachineSprite{
 		self.showRunning()
 	}
 
-	// El simulationEngine la llama cuando llega el paso que la máquina agendó.
-	// Por defecto no hace nada: una máquina que nunca agenda, nunca se despierta.
-	method use() {}
-
 	
 	// Vuelve la máquina a su estado inicial (sin items y quieta), al apagar la simulación
 	method reset() {
@@ -205,20 +215,19 @@ class Machine inherits MachineSprite{
 		self.showStatic()
 	}
 	
-
-
 	//----------- ITEMS -----------
-	// canReceive, receive y heldItems son valores por defecto para una máquina que no maneja
-	// items: las que sí lo hacen (por ejemplo Belt) los sobrescriben.
-
-	// ¿Puede aceptar un item más? Por defecto una máquina no acepta items
-	method canReceive() = false
 
 	// Otra máquina le entrega un item. Sólo se llama si canReceive() dio true.
-	method receive(anItem) {}
+	method receive(anItem) {
+		heldItem = anItem
+	}
+
+	// ¿Puede aceptar un item más? Por defecto acepta uno si está vacía.
+	// Las que no manejan items lo sobrescriben con false.
+	method canReceive() = heldItem == null
 
 	// Items que tiene encima la máquina en este momento
-	method heldItems() = []
+	method heldItems() = if (heldItem == null) [] else [heldItem]
 
 	// ¿Hay una máquina adelante y puede recibir?
 	method canPush() = next != null && next.canReceive()

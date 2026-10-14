@@ -10,11 +10,14 @@ class Ingrediente{
 class Carne inherits Animado and Ingrediente{
     var name = "Carne"
     var tiempoDeCoccion = 0
+    var image = "pepita.png"
 
     method cocinar(tiempo) {
         tiempoDeCoccion += tiempo
-        
     }
 
-    method image() = "pepita.png"
+    method image() = image
+    method cortar() {
+        image = "pepita_cortada.png"
+    }
 }

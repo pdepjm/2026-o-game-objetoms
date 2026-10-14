@@ -26,7 +26,6 @@ class AutomaticArm inherits Machine {
   const rotateFrames = 7
   const catchFrames = 28
 
-  var item = null       // el item que está moviendo (null si está libre)
   var from = null       // lado del que vino el item
   var grabbed = false   // ¿ya lo llevó al lado contrario?
   var facing = down     // hacia dónde está mirando ahora (no cambia direction: el brazo no rota)
@@ -51,9 +50,6 @@ class AutomaticArm inherits Machine {
   override method offsetX() = -1
   override method offsetY() = -1
 
-  // Quieto, mirando hacia donde quedó
-  override method staticImage() = "machines/"+self.name()+"/"+facing.name() + "_game.png"
-
   // Una animación del brazo, por ejemplo armAnimation(down, up, "rotate", rotateFrames)
   method armAnimation(fromSide, toSide, kind, frameCount) =
     new FrameAnimation(path = "machines/"+self.name()+"/"+fromSide.name()+"_to_"+toSide.name()+"_"+kind, frameCount = frameCount)
@@ -69,12 +65,8 @@ class AutomaticArm inherits Machine {
   }
 
   // ----------- ITEMS -----------
-  override method canReceive() = item == null
-
-  override method heldItems() = if (item == null) [] else [item]
-
   override method receive(anItem) {
-    item = anItem
+    super(anItem)
     from = self.sideOf(anItem.destinoFinal())
     grabbed = false
     self.continueWork()
@@ -97,7 +89,7 @@ class AutomaticArm inherits Machine {
 
   // Hace lo que falta con el item que tiene: girar hacia él, llevarlo, o entregarlo
   method continueWork() {
-    if (item != null) {
+    if (heldItem != null) {
       if (grabbed) self.deliver()
       else if (facing == from) self.carry()
       else self.turnToItem()
@@ -115,7 +107,7 @@ class AutomaticArm inherits Machine {
   // Lo agarra y gira hacia el lado contrario. El item viaja a la otra celda mientras tanto.
   method carry() {
     const to = from.invert()
-    item.moveInSteps(to.move(self.cell()), catchFrames)
+    heldItem.moveInSteps(to.move(self.cell()), catchFrames)
     self.showCatch(from, to, {
       facing = to
       grabbed = true
@@ -131,8 +123,8 @@ class AutomaticArm inherits Machine {
     const target = board.machineAt(facing.move(self.cell()))
     if (target != null) {
       if (target.canReceive()) {
-        const outgoing = item
-        item = null
+        const outgoing = heldItem
+        heldItem = null
         from = null
         grabbed = false
         target.receive(outgoing)
@@ -147,7 +139,7 @@ class AutomaticArm inherits Machine {
   // Al apagar la simulación suelta el item y vuelve a quedar quieto mirando hacia abajo.
   // El estado se reinicia antes del super(), que corta la animación y muestra staticImage().
   override method reset() {
-    item = null
+    heldItem = null
     from = null
     grabbed = false
     facing = down

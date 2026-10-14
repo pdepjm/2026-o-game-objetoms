@@ -1,10 +1,10 @@
 import machines.machineClasses.*
 import simulation.simulationEngine.*
-import simulation.ingredientes.*
+import food.ingredientes.*
 
 // Dispensa un item cada un determinado tiempo
 class Dispenser inherits Machine{
-  var item = { => new Carne() } // item a dispensar, instanciador de clase.
+  const product = { => new Carne() } // item a dispensar, instanciador de clase.
 
   override method name() = "Dispenser"
 
@@ -30,9 +30,13 @@ class Dispenser inherits Machine{
 		  self.waitForNext()
   }
 
+  // No recibe items: sólo los crea
+  override method canReceive() = false
+  override method receive(_) {}
+
   // Crea un item nuevo sobre el dispenser y se lo entrega a la máquina de adelante
   method dispense(){
-	  const newItem = item.apply()
+	  const newItem = product.apply()
 	  newItem.position(self.position())
 	  simulationEngine.addItem(newItem)
 	  self.push(newItem)

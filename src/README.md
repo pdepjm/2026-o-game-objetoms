@@ -7,7 +7,8 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 | Carpeta | Qué tiene |
 |---|---|
 | [`machines/`](machines/README.md) | Las máquinas: su lógica, cómo se dibujan, sus tipos y el catálogo del menú |
-| [`simulation/`](simulation/README.md) | El reloj de la simulación, las animaciones, los ingredientes y las recetas |
+| [`simulation/`](simulation/README.md) | El reloj de la simulación y las animaciones |
+| [`food/`](food/README.md) | Los ingredientes y las recetas |
 | [`menu/`](menu/README.md) | Los menús de la derecha: barra de herramientas y paneles (place, edit) |
 | [`tools/`](tools/README.md) | Las herramientas del jugador (colocar, borrar, editar, rotar) y la dirección elegida |
 | [`input/`](input/README.md) | Las teclas y los clicks |
@@ -40,12 +41,12 @@ Wollok Game le pide a cada objeto su `position().round()` unas 60 veces por segu
 teclas y clicks ─▶ input/userController
                      ├─▶ tools/toolsManager ─▶ tools/userTools ─▶ board ─▶ machines
                      │                       └─▶ menu/menuManager (paneles del menú)
-                     └─▶ simulation/simulationEngine ─▶ machines (start / use / reset)
+                     └─▶ simulation/simulationEngine ─▶ machines (start / acciones agendadas / reset)
                                                      └─▶ simulation/animationEngine
 ```
 
 1. El jugador elige una herramienta y hace click en el tablero: `toolsManager` le pasa el click a la herramienta, que coloca, borra o rota en el `board`.
-2. Con la tecla **5**, el `simulationEngine` prende la simulación: avisa a cada máquina (`start`) y desde ahí la despierta en los pasos que ella pidió (`use`).
+2. Con la tecla **5**, el `simulationEngine` prende la simulación: avisa a cada máquina (`start`) y desde ahí ejecuta las acciones que cada una agendó (`after`). Ver [el contrato de las máquinas](machines/README.md#el-contrato-de-machine).
 3. En cada paso, el `animationEngine` mueve los ingredientes y avanza las animaciones frame a frame.
 4. Al apagar, el `simulationEngine` borra los ingredientes y vuelve cada máquina a su estado inicial (`reset`).
 

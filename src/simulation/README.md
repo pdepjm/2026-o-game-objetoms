@@ -1,13 +1,14 @@
 # `simulation/`
 
-El reloj del juego, las animaciones y lo que circula por las máquinas (ingredientes y recetas).
+El reloj del juego y las animaciones. Los ingredientes y las recetas están en [`food/`](../food/README.md).
+
+> [!IMPORTANT]
+> Este README describe **el engine al que se está migrando** (ver [el plan de implementación](../../docs/plan-contrato-maquinas.md)). La sección [Estado actual](#estado-actual-mientras-dura-la-migración) dice qué parte ya existe.
 
 | Archivo | Qué tiene |
 |---|---|
-| `simulationEngine.wlk` | El reloj de la simulación: prender, apagar, velocidad y la agenda de las máquinas |
+| `simulationEngine.wlk` | El reloj de la simulación: prender, apagar, velocidad y la agenda de acciones |
 | `animationEngine.wlk` | Lo que se anima paso a paso: ingredientes que se mueven y animaciones frame a frame |
-| `ingredientes.wlk` | Los ingredientes (`Ingrediente`, `Carne`) |
-| `recetas.wlk` | Las recetas (`Hamburguesa`). Todavía sin usar |
 
 ## `simulationEngine.wlk`
 
@@ -17,11 +18,15 @@ Es el **único reloj del juego**. Wollok Game le manda `tick()` cada 100 ms (`ti
   - **Apagada** (modo construcción): no corre ningún paso y se puede editar el tablero.
   - **Prendida** (tecla 5): corren los pasos y el tablero queda bloqueado.
 - **`run()`:** prende la simulación y le manda `start()` a cada máquina.
-- **`stop()`:** la apaga, borra los ingredientes, vacía la agenda y le manda `reset()` a cada máquina.
-- **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Cada máquina pide "despertame dentro de N pasos" con `schedule(pasos, máquina)`, y cuando llega ese paso el engine le manda `use()`. Como máximo se agenda a 15 pasos.
-- **En cada paso (`step()`):** primero despierta a las máquinas agendadas y después avanza las animaciones (`animationEngine.tick()`).
-- **Items:** `addItem` pone un ingrediente en pantalla y lo cuenta; `allItems` devuelve todos los que tienen las máquinas encima.
+- **`stop()`:** la apaga, vacía la agenda, borra los ingredientes y le manda `reset()` a cada máquina.
+- **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Como máximo se agenda a 15 pasos (`slotCount - 1`).
+- **El bloque dice qué se hace:** `after(5, { self.onArrived(item) })`. Nadie tiene que deducir por qué lo despertaron.
+- **En cada paso (`step()`):** primero ejecuta las acciones agendadas y después avanza las animaciones (`animationEngine.tick()`).
+- **Items:** `addItem` pone un ingrediente en pantalla y lo cuenta; `allItems` devuelve todos los que tienen las máquinas encima (`heldItems()` de cada una).
 - `stepsFor(milisegundos)`: convierte un tiempo en pasos de simulación.
+
+> [!IMPORTANT]
+> **Toda acción agendada revisa el estado antes de actuar.** Entre que se agenda y que se ejecuta pueden pasar cosas, y una misma acción puede quedar agendada dos veces. Una acción que vuelve a preguntar (como `tryPush()`) es segura; una que actúa sin preguntar (entregar "porque sí") puede entregar dos veces.
 
 Los tests llaman a `step()` directamente para avanzar sin depender del tiempo real.
 
@@ -31,20 +36,18 @@ Avanza todo lo que se anima. No tiene reloj propio: el `simulationEngine` le avi
 
 | Qué | Para qué |
 |---|---|
-| `animationEngine` | Lista de lo que se está animando. En cada `tick()` le manda `avanzar()` a cada uno y saca a los que terminaron (`animando()` en false) |
+| `animationEngine` | Lista de lo que se está animando. En cada `tick()` le manda `avanzar()` a cada uno, saca a los que terminaron (`animando()` en false) y después ejecuta los bloques de fin de animación |
 | `PosicionSuave` | Una posición con decimales, para dibujar un ingrediente a mitad de camino entre dos celdas |
 | `Animado` (mixin) | Movimiento suave entre celdas: `move`, `moveInSteps`, `moverHacia`, `detener`. Lo usan los ingredientes |
 | `FrameAnimation` | Una animación frame a frame: la carpeta de PNG y la lista de rutas, armada una sola vez. La reproduce `MachineAnimator` (en `machines/machineClasses.wlk`) |
 
 - `pasosPorCelda` (5): cuántos pasos tarda un ingrediente en recorrer una celda. Las máquinas lo usan para saber cuándo termina de llegar un item.
-- `ticking()`: dice si el engine está avanzando en este momento. Mientras tanto no se puede agregar nada a la lista que se está recorriendo; por eso, por ejemplo, el brazo no mueve items en el bloque del final de una animación.
+- **Bloques de fin de animación:** cuando una animación termina, su bloque no se ejecuta en ese momento: queda pendiente y se ejecuta **después de recorrer la lista**. Por eso en el bloque se puede mover items o encadenar otra animación sin romper el recorrido.
 - Un mismo objeto no puede ser `Animado` y animarse frame a frame a la vez: los dos definen `avanzar()`.
 
-## `ingredientes.wlk`
+## Estado actual (mientras dura la migración)
 
-- `Ingrediente`: la clase de todo ingrediente. Todavía está vacía.
-- `Carne`: el único ingrediente por ahora. Se mueve (`Animado`) y se dibuja con `pepita.png` provisoriamente. Lo crea el `Dispenser`.
-
-## `recetas.wlk`
-
-- `Hamburguesa`: una receta de ejemplo (carne y pan). Todavía no la usa el juego.
+| Contrato | Hoy | Fase del plan |
+|---|---|---|
+| Los bloques de fin de animación corren después de recorrer la lista | Corren **dentro** del recorrido. Mientras tanto (`ticking()`) no se puede agregar nada a la lista, y por eso el bloque sólo agenda a la máquina (`playThenWake`) | 1 |
+| `after(pasos, bloque)` | `schedule(pasos, máquina)`, que despierta a la máquina con `use()`. `pendingWakeUps()` cuenta lo agendado (para tests) | 2 |
