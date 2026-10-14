@@ -6,7 +6,7 @@ import src.directions.*
 import src.board.*
 import src.simulation.simulationEngine.*
 import src.simulation.animationEngine.*
-import src.simulation.ingredientes.*
+import src.food.ingredientes.*
 import src.machines.machineClasses.*
 
 // Una máquina cualquiera, para probar la animación frame a frame (MachineAnimator) sola
@@ -14,6 +14,7 @@ class Sprite inherits Machine {
   var property finished = 0
 
   override method name() = "Sprite"
+  override method use() {}
 }
 
 // Una máquina de prueba para recibir lo que entrega el brazo: se le controla si acepta o no
@@ -22,6 +23,7 @@ class Sink inherits Machine {
   const property received = []
 
   override method name() = "Sink"
+  override method use() {}
   override method canReceive() = accepting
   override method receive(anItem) { received.add(anItem) }
 

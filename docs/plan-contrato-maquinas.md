@@ -20,9 +20,19 @@ Hoy el engine sólo sabe despertar a una máquina, y lo hace siempre con `use()`
 
 Para medir rendimiento (fases 0, 2 y 3): correr el juego, tocar **M** y **L**, esperar que `tick` baje a ~100 ms, tocar **5** y anotar `items`, `tick` y `max` a los 30 segundos (ver el [README principal](../README.md#pruebas-de-carga)).
 
+## ROADMAP
+- [X] [Fase 0: Preliminar](#fase-0-preliminar)
+- [ ] [Fase 1: bloques de fin de animación seguros](#fase-1-bloques-de-fin-de-animación-seguros)
+- [ ] [Fase 2: agendar acciones en vez de máquinas](#fase-2-agendar-acciones-en-vez-de-máquinas)
+- [ ] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
+- [ ] [Fase 4: contrato de los ingredientes](#fase-4-contrato-de-los-ingredientes)
+- [ ] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
+- [ ] [Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)](#fase-6-processingmachine-cuando-haya-2-máquinas-que-procesan)
+- [ ] [Fase 7: recetas y Assembler](#fase-7-recetas-y-assembler)
+
 ---
 
-## Fase 0: red de seguridad
+## Fase 0: Preliminar
 
 Antes de cambiar el diseño, los tests tienen que pasar. Hoy fallan 23, todos por el refactor en curso y no por bugs del juego.
 
@@ -33,8 +43,12 @@ Antes de cambiar el diseño, los tests tienen que pasar. Hoy fallan 23, todos po
 | `menuManagerTest`: la última página (2 tests) | El catálogo pasó de 6 a 7 máquinas (se agregó `Fryer`). Actualizar lo que esperan: la última página ahora tiene 3 máquinas (`[1, 1, 1, 0]`), y el test "clickear un slot libre…" hace click en `game.at(22, 4)`, que ahora es el slot de `Fryer`: cambiarlo por la celda del slot 4, que es el que queda libre |
 
 También:
-- [ ] **AutomaticArm:** volver a poner `override method staticImage() = "machines/"+self.name()+"/"+facing.name() + "_game.png"`. Se borró en el refactor, y desde entonces, al terminar de agarrar un item, el brazo se ve mirando hacia abajo en vez de hacia donde quedó.
-- [ ] Anotar la medición de rendimiento de referencia.
+- [X] **AutomaticArm: usar `direction` en vez de `facing`.** En el refactor se borró su `staticImage()`, y desde entonces, al terminar de agarrar un item, el brazo se ve mirando hacia abajo en vez de hacia donde quedó. En lugar de volver a sobrescribir `staticImage()`, que el brazo guarde hacia dónde mira en `direction`: como no rota, `direction` está libre, y la base ya arma con ella `staticImage()` y las animaciones.
+  - Borrar `var facing = down` y reemplazar `facing` por `direction` en `continueWork`, `turnToItem`, `carry` y `deliver`.
+  - En `reset()`, `direction = down` (antes de `super()`, que muestra la imagen quieta con la `direction` de ese momento).
+  - Dejar `rotate()` sobrescrito vacío: si no, la herramienta de rotar le cambiaría la dirección.
+  - En el comentario de `next` en `Machine` (`machineClasses.wlk`), aclarar que el brazo es la única máquina cuya dirección cambia con la simulación prendida, y que por eso no usa `next`.
+  - Test: después de agarrar un item que viene de un lado, `image()` es el `_game.png` del lado contrario.
 
 **Listo cuando:** `wollok test --skipValidations` da 0 fallas.
 
@@ -128,7 +142,7 @@ También:
 3. Migrar los tipos:
    - **Belt:** queda en `name()` y `runningImage()`.
    - **Dispenser:** como el ejemplo de [`src/machines/README.md`](../src/machines/README.md#ejemplos): `canReceive(item) = false`, guarda en el inventario el item que crea y agenda el próximo en `onPushed`. **Cambia un comportamiento:** mientras está frenado, el item queda visible sobre el dispenser (hoy no se crea hasta que hay lugar). Decidir si está bien; si no, que `dispense()` pregunte antes de crear.
-   - **AutomaticArm:** sobrescribe `onReceive(item)` (gira y lo agarra, sin animarlo hasta su celda) y `outputTarget()` (la máquina del lado `facing`). `deliver()` pasa a ser `tryPush()`. Su `reset()` sólo reinicia `from`, `grabbed` y `facing`.
+   - **AutomaticArm:** sobrescribe `onReceive(item)` (gira y lo agarra, sin animarlo hasta su celda) y `outputTarget()` (la máquina del lado `direction`, que después de agarrar el item apunta hacia donde lo entrega). `deliver()` pasa a ser `tryPush()`. Su `reset()` sólo reinicia `from`, `grabbed` y `direction`.
    - **Oven, Fryer, Assembler:** `canReceive(item) = false` y borrar su `receive(_) {}`. Si no, actuarían como cintas.
 4. Borrar del código lo que ya no se usa: `heldItem`, `canPush`, `push`, `wakeWaiting`, `waiting` de `Machine`.
 

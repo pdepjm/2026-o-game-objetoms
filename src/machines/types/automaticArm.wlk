@@ -28,7 +28,6 @@ class AutomaticArm inherits Machine {
 
   var from = null       // lado del que vino el item
   var grabbed = false   // ¿ya lo llevó al lado contrario?
-  var facing = down     // hacia dónde está mirando ahora (no cambia direction: el brazo no rota)
 
   // ----------- INICIALIZACION -----------
   // Siempre se coloca mirando hacia abajo, sin importar la dirección elegida
@@ -91,15 +90,15 @@ class AutomaticArm inherits Machine {
   method continueWork() {
     if (heldItem != null) {
       if (grabbed) self.deliver()
-      else if (facing == from) self.carry()
+      else if (direction == from) self.carry()
       else self.turnToItem()
     }
   }
 
   // Gira hacia el lado del que vino el item
   method turnToItem() {
-    self.showTurn(facing, from, {
-      facing = from
+    self.showTurn(direction, from, {
+      direction = from
       simulationEngine.schedule(1, self)
     })
   }
@@ -109,7 +108,7 @@ class AutomaticArm inherits Machine {
     const to = from.invert()
     heldItem.moveInSteps(to.move(self.cell()), catchFrames)
     self.showCatch(from, to, {
-      facing = to
+      direction = to
       grabbed = true
       self.showStatic()
       simulationEngine.schedule(1, self)
@@ -120,7 +119,7 @@ class AutomaticArm inherits Machine {
   // la simulación (como next) porque depende de por dónde llegó el item.
   // Si está llena, espera a que lo despierte; si no hay máquina, se queda con el item.
   method deliver() {
-    const target = board.machineAt(facing.move(self.cell()))
+    const target = board.machineAt(direction.move(self.cell()))
     if (target != null) {
       if (target.canReceive()) {
         const outgoing = heldItem
@@ -142,7 +141,7 @@ class AutomaticArm inherits Machine {
     heldItem = null
     from = null
     grabbed = false
-    facing = down
+    direction = down
     super()
   }
 }

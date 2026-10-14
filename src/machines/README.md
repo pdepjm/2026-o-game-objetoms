@@ -90,14 +90,14 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `start()` | busca `next` y pasa a `runningImage()` | arranca sola (el Dispenser agenda su primer item). **Siempre llamar a `super()`** |
-| `reset()` | vacía el inventario y las esperas, corta la animación y vuelve a la imagen quieta | tiene estado propio (el brazo: `facing`). Reiniciar ese estado **antes** de `super()`, que muestra `staticImage()` |
+| `reset()` | vacía el inventario y las esperas, corta la animación y vuelve a la imagen quieta | tiene estado propio (el brazo: `from`, `grabbed` y volver `direction` a `down`). Reiniciar ese estado **antes** de `super()`, que muestra `staticImage()` |
 
 **Dibujo** (en `MachineSprite`)
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `runningImage()` | la imagen quieta | se anima con GIF: `override method runningImage() = self.gifImage()` |
-| `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction` (el brazo usa `facing`) |
+| `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction`. Ninguna máquina lo necesita hoy: el brazo guarda en `direction` hacia dónde mira |
 | `offsetX()` / `offsetY()` | `0` | se dibuja corrida (el brazo, que ocupa 3x3 celdas) |
 | `rotate()` / `menuImage(dir)` | rota normalmente | no rota (el brazo) |
 

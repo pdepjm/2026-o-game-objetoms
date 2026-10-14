@@ -9,7 +9,6 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 | Documento | Qué tiene |
 |---|---|
-| [`src/README.md`](src/README.md) | Cómo está organizado el código, cómo se conecta todo y las convenciones |
 | [`src/machines/README.md`](src/machines/README.md) | Las máquinas y **el contrato para crear una nueva** |
 | [`src/simulation/README.md`](src/simulation/README.md) | El reloj de la simulación, la agenda de acciones y las animaciones |
 | [`src/food/README.md`](src/food/README.md) | Los ingredientes y las recetas |

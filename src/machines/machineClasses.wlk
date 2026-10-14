@@ -163,7 +163,7 @@ class Machine inherits MachineSprite{
 	const waiting = []
 
 	// La máquina hacia la que apunta (null si no hay ninguna).
-	// Se calcula una sola vez al prender la simulación: con la simulación prendida
+	// Se calcula una sola vez al prender la simulación: con la simulación prendida (El brazo robot no lo utiliza, ya que su direccion cambia con la simulacion prendida)
 	// no se puede editar el tablero, así que no cambia.
 	var next = null
 
