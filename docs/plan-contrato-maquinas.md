@@ -23,9 +23,9 @@ Para medir rendimiento (fases 0, 2 y 3): correr el juego, tocar **M** y **L**, e
 
 ## ROADMAP
 - [X] [Fase 0: Preliminar](#fase-0-preliminar)
-- [ ] [Fase 1: bloques de fin de animación seguros](#fase-1-bloques-de-fin-de-animación-seguros)
-- [ ] [Fase 2: agendar acciones en vez de máquinas](#fase-2-agendar-acciones-en-vez-de-máquinas)
-- [ ] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
+- [X] [Fase 1: bloques de fin de animación seguros](#fase-1-bloques-de-fin-de-animación-seguros)
+- [X] [Fase 2: agendar acciones en vez de máquinas](#fase-2-agendar-acciones-en-vez-de-máquinas)
+- [X] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
 - [ ] [Fase 4: traer la comida a la rama](#fase-4-traer-la-comida-a-la-rama)
 - [ ] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
 - [ ] [Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)](#fase-6-processingmachine-cuando-haya-2-máquinas-que-procesan)

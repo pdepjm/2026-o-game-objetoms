@@ -3,43 +3,52 @@ import simulation.simulationEngine.*
 import food.foodClasses.*
 import food.foodTypes.*
 
-// Dispensa un item cada un determinado tiempo
-class Dispenser inherits Machine{
-  const product = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
+// Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
+class Dispenser inherits Machine {
+	const product = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
 
-  override method name() = "Dispenser"
+	override method name() = "Dispenser"
 
-  // tiempo de simulación entre un dispense y el siguiente
-  method intervalMs() = 1000
+	// tiempo de simulación entre un dispense y el siguiente
+	method intervalMs() = 1000
 
-  // el mismo intervalo, medido en pasos de simulación
-  method intervalSteps() = simulationEngine.stepsFor(self.intervalMs())
+	// el mismo intervalo, medido en pasos de simulación
+	method intervalSteps() = simulationEngine.stepsFor(self.intervalMs())
 
-  // Busca a su vecina (super) y agenda el primer dispense
-  override method start() {
-	  super()
-	  simulationEngine.schedule(self.intervalSteps(), self)
-  }
+	// Busca a su vecina (super) y agenda el primer intento de dispensar
+	override method start() {
+		super()
+		self.scheduleNext()
+	}
 
-  // Se cumplió el intervalo: dispensa y agenda el próximo.
-  // Si no puede entregar, espera a la de adelante (ver waitForNext).
-  override method use(){
-	  if (self.canPush()) {
-		  self.dispense()
-		  simulationEngine.schedule(self.intervalSteps(), self)
-	  } else
-		  self.waitForNext()
-  }
+	method scheduleNext() {
+		simulationEngine.after(self.intervalSteps(), { self.tryDispense() })
+	}
 
-  // No recibe items: sólo los crea
-  override method canReceive() = false
-  override method receive(_) {}
+	// Intenta crear un item y pasarlo a la de adelante.
+	// Pregunta ANTES de crear: si la de adelante está llena no se crea ningún item
+	// (el item recién se hace cuando hay a dónde mandarlo). Si está llena, se anota
+	// para reintentar apenas se libere: no espera al próximo intervalo.
+	method tryDispense() {
+		const target = self.outputTarget()
+		if (target != null) {
+			const item = product.apply()
+			if (target.canReceive(item)) {
+				item.position(self.position())
+				simulationEngine.addItem(item)
+				inventory.add(item)
+				self.tryPush()
+			} else {
+				target.whenFree({ self.tryDispense() })
+			}
+		}
+	}
 
-  // Crea un item nuevo sobre el dispenser y se lo entrega a la máquina de adelante
-  method dispense(){
-	  const newItem = product.apply()
-	  newItem.position(self.position())
-	  simulationEngine.addItem(newItem)
-	  self.push(newItem)
-  }
+	// No recibe items: sólo los crea
+	override method canReceive(item) = false
+
+	// Recién cuando el item se entregó se agenda el próximo
+	override method onPushed(item) {
+		self.scheduleNext()
+	}
 }

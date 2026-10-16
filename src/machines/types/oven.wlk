@@ -1,8 +1,8 @@
 import machines.machineClasses.*
 
-class Oven inherits Machine{
-  override method name() = "Oven"
-  override method canReceive() = false
-  override method receive(_) {}
-  override method use() {}
+class Oven inherits Machine {
+
+	override method name() = "Oven"
+
+	override method canReceive(item) = false
 }

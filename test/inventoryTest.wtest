@@ -1,0 +1,58 @@
+// test/inventoryTest.wtest
+import src.machines.inventory.*
+import src.simulation.simulationEngine.*
+
+describe "tests de Inventory" {
+
+  const inventory = new Inventory(capacity = 2)
+  const itemA = "itemA"
+  const itemB = "itemB"
+
+  test "arranca vacío y con lugar" {
+    assert.that(inventory.isEmpty())
+    assert.that(inventory.hasRoom())
+  }
+
+  test "tiene lugar mientras no llegue a la capacidad" {
+    inventory.add(itemA)
+    assert.that(inventory.hasRoom())
+    inventory.add(itemB)
+    assert.notThat(inventory.hasRoom())
+  }
+
+  test "guarda los items y devuelve el primero" {
+    inventory.add(itemA)
+    inventory.add(itemB)
+    assert.equals([itemA, itemB], inventory.items())
+    assert.equals(itemA, inventory.first())
+  }
+
+  test "release saca el item del inventario y deja lugar" {
+    inventory.add(itemA)
+    inventory.add(itemB)
+    inventory.release(itemA)
+    assert.equals([itemB], inventory.items())
+    assert.that(inventory.hasRoom())
+  }
+
+  test "release despierta a las acciones que esperaban lugar" {
+    var woke = false
+    inventory.add(itemA)
+    inventory.add(itemB)
+    inventory.whenFree({ woke = true })
+    inventory.release(itemA)
+    // la acción se agenda para el paso siguiente del engine
+    simulationEngine.step()
+    assert.that(woke)
+  }
+
+  test "clear vacía los items y las esperas sin despertar a nadie" {
+    var woke = false
+    inventory.add(itemA)
+    inventory.whenFree({ woke = true })
+    inventory.clear()
+    assert.that(inventory.isEmpty())
+    simulationEngine.step()
+    assert.notThat(woke)
+  }
+}

@@ -3,7 +3,7 @@
 El reloj del juego y las animaciones. Los ingredientes y las recetas están en [`food/`](../food/README.md).
 
 > [!IMPORTANT]
-> Este README describe **el engine al que se está migrando** (ver [el plan de implementación](../../docs/plan-contrato-maquinas.md)). La sección [Estado actual](#estado-actual-mientras-dura-la-migración) dice qué parte ya existe.
+> Este README describe el engine, ya migrado (fases 1 y 2 del [plan de implementación](../../docs/plan-contrato-maquinas.md)).
 
 | Archivo | Qué tiene |
 |---|---|
@@ -45,9 +45,3 @@ Avanza todo lo que se anima. No tiene reloj propio: el `simulationEngine` le avi
 - **Bloques de fin de animación:** cuando una animación termina, su bloque no se ejecuta en ese momento: queda pendiente y se ejecuta **después de recorrer la lista**. Por eso en el bloque se puede mover items o encadenar otra animación sin romper el recorrido.
 - Un mismo objeto no puede ser `Animado` y animarse frame a frame a la vez: los dos definen `avanzar()`.
 
-## Estado actual (mientras dura la migración)
-
-| Contrato | Hoy | Fase del plan |
-|---|---|---|
-| Los bloques de fin de animación corren después de recorrer la lista | Corren **dentro** del recorrido. Mientras tanto (`ticking()`) no se puede agregar nada a la lista, y por eso el bloque sólo agenda a la máquina (`playThenWake`) | 1 |
-| `after(pasos, bloque)` | `schedule(pasos, máquina)`, que despierta a la máquina con `use()`. `pendingWakeUps()` cuenta lo agendado (para tests) | 2 |

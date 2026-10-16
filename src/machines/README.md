@@ -3,12 +3,12 @@
 Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles aparecen en el menú.
 
 > [!IMPORTANT]
-> Este README describe el **contrato al que se está migrando** (ver [el plan de implementación](../../docs/plan-contrato-maquinas.md)). Mientras el plan no esté terminado, el código todavía usa `schedule` + `use()`, `heldItem` y `canReceive()` sin parámetro. La sección [Estado actual](#estado-actual-mientras-dura-la-migración) dice qué parte del contrato ya existe.
+> Este README describe el **contrato de `Machine`**, ya implementado (fases 1 a 3 del [plan de implementación](../../docs/plan-contrato-maquinas.md)). El plan sigue con las fases 4 a 7: contrato de los ingredientes, la cortadora, `ProcessingMachine` y recetas.
 
 | Archivo | Qué tiene |
 |---|---|
 | `machineClasses.wlk` | Las clases base de todas las máquinas: `MachineAnimator`, `MachineSprite` y `Machine` |
-| `inventory.wlk` | `Inventory`: los items que guarda una máquina y las que esperan que se libere lugar *(fase 3 del plan)* |
+| `inventory.wlk` | `Inventory`: los items que guarda una máquina y los que esperan que se libere lugar |
 | `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk` |
 | `machineManager.wlk` | El catálogo de máquinas del menú y cuál está elegida para colocar |
 
@@ -196,12 +196,3 @@ Por defecto una máquina es **frame a frame**: con la simulación prendida se ve
 4. Su comportamiento: partir del ejemplo más parecido (cinta, dispenser o cortadora) y sobrescribir sólo lo que cambia, según [el contrato](#el-contrato-de-machine).
 5. Importar su archivo en `machineManager.wlk` (`import machines.types.<nombre>.*`) y agregarla a la lista. Si cambia la cantidad de máquinas, revisar los tests de páginas de `test/menuManagerTest.wtest`.
 
-## Estado actual (mientras dura la migración)
-
-Lo que el código hace hoy, hasta que se complete cada fase del [plan](../../docs/plan-contrato-maquinas.md):
-
-| Contrato | Hoy | Fase |
-|---|---|---|
-| `play(animación, bloque)` permite mover items en el bloque | El bloque corre dentro del tick del `animationEngine` y **no** puede mover items: se usa `playThenWake`, o el bloque sólo agenda | 1 |
-| `after(pasos, bloque)` y `whenFree(bloque)` | `simulationEngine.schedule(pasos, self)` despierta a la máquina con `use()`, que deduce por su estado por qué la despertaron. Si la de adelante está llena, `waitForNext()`, y toda máquina que se libere **tiene que** llamar a `wakeWaiting()` | 2 |
-| `Inventory`, `canReceive(item)`, `onReceive`, `onArrived`, `tryPush` | Un solo item en `heldItem`. `canReceive()` sin parámetro (por defecto, `heldItem == null`). Cada tipo sobrescribe `receive` y `use()` (abstracto) | 3 |

@@ -1,17 +1,14 @@
 import machines.machineClasses.*
-import simulation.animationEngine.*
-import simulation.simulationEngine.*
+import food.foodClasses.*
 
+// Cortadora: corta el item que recibe.
+// EN DESARROLLO: hasta la fase 5 del plan se deja sólo compilando, con el
+// comportamiento mínimo (recibe por defecto, corta al llegar si el item se puede cortar).
+class CuttingMachine inherits Machine {
 
-class CuttingMachine inherits Machine{
-  override method name() = "CuttingMachine"
-  override method receive(anItem) {
-    super(anItem)
-    anItem.moveInSteps(position, animationEngine.pasosPorCelda())
-	  simulationEngine.schedule(animationEngine.pasosPorCelda(), self)
-  }
+	override method name() = "CuttingMachine"
 
-  override method use() {
-    heldItem.cortar()
-  }
+	override method onArrived(item) {
+		if (item.canProcess(cutting)) item.process(cutting)
+	}
 }
