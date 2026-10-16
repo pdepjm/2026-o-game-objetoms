@@ -15,6 +15,7 @@ Hoy el engine sólo sabe despertar a una máquina, y lo hace siempre con `use()`
 
 - **Cada fase deja el juego andando y los tests en verde.** Hacer un commit por fase (o por paso, si la fase es grande).
 - Las fases 1 a 3 se pueden hacer ya. Las 4 a 7 conviene encararlas cuando la cortadora esté terminada: diseñarlas antes es adivinar.
+- **Este plan cubre sólo las máquinas.** La comida (ingredientes, procesos y recetas) se hace aparte, en `master`, y se trae a esta rama con un merge (fase 4).
 - La cortadora está en desarrollo: **no tocarla** hasta la fase 5. Mientras tanto, si una fase rompe su código, alcanza con dejarla compilando.
 - Al terminar cada fase, borrar su fila de la tabla "Estado actual" de [`src/machines/README.md`](../src/machines/README.md#estado-actual-mientras-dura-la-migración) y de [`src/simulation/README.md`](../src/simulation/README.md#estado-actual-mientras-dura-la-migración).
 
@@ -25,10 +26,10 @@ Para medir rendimiento (fases 0, 2 y 3): correr el juego, tocar **M** y **L**, e
 - [ ] [Fase 1: bloques de fin de animación seguros](#fase-1-bloques-de-fin-de-animación-seguros)
 - [ ] [Fase 2: agendar acciones en vez de máquinas](#fase-2-agendar-acciones-en-vez-de-máquinas)
 - [ ] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
-- [ ] [Fase 4: contrato de los ingredientes](#fase-4-contrato-de-los-ingredientes)
+- [ ] [Fase 4: traer la comida a la rama](#fase-4-traer-la-comida-a-la-rama)
 - [ ] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
 - [ ] [Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)](#fase-6-processingmachine-cuando-haya-2-máquinas-que-procesan)
-- [ ] [Fase 7: recetas y Assembler](#fase-7-recetas-y-assembler)
+- [ ] [Fase 7: Assembler](#fase-7-assembler)
 
 ---
 
@@ -152,52 +153,87 @@ También:
 
 ---
 
-## Fase 4: contrato de los ingredientes
+## Fase 4: traer la comida a la rama
 
-Cuando la cortadora defina lo que necesita.
+**Qué resuelve:** la comida (ingredientes, procesos y recetas) se desarrolla aparte, en `master`, y no es parte de este plan. Esta fase es sólo lo que hay que hacer **del lado de las máquinas** cuando se mergea `master` en esta rama.
 
-1. Pasar a `Ingrediente` (`src/food/ingredientes.wlk`) lo que se le puede hacer a cualquier ingrediente: `puedeCortarse()`, `cortar()`, `puedeCocinarse()`, `cocinar(tiempo)`, `estado()`. Ver la tabla de [`src/food/README.md`](../src/food/README.md#contrato-de-un-ingrediente-a-implementar-fase-4-del-plan).
-2. La imagen sale del estado: `food/<ingredients>/<ingredient>_<state>.png` (ver [`assets/README.md`](../assets/README.md#food)).
-3. Que `Carne` herede de verdad de `Ingrediente` y sólo diga lo que tiene de distinto.
+1. Mergear `master`. Conflictos esperables:
+   - `src/food/`: las dos ramas movieron ahí `ingredientes.wlk` y `recetas.wlk`. Quedarse con lo de `master`, incluido su `src/food/README.md`.
+   - `Dispenser` y `test/animationTest.wtest`: `master` ya reemplazó `new Carne()`. Quedarse con eso, sobre el código de esta rama.
+2. **Cortadora:** sólo dejarla compilando (se termina en la fase 5). Su `cortar()` pasa a ser `process(cutting)`.
+3. En [`src/machines/README.md`](../src/machines/README.md#el-contrato-de-machine), actualizar lo que todavía habla de la comida vieja: el `new Carne()` del ejemplo del Dispenser y el `item.puedeCortarse()` de la fila de `canReceive(item)`.
 
-**Listo cuando:** ninguna máquina le manda a un item un mensaje que no esté en `Ingrediente`.
+Lo que las máquinas le pueden pedir a la comida está en [`src/food/README.md`](../src/food/README.md). Para las fases que siguen alcanza con esto:
+
+| Quién | Mensaje | Para qué |
+|---|---|---|
+| Item | `canProcess(proceso)` | Saber si una máquina que procesa lo acepta |
+| Item | `process(proceso)` | Transformarlo |
+| Receta | `stillNeeds(item, items)` | Saber si el Assembler lo acepta |
+| Receta | `canBeMadeWith(items)` | Saber si el Assembler ya puede armar el plato |
+| Receta | `prepare()` | Crear el plato |
+| Receta | `totalItems()` | La capacidad del Assembler |
+
+**Listo cuando:** no queda ningún `Carne` en `src/` ni en `test/`, y los tests dan 0 fallas.
 
 ---
 
 ## Fase 5: la cortadora con el contrato
 
-1. `CuttingMachine` con `canReceive(item) = super(item) && item.puedeCortarse()` y `onArrived(item)` que anima, corta y hace `tryPush()` (ver el ejemplo del README de máquinas).
+1. `CuttingMachine` con `canReceive(item) = super(item) && item.canProcess(cutting)` y `onArrived(item)` que anima, hace `item.process(cutting)` y `tryPush()` (ver el ejemplo del README de máquinas).
 2. Renombrar sus carpetas de animación a la convención `<direccion>_<accion>/`: `down/` → `down_cut/`, etc. Así funciona `actionAnimation("cut", 17)`.
 
-**Listo cuando:** una cadena dispenser → cinta → cortadora → cinta entrega carne cortada, con un test que lo pruebe.
+**Listo cuando:** una cadena dispenser → cinta → cortadora → cinta entrega un item cortado, con un test que lo pruebe. Otro test: la cortadora no acepta un item que no se puede cortar.
 
 ---
 
 ## Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)
 
-Si Oven o Fryer repiten el `onArrived` de la cortadora ("animar, transformar, entregar"), extraer el patrón:
+Si Oven o Fryer repiten lo de la cortadora ("aceptar lo que se puede procesar, animar, transformar, entregar"), extraer el patrón. Como todos los items entienden `canProcess` y `process`, casi todo queda en la base: cada subclase sólo dice **qué proceso aplica** y con qué animación.
 
 ```wollok
 class ProcessingMachine inherits Machine {
-	method processAnimation()      // abstracto: la animación del proceso
-	method process(item)           // abstracto: lo que le hace al item
-	override method onArrived(item) {
-		self.play(self.processAnimation(), {
-			self.process(item)
-			self.tryPush()
-		})
-	}
+    method foodProcess()           // abstracto: cutting, frying…
+    method processAnimation()      // abstracto: la animación del proceso
+
+    override method canReceive(item) = super(item) && item.canProcess(self.foodProcess())
+
+    override method onArrived(item) {
+        self.play(self.processAnimation(), {
+            item.process(self.foodProcess())
+            self.tryPush()
+        })
+    }
+}
+
+class CuttingMachine inherits ProcessingMachine {
+    override method name() = "CuttingMachine"
+    override method foodProcess() = cutting
+    override method processAnimation() = self.actionAnimation("cut", 17)
 }
 ```
+
+El método se llama `foodProcess()` y no `process()` para no confundirlo con el `process(proceso)` del item.
 
 No hacerlo antes: con una sola máquina no se sabe qué parte es común.
 
 ---
 
-## Fase 7: recetas y Assembler
+## Fase 7: Assembler
 
-1. Una `Receta` con sus entradas (clase de ingrediente y estado) y su producto.
-2. `Assembler`: `capacity()` igual a la cantidad de entradas, `canReceive(item)` sólo si la receta todavía lo necesita, `onArrived` arma el producto cuando están todas, y `itemToPush()` devuelve el producto.
+Las recetas las define la comida (ver la tabla de la fase 4). Esta fase es la máquina que las usa.
+
+1. `Assembler`, con el contrato de la fase 3:
+   - `var recipe`: la receta que arma. Más adelante, que se elija desde el menú de edición, sólo con la simulación apagada.
+   - `capacity() = recipe.totalItems()`.
+   - `canReceive(item) = super(item) && recipe.stillNeeds(item, inventory.items())`. Como filtra en la entrada, **nunca tiene items de más**: cuando la receta se puede armar, lo que tiene es justo la receta y se consume todo.
+   - `onArrived(item)`: si `recipe.canBeMadeWith(inventory.items())`, saca los ingredientes (`inventory.release` y `simulationEngine.removeItem`), crea el plato con `recipe.prepare()`, lo pone en su posición con `addItem` y hace `tryPush()`.
+   - `itemToPush()` devuelve el plato, que no está en el inventario: se guarda aparte. `heldItems()` lo tiene que incluir, para que `stop()` lo saque de la pantalla, y `reset()` lo tiene que borrar.
+2. En `simulationEngine`, agregar `removeItem(item)` (`item.detener()` y `game.removeVisual(item)`), la contraparte de `addItem`.
+
+**Tests:** acepta lo que la receta necesita; rechaza lo que no pide o le sobra; con todo, entrega el plato y consume los ingredientes.
+
+**Listo cuando:** una cadena que termina en el Assembler entrega un plato, con un test que lo pruebe.
 
 ---
 
