@@ -172,7 +172,7 @@ food/
 | frito | `fried` |
 
 > [!NOTE]
-> Por ahora el código no usa estas imágenes (los ingredientes todavía se dibujan con `pepita.png`).
+> Por ahora solo hay imágenes de la papa. Las usan los ingredientes de `src/food/ingredients.wlk`.
 
 ## Archivos de la raíz
 
@@ -181,4 +181,4 @@ food/
 | `background.gif` | fondo del juego (se carga con `game.boardGround`). `background.png` es la versión sin animar |
 | `overlay.png` | marco que marca la máquina elegida en el menú |
 | `no_texture.png` | imagen de reemplazo cuando todavía no hay una definitiva |
-| `pepita.png` | imagen provisoria de los ingredientes |
+| `pepita.png` | imagen provisoria que usaban los ingredientes (ya no la usa el código) |
