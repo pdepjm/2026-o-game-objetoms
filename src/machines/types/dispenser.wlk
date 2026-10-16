@@ -1,10 +1,11 @@
 import machines.machineClasses.*
 import simulation.simulationEngine.*
-import simulation.ingredientes.*
+import food.foodClasses.*
+import food.foodTypes.*
 
 // Dispensa un item cada un determinado tiempo
 class Dispenser inherits Machine{
-  var item = { => new Carne() } // item a dispensar, instanciador de clase.
+  var item = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
 
   override method name() = "Dispenser"
 

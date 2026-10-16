@@ -7,7 +7,8 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 | Carpeta | Qué tiene |
 |---|---|
 | [`machines/`](machines/README.md) | Las máquinas: su lógica, cómo se dibujan, sus tipos y el catálogo del menú |
-| [`simulation/`](simulation/README.md) | El reloj de la simulación, las animaciones, los ingredientes y las recetas |
+| [`simulation/`](simulation/README.md) | El reloj de la simulación y las animaciones |
+| [`food/`](food/README.md) | Los ingredientes y las recetas |
 | [`menu/`](menu/README.md) | Los menús de la derecha: barra de herramientas y paneles (place, edit) |
 | [`tools/`](tools/README.md) | Las herramientas del jugador (colocar, borrar, editar, rotar) y la dirección elegida |
 | [`input/`](input/README.md) | Las teclas y los clicks |
