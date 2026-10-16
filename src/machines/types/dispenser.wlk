@@ -5,7 +5,7 @@ import food.foodTypes.*
 
 // Dispensa un item cada un determinado tiempo
 class Dispenser inherits Machine{
-  var item = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
+  const product = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
 
   override method name() = "Dispenser"
 
