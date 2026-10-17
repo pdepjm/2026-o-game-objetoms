@@ -1,0 +1,30 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="lechuga-cortada">
+<g id="Trozo 1">
+<path d="M8 11C11 9 15 10 16 13C18 15 15 18 12 17C9 18 6 15 8 11Z" fill="#7DBF4A" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M9 15C11 14 13 13.5 15 13.5" stroke="#3E7A24" stroke-width="0.4" stroke-linecap="round"/>
+</g>
+<g id="Trozo 2">
+<path d="M24 12C27 9 32 10 33 13C37 12 40 15 38 18C40 21 36 24 33 22C30 24 25 22 26 19C22 18 22 14 24 12Z" fill="#A6D96A" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M25 15C29 16 33 17 37 18M30 16.3C31 14.8 32 13.5 33 13M31.5 16.8C32.5 18.5 33.5 20 34 21.5" stroke="#5E9A34" stroke-width="0.4" stroke-linecap="round"/>
+</g>
+<g id="Trozo 3">
+<path d="M6 22C9 18 14 19 16 21C19 19 23 21 22 25C24 28 20 31 17 29C13 31 8 29 9 26C5 26 4 23 6 22Z" fill="#6FB33F" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M7 23.5C11 24 16 25 21 26.5M13 24.6C14 23 15 22 16 21.5M15 25.2C16 26.8 16.6 28 17 29" stroke="#3E7A24" stroke-width="0.4" stroke-linecap="round"/>
+</g>
+<g id="Trozo 4">
+<path d="M26 27C29 24 34 25 35 28C39 27 43 30 41 33C43 37 38 39 35 37C31 39 27 37 28 34C24 33 24 29 26 27Z" fill="#7DBF4A" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M26 30C30 31 35 32.5 40 34M32 31.5C33 30 34 29 35 28.5M34 32.2C35 34 35.4 35.5 35.5 37" stroke="#3E7A24" stroke-width="0.4" stroke-linecap="round"/>
+</g>
+<g id="Trozo 5">
+<path d="M9 34C12 32 16 33 17 35C20 35 21 38 19 40C17 42 13 42 11 40C8 40 7 36 9 34Z" fill="#A6D96A" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+<path d="M9.5 36.5C12.5 37 16 38 19.5 39" stroke="#5E9A34" stroke-width="0.4" stroke-linecap="round"/>
+</g>
+<g id="Trozo 6">
+<path d="M40 8C42 7 45 8 45 10.5C46.5 12 45 14.5 43 14C41 15 38.5 13.5 39 11.5C37.5 10.5 38.5 8.5 40 8Z" fill="#6FB33F" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+</g>
+<g id="Trozo 7">
+<path d="M22 37C24 35.5 27 36 27.5 38C29.5 38.5 29.5 41.5 27.5 42C26 43.5 22.5 43 22 41C20 40.5 20.5 37.5 22 37Z" fill="#7DBF4A" stroke="#2F5A1C" stroke-width="0.5" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>
