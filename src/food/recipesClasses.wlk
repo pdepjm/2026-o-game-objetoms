@@ -3,10 +3,10 @@ import food.foodClasses.*
 
 // Un requisito de una receta: un kind y cuántos hacen falta.
 class Requirement {
-    const kind
-    const amount
+    const kind 
+    const amount 
     method amount() = amount
-    
+
     // ¿Este item es del kind que pide?
     method isSatisfiedBy(anItem) = anItem.kind() == kind
 
@@ -33,4 +33,3 @@ class Recipe {
     // Crea un plato nuevo de esta receta
     method prepare() = new Item(kind = result)
 }
-

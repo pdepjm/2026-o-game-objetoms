@@ -1,14 +1,17 @@
 // Las clases de la comida y los procesos que puede sufrir.
 // Un Item es lo que circula por el tablero; su kind dice qué es:
 // un ingrediente (IngredientKind), que se puede procesar, o un plato (DishKind), que no.
-// Los kinds concretos (potato, cutPotato, friedPotato...) están en foodTypes.wlk
+// Los kinds concretos (potato, cutPotato, burger...) están en foodTypes.wlk
 import simulation.animationEngine.*
 
 // Objetos de transformación: sirven para definir los procesos que pueden sufrir los ingredientes.
 // Actualmente están vacíos, pero podrían tener el tiempo de procesamiento.
-object cutting {}
-// object frying {}
 
+object cutting {}
+object frying {}
+object cooking {}
+
+// Clase para los ingredientes
 class IngredientKind{
     const transitions = new Dictionary()
 

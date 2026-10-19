@@ -4,14 +4,15 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 
 | Archivo | Qué tiene |
 |---|---|
-| `foodClasses.wlk` | Los procesos (`cutting`) y las clases `IngredientKind`, `DishKind` e `Item` |
-| `foodTypes.wlk` | Los kinds concretos (`potato`, `cutPotato`, `friedPotato`) |
+| `foodClasses.wlk` | Los procesos (`cutting`, `frying`, `cooking`) y las clases `IngredientKind`, `DishKind` e `Item` |
+| `foodPaths.wlk` | Las familias de ingredientes (`potatoFamily`, `meatFamily`...), que arman la ruta de sus imágenes |
+| `foodTypes.wlk` | Los kinds concretos: ingredientes (`potato`, `meat`...) y platos (`burger`) |
 | `recipesClasses.wlk` | Las clases `Requirement` y `Recipe` |
-| `recipes.wlk` | Las recetas concretas (`friedPotatoRecipe`) |
+| `recipes.wlk` | Las recetas concretas (`burgerRecipe`) |
 
 ## `foodClasses.wlk`
 
-- **Procesos** (`cutting`): objetos vacíos que representan lo que hace cada máquina. Se comparan por identidad.
+- **Procesos** (`cutting`, `frying`, `cooking`): objetos vacíos que representan lo que hace cada máquina. Se comparan por identidad.
 - `Item`: lo que está en el tablero. Se mueve (`Animado`, de `simulation/animationEngine.wlk`) y delega en su `kind`, que cambia cuando lo procesan. Lo crean el `Dispenser` y las recetas (`prepare()`).
 - **Kinds**: qué es un item en este momento. Hay dos clases, y `Item` no necesita saber cuál tiene:
   - `IngredientKind`: un ingrediente (papa, papa cortada...). Guarda sus transiciones: con qué proceso se convierte en qué. Cada kind concreto las carga en su `initialize()` con `turnsInto(proceso, resultado)`.
@@ -28,9 +29,21 @@ Lo que las máquinas y las recetas le pueden pedir a un item:
 | `kind()` | Qué es ahora (`potato`, `cutPotato`...) | Las recetas, para comparar |
 | `image()` | La imagen de su kind | Wollok Game |
 
+## `foodPaths.wlk`
+
+Una familia por ingrediente con más de un estado. `image(estado)` arma la ruta siguiendo la convención de [`assets/README.md`](../../assets/README.md#food): `potatoFamily.image("cut")` → `food/Ingredients/potatoes/potato_cut.png`. Los platos de un solo estado escriben su ruta directamente.
+
 ## `foodTypes.wlk`
 
-Por ahora sólo la papa: `potato` → (`cutting`) → `cutPotato`. `friedPotato` es un plato (`DishKind`): no sale de un proceso sino de `friedPotatoRecipe`. Las imágenes están en `assets/food/potatoes/`.
+| Ingrediente | Transiciones |
+|---|---|
+| Papa | `potato` → (`cutting`) → `cutPotato` → (`frying`) → `friedPotato` |
+| Lechuga | `lettuce` → (`cutting`) → `cutLettuce` |
+| Tomate | `tomato` → (`cutting`) → `cutTomato` |
+| Pan | `bun` → (`cutting`) → `cutBun` |
+| Carne | `meat` → (`cooking`) → `cookedMeat` |
+
+Platos (`DishKind`): `burger`.
 
 ## `recipesClasses.wlk`
 
@@ -46,4 +59,4 @@ Por ahora sólo la papa: `potato` → (`cutting`) → `cutPotato`. `friedPotato`
 
 ## `recipes.wlk`
 
-- `friedPotatoRecipe`: una papa cortada → una papa frita. Las recetas son objetos bien conocidos, igual que los kinds.
+- `burgerRecipe`: pan cortado, lechuga cortada, tomate cortado y dos carnes cocidas → `burger`. Las recetas son objetos bien conocidos, igual que los kinds.

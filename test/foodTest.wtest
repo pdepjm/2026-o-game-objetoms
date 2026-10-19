@@ -11,10 +11,24 @@ describe "tests de items" {
     assert.equals(cutPotato, item.kind())
   }
 
+  test "una papa cortada y frita queda como friedPotato" {
+    const item = new Item(kind = potato)
+    item.process(cutting)
+    item.process(frying)
+    assert.equals(friedPotato, item.kind())
+  }
+
   test "una papa cortada no se puede volver a cortar" {
     const item = new Item(kind = potato)
     item.process(cutting)
     assert.notThat(item.canProcess(cutting))
+  }
+
+  test "la carne se cocina pero no se corta" {
+    const item = new Item(kind = meat)
+    assert.notThat(item.canProcess(cutting))
+    item.process(cooking)
+    assert.equals(cookedMeat, item.kind())
   }
 
   test "procesar un ingrediente con un proceso que no acepta tira error y no lo cambia" {
@@ -24,70 +38,68 @@ describe "tests de items" {
   }
 
   test "a un plato no se le puede aplicar ningun proceso" {
-    const dish = new Item(kind = friedPotato)
+    const dish = new Item(kind = burger)
     assert.notThat(dish.canProcess(cutting))
+    assert.notThat(dish.canProcess(cooking))
   }
 
   test "la imagen cambia con el kind" {
     const item = new Item(kind = potato)
-    assert.equals("food/potatoes/potato_raw.png", item.image())
+    assert.equals("food/Ingredients/potatoes/potato_raw.png", item.image())
     item.process(cutting)
-    assert.equals("food/potatoes/potato_cut.png", item.image())
+    assert.equals("food/Ingredients/potatoes/potato_cut.png", item.image())
   }
 }
 
 describe "tests de recetas" {
-  const cut = new Item(kind = cutPotato)
-  const raw = new Item(kind = potato)
+  const bunHalf = new Item(kind = cutBun)
+  const lettuceLeaf = new Item(kind = cutLettuce)
+  const tomatoSlice = new Item(kind = cutTomato)
+  const meat1 = new Item(kind = cookedMeat)
+  const meat2 = new Item(kind = cookedMeat)
 
-  // Una receta que pide dos del mismo kind, para probar las cantidades
-  const twoCut = new Recipe(requirements = [new Requirement(kind = cutPotato, amount = 2)], result = friedPotato)
+  // Todo lo que pide la hamburguesa: pan, lechuga, tomate y dos carnes cocidas
+  method allIngredients() = [bunHalf, lettuceLeaf, tomatoSlice, meat1, meat2]
 
-  test "con una papa cortada se puede preparar la papa frita" {
-    assert.that(friedPotatoRecipe.canBeMadeWith([cut]))
+  test "con todos los ingredientes se puede preparar la hamburguesa" {
+    assert.that(burgerRecipe.canBeMadeWith(self.allIngredients()))
   }
 
   test "sin items no se puede preparar" {
-    assert.notThat(friedPotatoRecipe.canBeMadeWith([]))
+    assert.notThat(burgerRecipe.canBeMadeWith([]))
   }
 
-  test "una papa cruda no cuenta como cortada" {
-    assert.notThat(friedPotatoRecipe.canBeMadeWith([raw]))
+  test "con una sola carne no alcanza" {
+    assert.notThat(burgerRecipe.canBeMadeWith([bunHalf, lettuceLeaf, tomatoSlice, meat1]))
   }
 
-  test "necesita una papa cortada si todavia no tiene ninguna" {
-    assert.that(friedPotatoRecipe.stillNeeds(cut, []))
+  test "un ingrediente sin procesar no cuenta como procesado" {
+    assert.notThat(burgerRecipe.canBeMadeWith([new Item(kind = bun), lettuceLeaf, tomatoSlice, meat1, meat2]))
   }
 
-  test "no necesita una papa cortada si ya tiene la que pide" {
-    assert.notThat(friedPotatoRecipe.stillNeeds(new Item(kind = cutPotato), [cut]))
+  test "necesita un ingrediente que pide si todavia no lo tiene" {
+    assert.that(burgerRecipe.stillNeeds(lettuceLeaf, [bunHalf]))
+  }
+
+  test "acepta la segunda carne pero no la tercera" {
+    assert.that(burgerRecipe.stillNeeds(meat2, [meat1]))
+    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = cookedMeat), [meat1, meat2]))
   }
 
   test "no necesita un kind que no pide" {
-    assert.notThat(friedPotatoRecipe.stillNeeds(raw, []))
-  }
-
-  test "con un requisito de dos, una sola no alcanza" {
-    assert.notThat(twoCut.canBeMadeWith([cut]))
-    assert.that(twoCut.canBeMadeWith([cut, new Item(kind = cutPotato)]))
-  }
-
-  test "con un requisito de dos, acepta la segunda pero no la tercera" {
-    const second = new Item(kind = cutPotato)
-    assert.that(twoCut.stillNeeds(second, [cut]))
-    assert.notThat(twoCut.stillNeeds(new Item(kind = cutPotato), [cut, second]))
+    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = potato), []))
+    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = meat), []))
   }
 
   test "totalItems suma las cantidades de los requisitos" {
-    assert.equals(1, friedPotatoRecipe.totalItems())
-    assert.equals(2, twoCut.totalItems())
+    assert.equals(5, burgerRecipe.totalItems())
   }
 
   test "prepare crea un plato del kind de la receta" {
-    assert.equals(friedPotato, friedPotatoRecipe.prepare().kind())
+    assert.equals(burger, burgerRecipe.prepare().kind())
   }
 
   test "cada prepare crea un plato distinto" {
-    assert.notThat(friedPotatoRecipe.prepare() === friedPotatoRecipe.prepare())
+    assert.notThat(burgerRecipe.prepare() === burgerRecipe.prepare())
   }
 }

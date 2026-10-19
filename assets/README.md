@@ -20,8 +20,12 @@ assets/
 ├── no_texture.png
 ├── pepita.png
 ├── food/
-│   └── <ingredients>/
-│       └── <ingredient>_<state>.png
+│   ├── Ingredients/
+│   │   └── <ingredients>/
+│   │       └── <ingredient>_<state>.png
+│   └── Dishes/
+│       └── <dishes>/
+│           └── <dish>.png
 ├── machines/
 │   └── <MachineName>/
 │       ├── <dir>_menu.png
@@ -154,25 +158,35 @@ El nombre sale del `name()` de cada herramienta (ver `src/tools/userTools.wlk`):
 
 ## `food/`
 
-Cada ingrediente tiene su propia carpeta, con el nombre del ingrediente en inglés y en plural, y adentro una imagen `.png` (50x50) por cada forma que puede tomar. El archivo se nombra `<ingredient>_<state>.png`, con el ingrediente en singular y el estado en inglés, separados por un guion bajo (si el estado tiene más de una palabra, también van unidas con `_`).
+La comida se divide en dos carpetas: `Ingredients/` y `Dishes/` (platos).
+
+- **Ingredientes:** cada uno tiene su propia carpeta, con el nombre del ingrediente en inglés y en plural, y adentro una imagen `.png` (50x50) por cada forma que puede tomar. El archivo se nombra `<ingredient>_<state>.png`, con el ingrediente en singular y el estado en inglés, separados por un guion bajo (si el estado tiene más de una palabra, también van unidas con `_`).
+- **Platos:** cada uno tiene su carpeta en plural y una sola imagen, `<dish>.png`.
 
 ```
 food/
-└── potatoes/
-    ├── potato_raw.png
-    ├── potato_cut.png
-    └── potato_cooked.png
+├── Ingredients/
+│   ├── potatoes/
+│   │   ├── potato_raw.png
+│   │   ├── potato_cut.png
+│   │   └── potato_cooked.png
+│   └── buns/
+│       ├── bun_whole.png
+│       └── bun_cut.png
+└── Dishes/
+    └── burgers/
+        └── burger.png
 ```
 
 | Estado | Nombre |
 |---|---|
 | crudo | `raw` |
+| entero | `whole` |
 | cortado | `cut` |
 | cocinado | `cooked` |
 | frito | `fried` |
 
-> [!NOTE]
-> Por ahora solo hay imágenes de la papa. Las usan los ingredientes de `src/food/ingredients.wlk`.
+Hay imágenes de papa, lechuga, tomate, pan, carne y hamburguesa. Las rutas las arman las familias de `src/food/foodPaths.wlk`.
 
 ## Archivos de la raíz
 
