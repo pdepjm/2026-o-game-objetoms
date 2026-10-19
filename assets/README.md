@@ -47,7 +47,7 @@ Cada celda del juego mide **50x50 px** (`game.cellSize(50)`) y el tablero es de 
 | Máquina en el tablero, quieta | `_game.png` | 50x50 (igual que su animación) | 1 celda |
 | Máquina en el tablero, andando | `.gif` o carpeta de frames `.png` | 50x50 | 1 celda |
 | Máquina en el menú | `_menu.png` | 100x100 | 2x2 celdas |
-| Ingrediente | `.png` | 50x50 | 1 celda |
+| Ingrediente o plato | `.png` | 50x50, con el dibujo al 65% y centrado ([ver `food/`](#tamaño-del-dibujo)) | 1 celda |
 | Barra de herramientas | `.png` | 200x50 | 4x1 celdas |
 | Overlay | `.png` | 200x200 | 4x4 celdas |
 | Fondo | `.gif` / `.png` | 1250x800 | todo el juego |
@@ -163,19 +163,22 @@ La comida se divide en dos carpetas: `Ingredients/` y `Dishes/` (platos).
 - **Ingredientes:** cada uno tiene su propia carpeta, con el nombre del ingrediente en inglés y en plural, y adentro una imagen `.png` (50x50) por cada forma que puede tomar. El archivo se nombra `<ingredient>_<state>.png`, con el ingrediente en singular y el estado en inglés, separados por un guion bajo (si el estado tiene más de una palabra, también van unidas con `_`).
 - **Platos:** cada uno tiene su carpeta en plural y una sola imagen, `<dish>.png`.
 
+Al lado de cada `.png` va su `.svg` con el mismo nombre (ver [Tamaño del dibujo](#tamaño-del-dibujo)).
+
 ```
 food/
+├── svgToSprite.py
 ├── Ingredients/
 │   ├── potatoes/
-│   │   ├── potato_raw.png
-│   │   ├── potato_cut.png
-│   │   └── potato_cooked.png
+│   │   ├── potato_raw.svg / potato_raw.png
+│   │   ├── potato_cut.svg / potato_cut.png
+│   │   └── potato_cooked.svg / potato_cooked.png
 │   └── buns/
-│       ├── bun_whole.png
-│       └── bun_cut.png
+│       ├── bun_whole.svg / bun_whole.png
+│       └── bun_cut.svg / bun_cut.png
 └── Dishes/
     └── burgers/
-        └── burger.png
+        └── burger.svg / burger.png
 ```
 
 | Estado | Nombre |
@@ -187,6 +190,34 @@ food/
 | frito | `fried` |
 
 Hay imágenes de papa, lechuga, tomate, pan, carne y hamburguesa. Las rutas las arman las familias de `src/food/foodPaths.wlk`.
+
+### Tamaño del dibujo
+
+Las imágenes de comida miden 50x50, como cualquier celda, pero el dibujo **no ocupa toda la imagen**: va **achicado al 65% y centrado**, y el resto es transparente. Así la comida no llena la celda y se ve proporcionada al lado de las máquinas.
+
+> [!IMPORTANT]
+> Todas las imágenes de comida tienen que respetar esta escala. Si una se exporta con el dibujo a tamaño completo, se va a ver más grande que el resto.
+
+Cada imagen tiene dos archivos en su carpeta:
+
+| Archivo | Para qué sirve | Tamaño del dibujo |
+|---|---|---|
+| `<ingredient>_<state>.svg` | Original para editar (no lo usa el juego) | Completo: llena el lienzo de 50x50, con unos 4 px de margen |
+| `<ingredient>_<state>.png` | La imagen que carga el juego | Achicado al 65% alrededor del centro (25, 25) |
+
+Para cambiar una imagen, se edita el `.svg` y se vuelve a exportar el `.png` con `food/svgToSprite.py`, que guarda cada `.png` al lado de su `.svg`:
+
+```bash
+pip3 install Pillow
+python3 food/svgToSprite.py food/Ingredients/tomatoes/*.svg
+```
+
+El script necesita Edge, Chrome o Chromium instalado: lo usa sin abrir ventanas para dibujar el SVG. Si no lo encuentra solo, se le indica con `--navegador <ruta>`. El `.svg` tiene que ser de 50x50 (`viewBox="0 0 50 50"`).
+
+| Opción | Qué hace |
+|---|---|
+| `--escala` | tamaño del dibujo dentro del PNG (por defecto `0.65`) |
+| `--navegador` | ruta a Edge, Chrome o Chromium |
 
 ## Archivos de la raíz
 
