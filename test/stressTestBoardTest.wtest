@@ -30,9 +30,10 @@ describe "tests del tablero de prueba de carga" {
 
   test "llena todas las casillas del tablero" {
     stressTestBoard.fill()
-    (5..19).forEach({ x => (1..13).forEach({ y =>
-      assert.that(board.isThereAMachine(game.at(x, y)))
-    }) })
+    const todasOcupadas = (5..19).all({ x =>
+      (1..13).all({ y => board.isThereAMachine(game.at(x, y)) })
+    })
+    assert.that(todasOcupadas)
   }
 
   test "no cambia la direccion que tenia elegida el jugador" {
