@@ -28,7 +28,7 @@ Para medir rendimiento (fases 0, 2 y 3): correr el juego, tocar **M** y **L**, e
 - [X] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
 - [x] [Fase 4: traer la comida a la rama](#fase-4-traer-la-comida-a-la-rama)
 - [X] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
-- [ ] [Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)](#fase-6-processingmachine-cuando-haya-2-máquinas-que-procesan)
+- [ ] [Fase 6: `ProcessingMachine` con tiempo de procesamiento](#fase-6-processingmachine-con-tiempo-de-procesamiento)
 - [X] [Fase 7: Assembler](#fase-7-assembler)
 
 ---
@@ -187,37 +187,203 @@ Lo que las máquinas le pueden pedir a la comida está en [`src/food/README.md`]
 
 ---
 
-## Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)
+## Fase 6: `ProcessingMachine` con tiempo de procesamiento
 
-Si Oven o Fryer repiten lo de la cortadora ("aceptar lo que se puede procesar, animar, transformar, entregar"), extraer el patrón. Como todos los items entienden `canProcess` y `process`, casi todo queda en la base: cada subclase sólo dice **qué proceso aplica** y con qué animación.
+**Qué resuelve:** la cortadora y el horno repiten el mismo patrón ("aceptar lo que se puede procesar, esperar, transformar, entregar"), y además cada ingrediente tiene que tardar su propio tiempo en procesarse. Hoy la cortadora tarda lo que dura su animación (17 pasos) sea cual sea el ingrediente, y el horno procesa al instante.
+
+### Cómo queda
+
+La idea central: **el tiempo lo dice el ingrediente, cómo se ve lo dice la máquina, y la lógica no sabe nada de imágenes.**
+
+```
+Ingrediente         → "tardo 4 pasos"                       processTime()
+ProcessingMachine   → "trabajá 4 pasos y después procesá"   animateWork(4, bloque)      (lógica)
+MachineSprite       → decide cómo se ve esos 4 pasos:                                   (dibujo)
+                        · frame a frame: ajusta sus PNG a 4 pasos (TimedAnimation + play)
+                        · GIF: pone el GIF y agenda el final (holdImage), sin animationEngine
+```
+
+Respeta la regla de las capas del [README de máquinas](../src/machines/README.md#las-clases-base): `ProcessingMachine` sólo dice **cuánto** y **qué hacer al terminar**; las imágenes, las animaciones y volver a la imagen andando quedan en `MachineAnimator` y `MachineSprite`.
+
+Crear cosas nuevas no se complica:
+
+| Qué se crea | Qué escribe |
+|---|---|
+| Un ingrediente | Lo mismo que hoy. `processTime()` es opcional (por defecto, 5 pasos) |
+| Una máquina que procesa, sin animación | `name()` y `foodProcess()`. Queda quieta, pero respeta el tiempo |
+| …con animación frame a frame | además, `workImages()` con sus PNG |
+| …con GIF | además, `animateWork` sobrescrito con `holdImage` (una línea) |
+
+### 1. Comida: el tiempo de procesamiento
+
+En `src/food/foodClasses.wlk`:
+
+- `IngredientKind`: agregar `processTime()` con un valor por defecto (no abstracto), para que los ingredientes nuevos no tengan que definirlo. Se mide en **pasos de simulación**, no en ticks ni milisegundos: a x2 un paso dura 50 ms, no 100.
+- En `foodTypes.wlk`, sobrescribirlo sólo en los ingredientes que tardan distinto.
+  ```wollok
+  // Pasos de simulación que tarda en procesarse. Sobrescribirlo sólo si tarda distinto.
+  method processTime() = 5
+  ```
+- `Item`: `method processTime() = kind.processTime()`.
+- `DishKind`: nada. Nunca se procesa, así que nadie le pregunta el tiempo.
+
+> [!NOTE]
+> El tiempo está en el kind de origen, no en la transición: alcanza mientras cada kind tenga un solo proceso. Si algún día un kind tiene dos (`potato` se corta **y** se fríe, con tiempos distintos), pasarlo a `turnsInto(proceso, kind, tiempo)`.
+
+### 2. `simulationEngine`: agendar más lejos
+
+`after` no puede agendar a más de 15 pasos (`slotCount = 16`), y el GIF agenda el final con `after(processTime, …)`. Subir `slotCount` a `64`: cada paso mira un solo casillero, así que los demás vacíos no cuestan nada, y así nadie tiene que acordarse del límite al poner tiempos. El mensaje de error ya usa `slotCount`, no hay que tocarlo. El test "no se puede agendar más lejos que la cantidad de casilleros" (`simulationTest`) agenda a 100 pasos, así que sigue valiendo con 64; si se sube a más de 100, ajustarlo.
+
+### 3. `TimedAnimation` (en `src/simulation/animationEngine.wlk`, junto a `FrameAnimation`)
+
+Una animación que dura exactamente `steps` pasos, armada con una lista de imágenes. Entiende `frames()` y `size()` como `FrameAnimation`, así que **`MachineAnimator` la reproduce sin cambios**.
 
 ```wollok
-class ProcessingMachine inherits Machine {
-    method foodProcess()           // abstracto: cutting, frying…
-    method processAnimation()      // abstracto: la animación del proceso
+// Una animación que dura exactamente `steps` pasos, armada con una lista de imágenes.
+// Muestra siempre vueltas completas (tantas como entren, al menos una) y ajusta
+// apenas la velocidad para que cierren justo: nunca termina a mitad de una vuelta.
+// Con más imágenes que pasos, saltea (una vuelta rápida); con menos, repite.
+class TimedAnimation {
+	const images    // rutas de los PNG, por ejemplo las frames() de una FrameAnimation
+	const steps
+	const laps = (steps / images.size()).round().max(1)
+	const property frames = (0 .. (steps - 1)).map({ i =>
+		images.get((i * images.size() * laps).div(steps) % images.size())
+	})
 
-    override method canReceive(item) = super(item) && item.canProcess(self.foodProcess())
-
-    override method onArrived(item) {
-        self.play(self.processAnimation(), {
-            item.process(self.foodProcess())
-            self.tryPush()
-        })
-    }
-}
-
-class CuttingMachine inherits ProcessingMachine {
-    override method name() = "CuttingMachine"
-    override method foodProcess() = cutting
-    override method processAnimation() = self.actionAnimation("cut", 17)
+	method size() = steps
 }
 ```
 
-El método se llama `foodProcess()` y no `process()` para no confundirlo con el `process(proceso)` del item.
+| imágenes | pasos | vueltas | qué se ve |
+|---|---|---|---|
+| 17 | 4 | 1 | un corte rápido: `0, 4, 8, 12` |
+| 17 | 20 | 1 | un corte, apenas más lento |
+| 17 | 34 | 2 | dos cortes exactos |
+| 3 | 10 | 3 | el ciclo 3 veces, casi a velocidad normal |
+| 1 | N | N | la misma imagen N pasos (una máquina sin animación) |
 
-No hacerlo antes: con una sola máquina no se sabe qué parte es común.
+Quien la crea se asegura de que `steps` sea al menos 1 (`animateWork` lo hace).
 
-Del lado de la comida ya está todo: existen los procesos `frying` (`cutPotato` → `friedPotato`) y `cooking` (`meat` → `cookedMeat`). Lo que falta es hacer la segunda máquina, `Fryer` u `Oven`, con el patrón de la cortadora, y recién ahí extraer la base.
+### 4. `MachineAnimator`: reproducir con duración
+
+```wollok
+// Reproduce esas imágenes durante exactamente `steps` pasos (ver TimedAnimation)
+method playTimed(images, steps, afterBlock) {
+	self.play(new TimedAnimation(images = images, steps = steps.max(1)), afterBlock)
+}
+```
+
+### 5. `MachineSprite`: cómo se ve una máquina trabajando
+
+```wollok
+// ----------- ANIMACION DE TRABAJO -----------
+// Las imágenes que se ven mientras trabaja. Por defecto, la imagen andando (la máquina quieta).
+// Las que se animan frame a frame lo sobrescriben con actionAnimation(...).frames()
+method workImages() = [self.runningImage()]
+
+// Se ve trabajando durante `steps` pasos, vuelve a la imagen andando y ejecuta el bloque.
+// Las que usan un GIF lo sobrescriben con holdImage (ver Oven).
+method animateWork(steps, afterBlock) {
+	self.playTimed(self.workImages(), steps, {
+		self.showRunning()
+		afterBlock.apply()
+	})
+}
+
+// Muestra una imagen fija (por ejemplo un GIF, que se anima solo) durante `steps` pasos,
+// vuelve a la imagen andando y ejecuta el bloque.
+// No pasa por el animationEngine: no hay nada que cambiar paso a paso.
+method holdImage(path, steps, afterBlock) {
+	image = path
+	simulationEngine.after(steps, {
+		self.showRunning()
+		afterBlock.apply()
+	})
+}
+```
+
+`animateWork` no tiene nada de comida: lo puede usar cualquier máquina que necesite verse trabajando un tiempo y después hacer algo (por ejemplo, el Dispenser o el Assembler si algún día tardan).
+
+**Apagar a mitad de un proceso** ya está cubierto: con frames, `reset()` llama a `stopAnimation()`, que descarta el bloque; con GIF, `stop()` vacía la agenda. En los dos casos `reset()` vuelve a la imagen quieta.
+
+### 6. `ProcessingMachine` (en `src/machines/machineClasses.wlk`)
+
+```wollok
+// Una máquina que procesa items: acepta los que puede procesar, trabaja el tiempo
+// que dice el item, lo transforma y lo entrega.
+// Cada subclase dice qué proceso aplica y, si quiere, cómo se ve trabajando (ver MachineSprite).
+class ProcessingMachine inherits Machine {
+	method foodProcess()    // abstracto: cutting, cooking, frying…
+
+	override method canReceive(item) = super(item) && item.canProcess(self.foodProcess())
+
+	override method onArrived(item) {
+		self.animateWork(item.processTime(), {
+			item.process(self.foodProcess())
+			self.tryPush()
+		})
+	}
+}
+```
+
+El método se llama `foodProcess()` y no `process()` para no confundirlo con el `process(proceso)` del item. El tiempo se lee **antes** de procesar, del kind de origen.
+
+### 7. Migrar las máquinas
+
+```wollok
+// Frame a frame: sus 17 PNG se ajustan al tiempo de cada ingrediente
+class CuttingMachine inherits ProcessingMachine {
+	override method name() = "CuttingMachine"
+	override method foodProcess() = cutting
+	override method workImages() = self.actionAnimation("cut", 17).frames()
+}
+
+// GIF: quieto cuando está vacío, el GIF sólo mientras cocina
+class Oven inherits ProcessingMachine {
+	override method name() = "Oven"
+	override method foodProcess() = cooking
+	override method animateWork(steps, afterBlock) {
+		self.holdImage(self.gifImage(), steps, afterBlock)
+	}
+}
+```
+
+- **CuttingMachine:** borrar `cutFrames`, `canReceive` y `onArrived` (los da la base). El `showRunning()` del bloque ya lo hace `animateWork`.
+- **Oven:** borrar `canReceive`, `onArrived` y `runningImage()` (así queda quieto cuando está vacío y se nota cuándo cocina).
+- **Fryer:** dejarla como está (`canReceive = false`) hasta que tenga assets (no tiene carpeta en `assets/machines/`). El proceso ya existe (`cutPotato` → `friedPotato` con `frying`); cuando tenga sus imágenes, se migra igual que el Oven (`foodProcess() = frying` y `animateWork` con `holdImage`) o que la cortadora, si tiene frames.
+
+### 8. Duración exacta
+
+Las dos formas tardan **exactamente `processTime` pasos** desde que el item llega a la celda:
+
+- **Frames:** `play` se llama desde el `after` de `onReceive`, que corre antes del `animationEngine.tick()` de ese paso. El frame 0 se ve en ese mismo paso, el frame `k` en el paso `k`, y el bloque corre al final del paso `processTime`.
+- **GIF:** `after(processTime, …)` corre al principio del paso `processTime`.
+
+Si los tests muestran un paso de diferencia entre las dos, ajustar `holdImage` y no los tests: lo que importa es que una máquina con GIF y otra con frames tarden lo mismo.
+
+### 9. Documentación
+
+- En [`src/machines/README.md`](../src/machines/README.md#el-contrato-de-machine):
+  - Agregar la sección **"Máquinas que procesan"**: `foodProcess()` es obligatorio; el resto lo da `ProcessingMachine`.
+  - En **Dibujo**: `workImages()` (por defecto, `[runningImage()]`), `animateWork(steps, bloque)` (sobrescribirlo con `holdImage` para usar un GIF).
+  - Agregar `animateWork` a la tabla de "herramientas para decir a continuación".
+  - Sacar el aviso del principio que dice que la fase 6 está pendiente.
+- En [`src/food/README.md`](../src/food/README.md): `processTime()` (opcional, en pasos de simulación).
+- En la tabla de la fase 4, agregar `Item` / `processTime()` / "Cuánto tarda en procesarse".
+
+### Tests
+
+- **`TimedAnimation`:** `size() == steps`; empieza en la imagen 0; con 17 imágenes y 34 pasos pasa dos veces por la 16; con 1 imagen, todas las frames son esa imagen.
+- **Cortadora:** un tomate (`processTime = 4`) sigue sin cortar a los 3 pasos de llegar y está cortado a los 4. Otro ingrediente con un tiempo distinto tarda lo suyo.
+- **Horno:** lo mismo con `cooking`, y que la imagen sea el GIF mientras cocina y el `_game.png` después.
+- **Apagar a mitad del proceso:** después de `stop()`, avanzar pasos no procesa nada ni tira error (con frames y con GIF).
+- **Un tiempo mayor a 15 pasos** no tira error (prueba el nuevo `slotCount`).
+- **Una `ProcessingMachine` sin `workImages()`** respeta el tiempo y entrega.
+
+**Rendimiento:** cada item procesado con frames crea una `TimedAnimation` (una lista de `processTime` rutas). Medir con el stress test; si se nota, cachearlas por `steps` en cada máquina. El GIF no crea nada ni pasa por el `animationEngine`.
+
+**Listo cuando:** la cortadora y el horno heredan de `ProcessingMachine` sin sobrescribir `canReceive` ni `onArrived`, cada ingrediente tarda su `processTime`, y los tests de arriba pasan.
 
 ---
 
@@ -241,6 +407,6 @@ Las recetas las define la comida (ver la tabla de la fase 4). Esta fase es la m�
 
 ## Pendientes sueltos
 
-- [ ] `Oven`: sólo tiene `up_game.png` y `up.gif` en `assets/machines/Oven/`. Faltan las otras direcciones y los `_menu.png` (se pueden generar con `assetGenerator.py`).
+- [X] `Oven`: ya tiene las cuatro direcciones (`_game.png`, `_menu.png` y `.gif`) en `assets/machines/Oven/`.
 - [ ] `Fryer`: no tiene carpeta en `assets/machines/`.
 - [X] El comentario "METODOS A REESCRIBIR PARA INSTANCIAR MAQUINA" al principio de `src/machines/machineClasses.wlk` queda obsoleto en la fase 3: reemplazarlo por un link al contrato del README.

@@ -17,8 +17,8 @@ object machineManager{
 		{ => new Dispenser() },
 		{ => new AutomaticArm()},
 		{ => new CuttingMachine() },
-		{ => new Assembler() },
 		{ => new Oven() },
+		{ => new Assembler() },
 		{ => new Fryer() }
 	]
 
