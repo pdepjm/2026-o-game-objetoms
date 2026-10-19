@@ -118,7 +118,12 @@ object simulationEngine {
 		game.addVisual(item)
 		itemCount += 1
 	}
-
+	// Saca un item del tablero (lo consume una máquina, como el Assembler).
+	// Es la contraparte de addItem.
+	method removeItem(item) {
+		item.detener()
+		game.removeVisual(item)
+	}
 	// Cantidad de items creados desde que se prendió la simulación
 	method itemCount() = itemCount
 

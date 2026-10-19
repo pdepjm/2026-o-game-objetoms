@@ -1,0 +1,176 @@
+import wollok.game.*
+import src.machines.machineClasses.*
+import src.machines.types.assembler.*
+import src.machines.types.belt.*
+import src.machines.types.cuttingMachine.*
+import src.machines.types.dispenser.*
+import src.tools.toolsManager.*
+import src.directions.*
+import src.board.*
+import src.simulation.simulationEngine.*
+import src.simulation.animationEngine.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+
+// Una maquina de prueba para recibir lo que entrega el ensamblador: se le controla si acepta o no
+class Sink inherits Machine {
+  var accepting = true
+  const property received = []
+
+  override method name() = "Sink"
+
+  override method canReceive(item) = accepting
+
+  // Registra lo que recibe en vez de animar el item hasta su celda
+  override method onReceive(item) {
+    received.add(item)
+  }
+
+  method close() {
+    accepting = false
+  }
+
+  // Se libera y despierta a los que esperaban, como hace una cinta al entregar un item
+  method open() {
+    accepting = true
+    inventory.wakeWaiting()
+  }
+}
+
+describe "tests de Assembler: que acepta" {
+
+  test "acepta la papa cortada que pide la receta" {
+    assert.that(new Assembler().canReceive(new Item(kind = cutPotato)))
+  }
+
+  test "no acepta una papa cruda" {
+    assert.notThat(new Assembler().canReceive(new Item(kind = potato)))
+  }
+
+  test "no acepta un plato terminado" {
+    assert.notThat(new Assembler().canReceive(new Item(kind = friedPotato)))
+  }
+
+  test "su capacidad es la cantidad de ingredientes de la receta" {
+    assert.equals(1, new Assembler().capacity())
+  }
+}
+
+describe "tests de Assembler con items puestos a mano" {
+
+  const assembler = new Assembler()
+  const sink = new Sink()
+  const cellSteps = animationEngine.pasosPorCelda()
+
+  method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(10, 6), assembler)
+    board.push(game.at(11, 6), sink)
+  }
+
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+
+  // Le entrega un item al ensamblador, como haria la maquina de atras
+  method feed(item) {
+    item.position(assembler.position())
+    simulationEngine.addItem(item)
+    assembler.receive(item)
+  }
+
+  test "al llegar el ingrediente que pide la receta, entrega el plato" {
+    simulationEngine.run()
+    self.feed(new Item(kind = cutPotato))
+    self.steps(cellSteps)
+    assert.equals(1, sink.received().size())
+    assert.equals(friedPotato, sink.received().first().kind())
+  }
+
+  test "mientras el ingrediente todavia esta llegando no hay plato" {
+    const ingredient = new Item(kind = cutPotato)
+    simulationEngine.run()
+    self.feed(ingredient)
+    self.steps(cellSteps - 1)
+    assert.that(sink.received().isEmpty())
+    assert.equals([ingredient], assembler.heldItems())
+  }
+
+  test "consume el ingrediente: ya no esta en pantalla ni en el ensamblador" {
+    const ingredient = new Item(kind = cutPotato)
+    simulationEngine.run()
+    self.feed(ingredient)
+    self.steps(cellSteps)
+    assert.notThat(game.hasVisual(ingredient))
+    assert.that(assembler.heldItems().isEmpty())
+    assert.notThat(sink.received().contains(ingredient))
+  }
+
+  test "con el plato esperando salir no acepta otro ingrediente" {
+    sink.close()
+    simulationEngine.run()
+    self.feed(new Item(kind = cutPotato))
+    self.steps(cellSteps)
+    assert.equals(1, assembler.heldItems().size())
+    assert.notThat(assembler.canReceive(new Item(kind = cutPotato)))
+  }
+
+  test "cuando se libera la maquina de adelante entrega el plato y vuelve a aceptar" {
+    sink.close()
+    simulationEngine.run()
+    self.feed(new Item(kind = cutPotato))
+    self.steps(cellSteps)
+    assert.that(sink.received().isEmpty())
+    sink.open()
+    self.steps(1)
+    assert.equals(1, sink.received().size())
+    assert.equals(friedPotato, sink.received().first().kind())
+    assert.that(assembler.heldItems().isEmpty())
+    assert.that(assembler.canReceive(new Item(kind = cutPotato)))
+  }
+
+  test "al apagar la simulacion con un plato esperando, lo saca de pantalla y queda libre" {
+    sink.close()
+    simulationEngine.run()
+    self.feed(new Item(kind = cutPotato))
+    self.steps(cellSteps)
+    const dish = assembler.heldItems().first()
+    simulationEngine.stop()
+    assert.that(assembler.heldItems().isEmpty())
+    assert.notThat(game.hasVisual(dish))
+    assert.that(assembler.canReceive(new Item(kind = cutPotato)))
+  }
+}
+
+describe "tests de una cadena que termina en el Assembler" {
+
+  const dispenser = new Dispenser()
+  const beltBefore = new Belt()
+  const cutter = new CuttingMachine()
+  const beltAfter = new Belt()
+  const assembler = new Assembler()
+  const sink = new Sink()
+
+  method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(5, 5), dispenser)
+    board.push(game.at(6, 5), beltBefore)
+    board.push(game.at(7, 5), cutter)
+    board.push(game.at(8, 5), beltAfter)
+    board.push(game.at(9, 5), assembler)
+    board.push(game.at(10, 5), sink)
+  }
+
+  // Avanza de a un paso hasta que se cumpla la condicion (con un tope de 400 pasos)
+  method stepsUntil(condition) {
+    (1..400).forEach({ _ => if (!condition.apply()) simulationEngine.step() })
+  }
+
+  test "dispenser, cinta, cortadora, cinta y ensamblador entregan un plato" {
+    simulationEngine.run()
+    self.stepsUntil({ !sink.received().isEmpty() })
+    assert.equals(1, sink.received().size())
+    assert.equals(friedPotato, sink.received().first().kind())
+    assert.that(assembler.heldItems().isEmpty())
+  }
+}
