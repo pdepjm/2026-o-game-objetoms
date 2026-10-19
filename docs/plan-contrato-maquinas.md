@@ -27,9 +27,9 @@ Para medir rendimiento (fases 0, 2 y 3): correr el juego, tocar **M** y **L**, e
 - [X] [Fase 2: agendar acciones en vez de máquinas](#fase-2-agendar-acciones-en-vez-de-máquinas)
 - [X] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
 - [x] [Fase 4: traer la comida a la rama](#fase-4-traer-la-comida-a-la-rama)
-- [ ] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
+- [X] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
 - [ ] [Fase 6: `ProcessingMachine` (cuando haya 2 máquinas que procesan)](#fase-6-processingmachine-cuando-haya-2-máquinas-que-procesan)
-- [ ] [Fase 7: Assembler](#fase-7-assembler)
+- [X] [Fase 7: Assembler](#fase-7-assembler)
 
 ---
 
@@ -217,6 +217,8 @@ El método se llama `foodProcess()` y no `process()` para no confundirlo con el 
 
 No hacerlo antes: con una sola máquina no se sabe qué parte es común.
 
+Del lado de la comida ya está todo: existen los procesos `frying` (`cutPotato` → `friedPotato`) y `cooking` (`meat` → `cookedMeat`). Lo que falta es hacer la segunda máquina, `Fryer` u `Oven`, con el patrón de la cortadora, y recién ahí extraer la base.
+
 ---
 
 ## Fase 7: Assembler
@@ -241,4 +243,4 @@ Las recetas las define la comida (ver la tabla de la fase 4). Esta fase es la m�
 
 - [ ] `Oven`: sólo tiene `up_game.png` y `up.gif` en `assets/machines/Oven/`. Faltan las otras direcciones y los `_menu.png` (se pueden generar con `assetGenerator.py`).
 - [ ] `Fryer`: no tiene carpeta en `assets/machines/`.
-- [ ] El comentario "METODOS A REESCRIBIR PARA INSTANCIAR MAQUINA" al principio de `src/machines/machineClasses.wlk` queda obsoleto en la fase 3: reemplazarlo por un link al contrato del README.
+- [X] El comentario "METODOS A REESCRIBIR PARA INSTANCIAR MAQUINA" al principio de `src/machines/machineClasses.wlk` queda obsoleto en la fase 3: reemplazarlo por un link al contrato del README.

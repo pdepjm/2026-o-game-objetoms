@@ -3,7 +3,7 @@
 Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles aparecen en el menú.
 
 > [!IMPORTANT]
-> Este README describe el **contrato de `Machine`**, ya implementado (fases 1 a 5 y 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md)). Queda pendiente la fase 6: `ProcessingMachine`, que se hace cuando haya dos máquinas que procesan.
+> Este README describe el **contrato de `Machine`**, ya implementado (fases 1 a 5 y 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md)). Queda pendiente la fase 6: `ProcessingMachine`, que se hace cuando haya dos máquinas que procesan. La comida ya tiene los procesos `frying` y `cooking`: falta que `Fryer` u `Oven` los usen.
 
 | Archivo | Qué tiene |
 |---|---|
@@ -67,7 +67,7 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
-| `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (`super(item) && item.puedeCortarse()`) o ninguno (`false`) |
+| `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (`super(item) && item.canProcess(cutting)`) o ninguno (`false`) |
 | `onReceive(item)` | anima el item hasta su celda y, al llegar, llama a `onArrived(item)` | el item no viaja a su celda (el brazo) |
 | `onArrived(item)` | `self.tryPush()`: lo pasa a la siguiente, como una cinta | la máquina hace algo con el item: procesarlo, juntarlo con otros… |
 
@@ -128,7 +128,7 @@ class Belt inherits Machine {
 ```wollok
 // Un dispenser: crea un item, lo entrega y, recién al entregarlo, agenda el próximo
 class Dispenser inherits Machine {
-	var property product = { => new Carne() }
+	const product = { => new Item(kind = potato) }
 
 	override method name() = "Dispenser"
 	override method canReceive(item) = false   // guarda el item que crea, pero no recibe
