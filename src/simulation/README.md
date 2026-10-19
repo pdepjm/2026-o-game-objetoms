@@ -3,7 +3,7 @@
 El reloj del juego y las animaciones. Los ingredientes y las recetas están en [`food/`](../food/README.md).
 
 > [!IMPORTANT]
-> Este README describe el engine, ya migrado (fases 1 y 2 del [plan de implementación](../../docs/plan-contrato-maquinas.md)).
+> Este README describe el engine, ya migrado (fases 1 a 5 y 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md)).
 
 | Archivo | Qué tiene |
 |---|---|
@@ -22,7 +22,7 @@ Es el **único reloj del juego**. Wollok Game le manda `tick()` cada 100 ms (`ti
 - **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Como máximo se agenda a 15 pasos (`slotCount - 1`).
 - **El bloque dice qué se hace:** `after(5, { self.onArrived(item) })`. Nadie tiene que deducir por qué lo despertaron.
 - **En cada paso (`step()`):** primero ejecuta las acciones agendadas y después avanza las animaciones (`animationEngine.tick()`).
-- **Items:** `addItem` pone un ingrediente en pantalla y lo cuenta; `allItems` devuelve todos los que tienen las máquinas encima (`heldItems()` de cada una).
+- **Items:** `addItem` pone un ingrediente en pantalla y lo cuenta; `removeItem` lo saca del tablero (lo usan las máquinas que consumen ingredientes, como el Assembler); `allItems` devuelve todos los que tienen las máquinas encima (`heldItems()` de cada una).
 - `stepsFor(milisegundos)`: convierte un tiempo en pasos de simulación.
 
 > [!IMPORTANT]
