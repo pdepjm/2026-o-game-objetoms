@@ -188,16 +188,8 @@ describe "tests de menuManager" {
     self.startWithPlace()
     menuManager.nextPage()
     const sizes = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).size() })
-    assert.equals([1, 1, 0, 0], sizes)
+    assert.equals([1, 1, 1, 0], sizes)
     assert.notThat(game.hasVisual(overlay))
-  }
-
-  test "clickear un slot libre de la última página no cambia la máquina elegida" {
-    self.startWithPlace()
-    const selectedBefore = machineManager.selectedName()
-    menuManager.nextPage()
-    toolsManager.onClick(game.at(22, 4))
-    assert.equals(selectedBefore, machineManager.selectedName())
   }
 
   test "un click en la zona interactiva con edit no cambia la máquina elegida" {

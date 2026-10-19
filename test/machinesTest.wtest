@@ -1,3 +1,4 @@
+import src.machines.types.automaticArm.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
 import src.machines.types.assembler.*
@@ -101,5 +102,4 @@ describe "tests de Machine" {
     belt.position(game.at(7, 4))
     assert.equals(game.at(7, 4), belt.cell())
   }
-
 }

@@ -78,8 +78,11 @@ Y además, según el tipo:
 
 | Tipo | Animación | Cuándo se anima | Máquinas |
 |---|---|---|---|
-| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida | `Belt`, `Oven` |
+| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida | `Belt` |
 | **Frame a frame** | Una carpeta `<direccion>_<accion>/` con `0.png`, `1.png`, ... por cada acción | Sólo cuando la máquina hace algo (por ejemplo, el dispenser al dispensar) | `Dispenser`, `CuttingMachine`, `Assembler`, `AutomaticArm` |
+
+> [!NOTE]
+> `Oven` y `Fryer` todavía no tienen sus imágenes completas: `Oven` sólo tiene `up_game.png` y `up.gif`, y `Fryer` no tiene carpeta.
 
 Por ejemplo:
 - una cinta hacia arriba tiene `up_menu.png`, `up_game.png` y `up.gif`;
@@ -137,8 +140,7 @@ Cada GIF genera una carpeta con su mismo nombre (`down_to_up_catch.gif` → `dow
 ### Agregar una máquina nueva
 
 1. Crear la carpeta `machines/<MachineName>/` con `_menu.png` y `_game.png` para cada dirección, y su animación: `.gif` o carpetas de frames, según el tipo.
-2. Crear la clase en su propio archivo, `src/machines/types/<machineName>.wlk`, con `override method name() = "<MachineName>"`. Si es una máquina con GIF, agregar también `override method runningImage() = self.gifImage()`.
-3. Agregarla a la lista de `src/machines/machineManager.wlk` (el orden de la lista es el orden del menú).
+2. Crear la clase y agregarla al catálogo siguiendo [`src/machines/README.md`](../src/machines/README.md#agregar-una-máquina-nueva), que tiene el contrato de qué métodos sobrescribir.
 
 ## `tools/`
 

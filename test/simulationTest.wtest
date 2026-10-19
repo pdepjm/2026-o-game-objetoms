@@ -189,7 +189,7 @@ describe "tests de simulacion" {
     simulationEngine.run()
     self.steps((dispenseSteps + cellSteps) * 3)
     // la belt no tiene a quién entregar y el dispenser espera a la belt: nadie agendado
-    assert.equals(0, simulationEngine.pendingWakeUps())
+    assert.equals(0, simulationEngine.pendingActions())
   }
 
   test "una belt trabada despierta al dispenser cuando se libera" {
@@ -198,7 +198,7 @@ describe "tests de simulacion" {
     self.steps((dispenseSteps + cellSteps) * 4)
     assert.equals(1, firstBelt.heldItems().size())
     assert.equals(1, secondBelt.heldItems().size())
-    assert.equals(0, simulationEngine.pendingWakeUps())
+    assert.equals(0, simulationEngine.pendingActions())
   }
 
   test "el engine cuenta los items que se crean" {
@@ -217,6 +217,6 @@ describe "tests de simulacion" {
   }
 
   test "no se puede agendar más lejos que la cantidad de casilleros" {
-    assert.throwsException({ simulationEngine.schedule(100, firstBelt) })
+    assert.throwsException({ simulationEngine.after(100, {}) })
   }
 }

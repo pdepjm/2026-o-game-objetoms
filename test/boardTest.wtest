@@ -30,9 +30,10 @@ describe "tests de board" {
   // Por un bug de Wollok, una casilla creada sin machine = null explícito devolvía
   // un "null" que no era == null, y todas las casillas parecían ocupadas
   test "ninguna casilla del tablero vacio esta ocupada" {
-    (5..19).forEach({ x => (1..13).forEach({ y =>
-      assert.notThat(board.isThereAMachine(game.at(x, y)))
-    }) })
+    const hayAlgunaOcupada = (5..19).any({ x =>
+      (1..13).any({ y => board.isThereAMachine(game.at(x, y)) })
+    })
+    assert.notThat(hayAlgunaOcupada)
   }
 
   test "una maquina colocada se encuentra en su posicion" {

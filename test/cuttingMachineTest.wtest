@@ -1,0 +1,128 @@
+import wollok.game.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.cuttingMachine.*
+import src.tools.toolsManager.*
+import src.directions.*
+import src.board.*
+import src.simulation.simulationEngine.*
+import src.simulation.animationEngine.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+
+describe "tests de CuttingMachine: que acepta" {
+
+  test "acepta una papa cruda" {
+    assert.that(new CuttingMachine().canReceive(new Item(kind = potato)))
+  }
+
+  test "no acepta una papa que ya esta cortada" {
+    assert.notThat(new CuttingMachine().canReceive(new Item(kind = cutPotato)))
+  }
+
+  test "no acepta un plato terminado" {
+    assert.notThat(new CuttingMachine().canReceive(new Item(kind = friedPotato)))
+  }
+}
+
+describe "tests de la cortadora en una cadena" {
+
+  const dispenser = new Dispenser()
+  const beltBefore = new Belt()
+  const cutter = new CuttingMachine()
+  const beltAfter = new Belt()
+
+  const dispenseSteps = dispenser.intervalSteps()
+  const cellSteps = animationEngine.pasosPorCelda()
+
+  method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(5, 5), dispenser)
+    board.push(game.at(6, 5), beltBefore)
+    board.push(game.at(7, 5), cutter)
+    board.push(game.at(8, 5), beltAfter)
+  }
+
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+
+  // Avanza de a un paso hasta que se cumpla la condicion (con un tope de 300 pasos)
+  method stepsUntil(condition) {
+    (1..300).forEach({ _ => if (!condition.apply()) simulationEngine.step() })
+  }
+
+  test "una papa cruda sale cortada hacia la cinta de adelante" {
+    simulationEngine.run()
+    self.stepsUntil({ !beltAfter.heldItems().isEmpty() })
+    assert.equals(1, beltAfter.heldItems().size())
+    assert.equals(cutPotato, beltAfter.heldItems().first().kind())
+  }
+
+  test "mientras corta, la papa todavia esta cruda" {
+    simulationEngine.run()
+    self.steps(dispenseSteps + cellSteps * 2)
+    assert.that(cutter.animando())
+    assert.equals(potato, cutter.heldItems().first().kind())
+    assert.that(beltAfter.heldItems().isEmpty())
+  }
+
+  test "no acepta otra papa mientras esta cortando" {
+    simulationEngine.run()
+    self.steps(dispenseSteps + cellSteps * 2)
+    assert.notThat(cutter.canReceive(new Item(kind = potato)))
+  }
+
+  test "al terminar de cortar queda libre y deja de animarse" {
+    simulationEngine.run()
+    self.stepsUntil({ !beltAfter.heldItems().isEmpty() })
+    assert.that(cutter.heldItems().isEmpty())
+    assert.notThat(cutter.animando())
+  }
+}
+
+describe "tests de la cortadora con items puestos a mano" {
+
+  const beltBefore = new Belt()
+  const cutter = new CuttingMachine()
+  const cellSteps = animationEngine.pasosPorCelda()
+
+  method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(6, 5), beltBefore)
+    board.push(game.at(7, 5), cutter)
+  }
+
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+
+  // Le entrega un item a una maquina, como haria la de atras
+  method feed(machine, item) {
+    item.position(machine.position())
+    simulationEngine.addItem(item)
+    machine.receive(item)
+  }
+
+  test "una papa ya cortada no pasa de la cinta a la cortadora" {
+    const cut = new Item(kind = cutPotato)
+    simulationEngine.run()
+    self.feed(beltBefore, cut)
+    self.steps(cellSteps * 3)
+    assert.equals([cut], beltBefore.heldItems())
+    assert.that(cutter.heldItems().isEmpty())
+  }
+
+  test "al apagar la simulacion en medio del corte, la cortadora queda vacia y quieta" {
+    const raw = new Item(kind = potato)
+    simulationEngine.run()
+    self.feed(cutter, raw)
+    self.steps(cellSteps + 3)
+    assert.that(cutter.animando())
+    simulationEngine.stop()
+    assert.notThat(cutter.animando())
+    assert.that(cutter.heldItems().isEmpty())
+    assert.equals(cutter.staticImage(), cutter.image())
+    assert.equals(potato, raw.kind())
+  }
+}
