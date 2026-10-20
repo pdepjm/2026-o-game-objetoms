@@ -28,6 +28,7 @@ Lo que las máquinas y las recetas le pueden pedir a un item:
 | `process(proceso)` | Transformarlo. **Sólo se llama si `canProcess` dio verdadero** | Las máquinas que procesan |
 | `kind()` | Qué es ahora (`potato`, `cutPotato`...) | Las recetas, para comparar |
 | `image()` | La imagen de su kind | Wollok Game |
+| `processTime()` | Cuántos pasos de simulación tarda en procesarse (por defecto 5) | `ProcessingMachine` |
 
 ## `foodPaths.wlk`
 

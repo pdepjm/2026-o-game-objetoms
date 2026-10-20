@@ -28,7 +28,7 @@ Para medir rendimiento (fases 0, 2 y 3): correr el juego, tocar **M** y **L**, e
 - [X] [Fase 3: `Inventory` y el contrato de items](#fase-3-inventory-y-el-contrato-de-items)
 - [x] [Fase 4: traer la comida a la rama](#fase-4-traer-la-comida-a-la-rama)
 - [X] [Fase 5: la cortadora con el contrato](#fase-5-la-cortadora-con-el-contrato)
-- [ ] [Fase 6: `ProcessingMachine` con tiempo de procesamiento](#fase-6-processingmachine-con-tiempo-de-procesamiento)
+- [x] [Fase 6: `ProcessingMachine` con tiempo de procesamiento](#fase-6-processingmachine-con-tiempo-de-procesamiento)
 - [X] [Fase 7: Assembler](#fase-7-assembler)
 
 ---
