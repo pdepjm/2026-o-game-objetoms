@@ -17,6 +17,10 @@ class IngredientKind{
 
     method image()
 
+    // Pasos de simulación que tarda en procesarse. Sobrescribirlo sólo si tarda distinto.
+    method processTime() = 5
+
+
     // Agrega un proceso como 'cutting' junto al objeto ya convertido
     // Ejemplo:
     // (cutting, cutPotato)
@@ -26,6 +30,8 @@ class IngredientKind{
 
     // Verifica si al ingrediente se le puede aplicar un proceso, por ejemplo, freírlo
     method canProcess(aProcess) = transitions.containsKey(aProcess)
+
+
 
     // Aplica el proceso y devuelve el objeto ya convertido.
     // Las máquinas preguntan canProcess antes, así que el error solo salta si hay un bug.
@@ -47,6 +53,10 @@ class Item inherits Animado {
     method kind() = kind
     method image() = kind.image()
     method canProcess(aProcess) = kind.canProcess(aProcess)
+
+    // Cuánto tarda en procesarse: lo dice su kind de origen
+    method processTime() = kind.processTime()
+    
     method process(aProcess) {
         kind = kind.process(aProcess)
     }

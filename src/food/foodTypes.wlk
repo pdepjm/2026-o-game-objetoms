@@ -40,6 +40,7 @@ object cutLettuce inherits IngredientKind {
 // -------------------------------- TOMATOES --------------------------------------------
 object tomato inherits IngredientKind {
     override method image() = tomatoFamily.image("whole")
+    override method processTime() = 4
     override method initialize() {
         self.turnsInto(cutting, cutTomato)
     }
@@ -64,6 +65,7 @@ object cutBun inherits IngredientKind {
 // -------------------------------- MEATS --------------------------------------------
 object meat inherits IngredientKind {
     override method image() = meatFamily.image("raw")
+    override method processTime() = 8
     override method initialize() {
         self.turnsInto(cooking, cookedMeat)
     }

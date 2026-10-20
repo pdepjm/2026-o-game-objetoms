@@ -54,6 +54,14 @@ class MachineAnimator {
 		onFinish = null
 	}
 	
+
+	// Reproduce esas imágenes durante exactamente `steps` pasos (ver TimedAnimation)
+
+	method playTimed(images, steps, afterBlock) {
+
+		self.play(new TimedAnimation(images = images, steps = steps.max(1)), afterBlock)
+
+	}
 	// ----------- CONTRATO CON EL ANIMATION ENGINE -----------
 	method animando() = animation !== null
 	
@@ -144,6 +152,52 @@ class MachineSprite inherits MachineAnimator {
 		path = "machines/" + self.name() + "/" + self.direction().name() + "_" + action,
 		frameCount = frameCount
 	)
+
+	// ----------- ANIMACION DE TRABAJO -----------
+
+	// Las imágenes que se ven mientras trabaja. Por defecto, la imagen andando (la máquina quieta).
+
+	// Las que se animan frame a frame lo sobrescriben con actionAnimation(...).frames()
+
+	method workImages() = [self.runningImage()]
+
+
+
+	// Se ve trabajando durante `steps` pasos, vuelve a la imagen andando y ejecuta el bloque.
+
+	// Las que usan un GIF lo sobrescriben con holdImage.
+
+	method animateWork(steps, afterBlock) {
+
+		self.playTimed(self.workImages(), steps, {
+
+			self.showRunning()
+
+			afterBlock.apply()
+
+		})
+
+	}
+
+
+
+	// Muestra una imagen fija (por ejemplo un GIF, que se anima solo) durante `steps` pasos,
+
+	// vuelve a la imagen andando y ejecuta el bloque. No pasa por el animationEngine.
+
+	method holdImage(path, steps, afterBlock) {
+
+		image = path
+
+		simulationEngine.after(steps, {
+
+			self.showRunning()
+
+			afterBlock.apply()
+
+		})
+
+	}
 }
 
 // Esta clase se encarga de la logica general de las maquinas.
@@ -277,4 +331,34 @@ class Machine inherits MachineSprite {
 	method whenFree(action) {
 		inventory.whenFree(action)
 	}
+}
+
+// Una máquina que procesa items: acepta los que puede procesar, trabaja el tiempo
+
+// que dice el item, lo transforma y lo entrega.
+
+// Cada subclase dice qué proceso aplica y, si quiere, cómo se ve trabajando.
+
+class ProcessingMachine inherits Machine {
+
+	method foodProcess()    // abstracto: cutting, cooking, frying…
+
+
+
+	override method canReceive(item) = super(item) && item.canProcess(self.foodProcess())
+
+
+
+	override method onArrived(item) {
+
+		self.animateWork(item.processTime(), {
+
+			item.process(self.foodProcess())
+
+			self.tryPush()
+
+		})
+
+	}
+
 }

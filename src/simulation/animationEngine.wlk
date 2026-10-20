@@ -171,3 +171,31 @@ class FrameAnimation {
 	
 	method size() = frameCount
 }
+
+// Una animación que dura exactamente `steps` pasos, armada con una lista de imágenes.
+
+// Muestra siempre vueltas completas (tantas como entren, al menos una) y ajusta
+
+// apenas la velocidad para que cierren justo: nunca termina a mitad de una vuelta.
+
+// Con más imágenes que pasos, saltea (una vuelta rápida); con menos, repite.
+
+class TimedAnimation {
+
+	const images    // rutas de los PNG, por ejemplo las frames() de una FrameAnimation
+
+	const steps
+
+	const laps = (steps / images.size()).round().max(1)
+
+	const property frames = (0 .. (steps - 1)).map({ i =>
+
+		images.get((i * images.size() * laps).div(steps) % images.size())
+
+	})
+
+ 
+
+	method size() = steps
+
+}

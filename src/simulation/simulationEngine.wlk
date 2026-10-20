@@ -23,7 +23,7 @@ object simulationEngine {
 
 	// Cantidad de casilleros de la agenda. Tiene que ser mayor que la demora
 	// más larga que se agende (hoy, el dispenser: 10 pasos).
-	const slotCount = 16
+	const slotCount = 64
 
 	// La agenda es una lista de casilleros que se usa en ronda: las acciones a ejecutar
 	// en el paso p están en el casillero p % slotCount.

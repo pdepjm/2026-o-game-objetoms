@@ -1,16 +1,16 @@
 import machines.machineClasses.*
 import food.foodClasses.*
 
-class Oven inherits Machine {
+// Horno: quieto cuando está vacío, el GIF sólo mientras cocina
+
+class Oven inherits ProcessingMachine {
 
 	override method name() = "Oven"
 
-	override method canReceive(item) = super(item) && item.canProcess(cooking)
+	override method foodProcess() = cooking
 
-	override method runningImage() = self.gifImage()
+	override method animateWork(steps, afterBlock) {
 
-	override method onArrived(item) {
-		item.process(cooking)
-		self.tryPush()
+		self.holdImage(self.gifImage(), steps, afterBlock)
 	}
 }

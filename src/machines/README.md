@@ -3,7 +3,7 @@
 Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles aparecen en el menú.
 
 > [!IMPORTANT]
-> Este README describe el **contrato de `Machine`**, ya implementado (fases 1 a 5 y 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md)). Queda pendiente la fase 6: `ProcessingMachine`, que se hace cuando haya dos máquinas que procesan. La comida ya tiene los procesos `frying` y `cooking`: falta que `Fryer` u `Oven` los usen.
+> Este README describe el **contrato de `Machine`**, ya implementado (fases 1 a 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md))
 
 | Archivo | Qué tiene |
 |---|---|
@@ -115,6 +115,16 @@ Son las herramientas que la base les da a las subclases. Si una subclase las rei
 | `play(animación, bloque)`, `actionAnimation(acción, frames)`, `stopAnimation()` | Animaciones frame a frame (ver `MachineAnimator`) |
 | `cell()`, `nextMachine()`, `direction()` | Ubicación en el tablero |
 
+## Máquinas que procesan
+
+Las que transforman un ingrediente (cortadora, horno) heredan de `ProcessingMachine`, que ya sabe aceptar lo que puede procesar, trabajar el tiempo que dice el item (`processTime()`), transformarlo y entregarlo. Cada subclase sólo dice:
+
+| Método | Para qué |
+|---|---|
+| `foodProcess()` | **Obligatorio.** Qué proceso aplica (`cutting`, `cooking`, `frying`) |
+| `workImages()` | Opcional. Las imágenes frame a frame que se ven mientras trabaja. Por defecto, la máquina queda quieta |
+| `animateWork(pasos, bloque)` | Opcional. Se sobrescribe con `holdImage` para usar un GIF mientras trabaja (ver `Oven`) |
+
 ## Ejemplos
 
 ```wollok
@@ -180,9 +190,10 @@ class CuttingMachine inherits Machine {
 | `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `runningImage` |
 | `Dispenser` | Crea un ingrediente cada 1 segundo y se lo entrega a la de adelante | Frame a frame (todavía sin animación) | `name`, `canReceive`, `start`, `onPushed` |
 | `AutomaticArm` | Agarra el item que le llega de un lado y lo entrega del lado contrario (provisorio). No rota y ocupa 3x3 celdas | Frame a frame (giro y agarre) | `onReceive`, `outputTarget`, `reset` y el dibujo |
-| `CuttingMachine` | Acepta lo que se puede cortar, anima el corte y entrega el item cortado | Frame a frame (corte) | `name`, `canReceive`, `onArrived` |
+| `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `foodProcess`, `workImages` |
 | `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato | Sin animación | `name`, `capacity`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` |
-| `Oven`, `Fryer` | Todavía sin lógica: no aceptan items | — | `name`, `canReceive` (`false`) |
+| `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |
+| `Fryer` | Todavía sin lógica: no acepta items | — | `name`, `canReceive` (`false`) |
 
 Por defecto una máquina es **frame a frame**: con la simulación prendida se ve quieta y se anima cuando hace algo. Las imágenes de cada tipo se explican en [`assets/README.md`](../../assets/README.md), y el brazo tiene su propia guía en [`assets/machines/AutomaticArm/README.md`](../../assets/machines/AutomaticArm/README.md).
 
