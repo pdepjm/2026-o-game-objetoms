@@ -7,8 +7,6 @@ import tools.toolsManager.*
 import tools.userTools.*
 import directions.*
 import simulation.simulationEngine.*
-import stressTest.stressMeter.*
-import stressTest.stressTestBoard.*
 
 object userController {
 	method setUp() {
@@ -22,12 +20,6 @@ object userController {
 
 		// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
 		keyboard.num5().onPressDo({ => simulationEngine.toggle() })
-
-		// PRUEBAS DE CARGA (ver la carpeta stressTest)
-		// M: medidor de carga, escribe en la terminal cuánto tarda cada tick
-		keyboard.m().onPressDo({ => stressMeter.toggle() })
-		// L: llena el tablero con una serpiente de cintas
-		keyboard.l().onPressDo({ => stressTestBoard.fill() })
 
 		keyboard.q().onPressDo({ => menuManager.prevPage() })
 		keyboard.e().onPressDo({ => menuManager.nextPage() })

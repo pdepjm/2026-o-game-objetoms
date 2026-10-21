@@ -32,4 +32,7 @@ class Recipe {
 
     // Crea un plato nuevo de esta receta
     method prepare() = new Item(kind = result)
+
+    // Tiempo que tarda en armarse (Medido en ticks ~100ms)
+    method assembleTime() = 20 // Por defecto 2 segundos
 }

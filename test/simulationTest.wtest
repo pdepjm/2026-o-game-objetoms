@@ -201,21 +201,6 @@ describe "tests de simulacion" {
     assert.equals(0, simulationEngine.pendingActions())
   }
 
-  test "el engine cuenta los items que se crean" {
-    self.twoBelts()
-    simulationEngine.run()
-    self.steps((dispenseSteps + cellSteps) * 2)
-    assert.equals(2, simulationEngine.itemCount())
-  }
-
-  test "apagar la simulacion reinicia la cuenta de items" {
-    self.oneBelt()
-    simulationEngine.run()
-    self.steps(dispenseSteps)
-    simulationEngine.stop()
-    assert.equals(0, simulationEngine.itemCount())
-  }
-
   test "no se puede agendar más lejos que la cantidad de casilleros" {
     assert.throwsException({ simulationEngine.after(100, {}) })
   }

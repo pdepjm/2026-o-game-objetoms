@@ -47,9 +47,9 @@ class AutomaticArm inherits Machine {
 
 	// ----------- DIBUJO -----------
 	// Se dibuja sobre 3x3 celdas, centrado en la suya
-	override method offsetX() = -1
+	override method drawOffsetX() = -1
 
-	override method offsetY() = -1
+	override method drawOffsetY() = -1
 
 	// Una animación del brazo, por ejemplo armAnimation(down, up, "rotate", rotateFrames)
 	method armAnimation(fromSide, toSide, kind, frameCount) = new FrameAnimation(
@@ -99,16 +99,14 @@ class AutomaticArm inherits Machine {
 		self.itemToPush().moveInSteps(to.move(self.cell()), catchFrames)
 		self.showCatch(from, to, {
 			direction = to
+			// Entrega hacia el lado al que quedó mirando (el contrario al del que vino el item).
+			// next se calculó al prender, mirando hacia otro lado: se vuelve a buscar.
+			next = self.nextMachine()
 			grabbed = true
 			self.showStatic()
 			self.tryPush()
 		})
 	}
-
-	// Entrega hacia el lado al que está mirando (que después del catch es el contrario
-	// al del que vino el item). Se busca acá y no al prender la simulación (como next)
-	// porque depende de por dónde llegó el item.
-	override method outputTarget() = board.machineAt(direction.move(self.cell()))
 
 	// Se entera de que entregó: queda libre para el próximo item
 	override method onPushed(item) {

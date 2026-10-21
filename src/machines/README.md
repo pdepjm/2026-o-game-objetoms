@@ -2,9 +2,6 @@
 
 Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles aparecen en el menú.
 
-> [!IMPORTANT]
-> Este README describe el **contrato de `Machine`**, ya implementado (fases 1 a 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md))
-
 | Archivo | Qué tiene |
 |---|---|
 | `machineClasses.wlk` | Las clases base de todas las máquinas: `MachineAnimator`, `MachineSprite` y `Machine` |
@@ -12,7 +9,7 @@ Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles 
 | `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk` |
 | `machineManager.wlk` | El catálogo de máquinas del menú y cuál está elegida para colocar |
 
-> **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo), `stressTest/stressTestBoard.wlk` (arma un tablero de prueba con cintas y un dispenser) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
+> **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
 
 ## Las clases base
 
@@ -67,7 +64,7 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
-| `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (`super(item) && item.canProcess(cutting)`) o ninguno (`false`) |
+| `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (el Assembler: `super(item) && recipe.stillNeeds(item, inventory.items())`) o ninguno (`false`). Las que procesan ya lo tienen resuelto en `ProcessingMachine` |
 | `onReceive(item)` | anima el item hasta su celda y, al llegar, llama a `onArrived(item)` | el item no viaja a su celda (el brazo) |
 | `onArrived(item)` | `self.tryPush()`: lo pasa a la siguiente, como una cinta | la máquina hace algo con el item: procesarlo, juntarlo con otros… |
 
@@ -81,7 +78,7 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
-| `outputTarget()` | `next` (la máquina hacia la que apunta) | entrega a otro lado (el brazo, según por dónde llegó el item) |
+| `outputTarget()` | la **celda** pegada a su borde de adelante (`direction.output(...)`). Al prender, la máquina que está ahí se guarda en `next` | el dibujo marca la salida en otra celda de ese borde |
 | `itemToPush()` | el primer item del inventario | elige qué entregar (el Assembler entrega el producto, no las entradas) |
 | `onPushed(item)` | no hace nada | tiene que enterarse de que entregó (el Dispenser, para agendar el próximo) |
 
@@ -98,8 +95,10 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 |---|---|---|
 | `runningImage()` | la imagen quieta | se anima con GIF: `override method runningImage() = self.gifImage()` |
 | `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction`. Ninguna máquina lo necesita hoy: el brazo guarda en `direction` hacia dónde mira |
-| `offsetX()` / `offsetY()` | `0` | se dibuja corrida (el brazo, que ocupa 3x3 celdas) |
+| `drawOffsetX()` / `drawOffsetX()` | `0` | se dibuja corrida (el brazo, que ocupa 3x3 celdas) |
 | `rotate()` / `menuImage(dir)` | rota normalmente | no rota (el brazo) |
+| `workImages()` | `[self.runningImage()]`: se ve quieta mientras trabaja | se anima frame a frame mientras trabaja (la cortadora: `self.actionAnimation("cut", 17).frames()`) |
+| `animateWork(pasos, bloque)` | reproduce `workImages()` ajustadas a `pasos` (con `TimedAnimation`), vuelve a la imagen andando y ejecuta el bloque | usa un GIF mientras trabaja: `self.holdImage(self.gifImage(), pasos, bloque)` (el horno) |
 
 ### No sobrescribir: sólo usar
 
@@ -108,11 +107,13 @@ Son las herramientas que la base les da a las subclases. Si una subclase las rei
 | Método | Qué hace |
 |---|---|
 | `receive(item)` | Lo guarda en el inventario y llama a `onReceive(item)`. Lo llaman las otras máquinas |
-| `tryPush()` | Le entrega `itemToPush()` a `outputTarget()` si puede (y llama a `onPushed`); si no, espera con `whenFree` y vuelve a intentar |
+| `tryPush()` | Le entrega `itemToPush()` a `next` si puede (y llama a `onPushed`); si no, espera con `whenFree` y vuelve a intentar |
 | `whenFree(bloque)` | Anota el bloque para cuando esta máquina libere lugar |
 | `heldItems()` | Los items que tiene encima (para el tablero y el engine) |
 | `inventory` | `items()`, `add(item)`, `release(item)`. **`release` despierta solo a las que esperaban**: no hay que acordarse de avisarles |
 | `play(animación, bloque)`, `actionAnimation(acción, frames)`, `stopAnimation()` | Animaciones frame a frame (ver `MachineAnimator`) |
+| `animateWork(pasos, bloque)` | Se ve trabajando durante `pasos` y después ejecuta el bloque. Sirve para cualquier máquina que tarde, no sólo las que procesan |
+| `playTimed(imágenes, pasos, bloque)`, `holdImage(ruta, pasos, bloque)` | Lo que usa `animateWork` por dentro: frames ajustados a una duración, o una imagen fija (un GIF) durante esos pasos |
 | `cell()`, `nextMachine()`, `direction()` | Ubicación en el tablero |
 
 ## Máquinas que procesan
@@ -165,23 +166,26 @@ class Dispenser inherits Machine {
 ```
 
 ```wollok
-// Una máquina que procesa: anima, transforma y entrega
-class CuttingMachine inherits Machine {
+// Una máquina que procesa con frames: sus 17 PNG de corte se ajustan al tiempo de cada ingrediente
+class CuttingMachine inherits ProcessingMachine {
 	override method name() = "CuttingMachine"
-	override method canReceive(item) = super(item) && item.canProcess(cutting)
-	override method onArrived(item) {
-		self.play(self.actionAnimation("cut", 17), {
-			item.process(cutting)
-			self.showRunning()
-			self.tryPush()
-		})
+	override method foodProcess() = cutting
+	override method workImages() = self.actionAnimation("cut", 17).frames()
+}
+```
+
+```wollok
+// Una máquina que procesa con GIF: quieta cuando está vacía, el GIF sólo mientras cocina
+class Oven inherits ProcessingMachine {
+	override method name() = "Oven"
+	override method foodProcess() = cooking
+	override method animateWork(steps, afterBlock) {
+		self.holdImage(self.gifImage(), steps, afterBlock)
 	}
 }
 ```
 
-**Por dónde empezar:** casi todas las máquinas que procesan algo se resuelven con `onArrived(item)`, y si filtran lo que aceptan, con `canReceive(item)`. El resto, sólo si hace falta.
-
-> Cuando haya dos o más máquinas con un `onArrived` del tipo "animar, transformar y entregar" (cortadora, horno, freidora), ese patrón pasa a una `ProcessingMachine`, y cada una define sólo su animación y su transformación (fase 6 del plan).
+**Por dónde empezar:** si la máquina transforma un ingrediente, heredar de `ProcessingMachine` y definir `foodProcess()` (y, si se anima, `workImages()` o `animateWork`). Si hace otra cosa con el item (juntarlo con otros, como el Assembler), sobrescribir `onArrived(item)`, y si filtra lo que acepta, `canReceive(item)`. El resto, sólo si hace falta.
 
 ## `types/`: las máquinas
 
@@ -189,7 +193,7 @@ class CuttingMachine inherits Machine {
 |---|---|---|---|
 | `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `runningImage` |
 | `Dispenser` | Crea un ingrediente cada 1 segundo y se lo entrega a la de adelante | Frame a frame (todavía sin animación) | `name`, `canReceive`, `start`, `onPushed` |
-| `AutomaticArm` | Agarra el item que le llega de un lado y lo entrega del lado contrario (provisorio). No rota y ocupa 3x3 celdas | Frame a frame (giro y agarre) | `onReceive`, `outputTarget`, `reset` y el dibujo |
+| `AutomaticArm` | Agarra el item que le llega de un lado y lo entrega del lado contrario (provisorio): al girar vuelve a calcular `next`. No rota, ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `onReceive`, `reset` y el dibujo |
 | `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `foodProcess`, `workImages` |
 | `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato | Sin animación | `name`, `capacity`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` |
 | `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |

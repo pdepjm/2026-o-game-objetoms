@@ -36,13 +36,14 @@ object placeMenu{
     }
 
     // Cambiar de página sólo redibuja si el panel se está viendo
+    // Avanzan o retroceden de a una página, sin pasarse de la primera ni de la última
     method prev(){
-        currentPage = 0
+        currentPage = (currentPage - 1).max(0)
         if (visible) self.renderItems()
     }
 
     method next(){
-        currentPage = 1
+        currentPage = (currentPage + 1).min(machineManager.pageCount() - 1)
         if (visible) self.renderItems()
     }
 

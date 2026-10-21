@@ -42,9 +42,6 @@ object simulationEngine {
 	// el juego arranca en modo construcción, con la simulación apagada
 	var property running = false
 
-	// items creados desde que se prendió la simulación (ver addItem)
-	var itemCount = 0
-
 	// Engancha el engine al reloj de Wollok Game. Se llama una sola vez, desde el main.
 	method start() {
 		game.onTick(tickMs, "simulacion", { self.tick() })
@@ -108,15 +105,13 @@ object simulationEngine {
 			game.removeVisual(item)
 		})
 		simulatedObjects.forEach({ machine => machine.reset() })
-		itemCount = 0
 	}
 
 	// Un item nuevo entra al tablero (lo crea, por ejemplo, un Dispenser).
 	// El engine es el que saca los items al apagar la simulación (stop),
-	// así que también es el que los pone: así sabe cuántos se crearon.
+	// así que también es el que los pone.
 	method addItem(item) {
 		game.addVisual(item)
-		itemCount += 1
 	}
 	// Saca un item del tablero (lo consume una máquina, como el Assembler).
 	// Es la contraparte de addItem.
@@ -124,9 +119,6 @@ object simulationEngine {
 		item.detener()
 		game.removeVisual(item)
 	}
-	// Cantidad de items creados desde que se prendió la simulación
-	method itemCount() = itemCount
-
 	// Todos los items que hay en el tablero (cada uno está en alguna máquina)
 	method allItems() = simulatedObjects.flatMap({ machine => machine.heldItems() })
 

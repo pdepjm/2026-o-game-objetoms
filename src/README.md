@@ -13,7 +13,6 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 | [`tools/`](tools/README.md) | Las herramientas del jugador (colocar, borrar, editar, rotar) y la dirección elegida |
 | [`input/`](input/README.md) | Las teclas y los clicks |
 | [`levels/`](levels/README.md) | Niveles (todavía sin usar) |
-| [`stressTest/`](stressTest/README.md) | Pruebas de carga: medidor de rendimiento y tablero lleno |
 
 ## Archivos de esta carpeta
 
@@ -28,7 +27,7 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 
 - El tablero jugable va de **x 5 a 19** y de **y 1 a 13** (`inBoard`). El resto de la pantalla son los menús.
 - Por dentro es una grilla de casillas (`Cell`) que se arma una sola vez. Buscar una máquina es ir directo a su casilla, sin recorrer nada. Por eso no es un `Dictionary`: el comentario del archivo explica por qué era lento.
-- `push(posición, máquina)` la coloca: le fija la posición del dibujo (con su `offsetX`/`offsetY`), la agrega a la pantalla y la anota en el `simulationEngine`. `pop(posición)` hace lo contrario, y se lleva los ingredientes que tenía encima.
+- `push(posición, máquina)` la coloca: le fija la posición del dibujo (con su `drawOffsetX`/`drawOffsetX`), la agrega a la pantalla y la anota en el `simulationEngine`. `pop(posición)` hace lo contrario, y se lleva los ingredientes que tenía encima.
 - **No usar `push` ni `pop` con la simulación prendida:** las máquinas ya calcularon a sus vecinas. Los clicks se bloquean en `toolsManager`.
 
 ### `cellPosition.wlk`

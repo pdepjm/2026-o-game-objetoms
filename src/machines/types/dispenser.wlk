@@ -1,3 +1,4 @@
+import src.directions.*
 import machines.machineClasses.*
 import simulation.simulationEngine.*
 import food.foodClasses.*
@@ -5,12 +6,13 @@ import food.foodTypes.*
 
 // Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
 class Dispenser inherits Machine {
-	const product = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
+	// item a dispensar, instanciador de clase. Por defecto papa; el menú le pasa otro.
+	const product = { => new Item(kind = potato) }
 
 	override method name() = "Dispenser"
 
 	// tiempo de simulación entre un dispense y el siguiente
-	method intervalMs() = 1000
+	method intervalMs() = 5000
 
 	// el mismo intervalo, medido en pasos de simulación
 	method intervalSteps() = simulationEngine.stepsFor(self.intervalMs())
@@ -30,7 +32,7 @@ class Dispenser inherits Machine {
 	// (el item recién se hace cuando hay a dónde mandarlo). Si está llena, se anota
 	// para reintentar apenas se libere: no espera al próximo intervalo.
 	method tryDispense() {
-		const target = self.outputTarget()
+		const target = next
 		if (target != null) {
 			const item = product.apply()
 			if (target.canReceive(item)) {

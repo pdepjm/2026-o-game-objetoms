@@ -16,11 +16,9 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`src/tools/README.md`](src/tools/README.md) | Las herramientas del jugador y la dirección elegida |
 | [`src/input/README.md`](src/input/README.md) | Las teclas y los clicks |
 | [`src/levels/README.md`](src/levels/README.md) | Niveles (todavía sin usar) |
-| [`src/stressTest/README.md`](src/stressTest/README.md) | Pruebas de carga |
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |
 | [`Diagrama de clase`](https://lucid.app/lucidchart/a3679667-4ca6-4fa7-b44c-518a1db91a84/edit?invitationId=inv_417f2848-4415-43b1-b901-ad3450eb3ba1) |
-| [`docs/plan-contrato-maquinas.md`](docs/plan-contrato-maquinas.md) | Plan de implementación del contrato de las máquinas |
 
 ## Participantes
 - Mateo Bustos
@@ -69,35 +67,6 @@ Es tu tarea automatizar todos los procesos del buffet.
 **3**: establece la velocidad en x3
 **5**: Inicia o termina la simulación
 
-### Pruebas de carga
-**M**: Prende o apaga el medidor de carga. Escribe en la terminal, cada segundo, la cantidad de items y cuánto tarda cada tick
-
-**L**: Llena el tablero con una "serpiente" de cintas que arranca en un dispenser (sólo con la simulación apagada)
-
-Cómo probar el rendimiento:
-1. Correr el juego: `wollok run src.main.BuffetAlbertEinstein --skipValidations -p ./`
-2. Tocar **M** para prender el medidor
-3. Tocar **L** para llenar el tablero, y esperar a que la terminal muestre `tick` cerca de 100 ms (después de llenar, el juego se pone al día durante unos segundos)
-4. Tocar **5** para iniciar la simulación y mirar cómo cambian los números a medida que aparecen items
-
-Cada línea del medidor se ve así:
-```
-items=20 | tick=100 ms (ideal 100) | max=171 ms | x1 | SOBRECARGADO
-```
-- `tick`: tiempo promedio entre ticks del último segundo. Lo ideal es 100 ms
-- `max`: el tick más lento del último segundo. Si es alto, en pantalla se ven tirones
-- Estado (según `max`): `ok` hasta 140 ms, `justo` hasta 150 ms, `SOBRECARGADO` más de 150 ms
-
-> [!NOTE]
-> Aun con el tablero vacío, `max` ronda los 125 ms: Wollok sólo dispara un tick cuando dibuja un frame (cada ~17 ms), así que esa diferencia es normal.
-
-> [!NOTE]
-> La serpiente es el peor caso a propósito: con un solo dispenser regular, todos los items cambian de cinta en el mismo paso. Sirve para comparar antes y después de un cambio, no como una partida real.
-
-El código de las pruebas de carga está en `src/stressTest`.
-
-
-
 ## TAMAÑOS
 
 - Máquina en el tablero (`<direccion>_game.png` y su animación): 50x50px
@@ -107,6 +76,6 @@ El código de las pruebas de carga está en `src/stressTest`.
 Todas las machines tienen que tener, para cada una de las 4 rotaciones (`up`, `down`, `left`, `right`):
 - `<direccion>_menu.png` (100x100): la imagen del menú
 - `<direccion>_game.png` (mismo tamaño que su animación): la máquina quieta
-- su animación: `<direccion>.gif` en las máquinas con GIF (la cinta), o carpetas de frames `<direccion>_<accion>/` en las frame a frame (dispenser, cortadora, ensambladora, brazo)
+- su animación: `<direccion>.gif` en las máquinas con GIF (la cinta, el horno), o carpetas de frames `<direccion>_<accion>/` en las frame a frame (dispenser, cortadora, ensambladora, brazo)
 
 Hay máquinas con su propia convención (por ejemplo, `AutomaticArm`). La guía completa y la lista de casos especiales está en [`assets/README.md`](assets/README.md).

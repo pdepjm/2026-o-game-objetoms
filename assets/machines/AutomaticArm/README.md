@@ -35,9 +35,9 @@ Por ejemplo, con una cinta a la izquierda y otra a la derecha:
 El brazo se dibuja sobre 3x3 celdas, pero en el tablero **ocupa sólo la del centro** (la celda donde se hizo click). Por eso:
 
 - Las máquinas que le entregan y reciben ingredientes van en las celdas vecinas, aunque queden debajo de su dibujo.
-- En el código, `position` es la esquina del dibujo (corrida con `offsetX()` y `offsetY()`, que valen `-1`), y `cell()` es la celda del centro. Para cualquier cálculo sobre el tablero se usa `cell()`.
+- En el código, `position` es la esquina del dibujo (corrida con `drawOffsetX()` y `drawOffsetX()`, que valen `-1`), y `cell()` es la celda del centro. Para cualquier cálculo sobre el tablero se usa `cell()`.
 
-Si se cambia el tamaño de las imágenes, hay que cambiar también `offsetX()` y `offsetY()`.
+Si se cambia el tamaño de las imágenes, hay que cambiar también `drawOffsetX()` y `drawOffsetX()`.
 
 ## Qué hay en la carpeta
 
@@ -77,9 +77,9 @@ Los GIFs originales ya no están en el repo: **las carpetas de frames son la fue
 - **Editando los PNG de la carpeta** directamente (respetando la cantidad y la numeración: `0.png`, `1.png`, ...).
 - **Desde un GIF nuevo**, con `gifToFrames.py`. Parado en `assets/`:
   ```bash
-  python3 machines/gifToFrames.py machines/AutomaticArm/down_to_up_catch.gif
+  python3 machines/gifToFrames.py machines/AutomaticArm/down_to_up_catch.gif --solo
   ```
-  Genera (o reemplaza) la carpeta con el mismo nombre del GIF, remuestreada a 100 ms por frame para que dure lo mismo que el GIF. Después **borrar el GIF de la carpeta**: el juego no lo usa, pero lo cargaría igual al arrancar.
+  Genera (o reemplaza) la carpeta con el mismo nombre del GIF, remuestreada a 100 ms por frame para que dure lo mismo que el GIF. Usar `--solo`: sin él, el script busca las otras direcciones cambiando sólo la última del nombre (`down_to_right_catch`, `down_to_down_catch`...), que no es como se nombran las del brazo. Después **borrar el GIF de la carpeta**: el juego no lo usa, pero lo cargaría igual al arrancar.
 
 Si cambia la cantidad de frames:
 
@@ -101,7 +101,7 @@ Las imágenes de cada dirección son la misma imagen girada. Girando 90° en sen
 | `down_to_right` | `left_to_down` | `up_to_left` | `right_to_up` |
 
 > [!WARNING]
-> `machines/assetGenerator.py` sirve para los `<dir>_game.png`, pero **no** para las animaciones `_to_`: sólo cambia la última dirección del nombre, así que generaría archivos con el nombre equivocado.
+> `machines/assetRotate.py` sirve para los `<dir>_game.png`, pero **no** para las animaciones `_to_`: sólo cambia la última dirección del nombre, así que generaría archivos con el nombre equivocado.
 
 ## Agregar una animación nueva
 

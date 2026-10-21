@@ -118,10 +118,13 @@ describe "tests de menuManager" {
     assert.equals(items.map({ item => "machines/" + item.name() + "/up_menu.png" }), items.map({ item => item.image() }))
   }
 
+  // el brazo está en la última página, en el slot 1
   test "cambiar la dirección no cambia la imagen del brazo automático en el menú" {
     self.startWithPlace()
+    menuManager.nextPage()
+    menuManager.nextPage()
     toolsManager.currentDirection(up)
-    const arm = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first() })
+    const arm = [1, 2].map({ slot => self.slotVisuals(slot).first() })
       .find({ item => item.name() == "AutomaticArm" })
     assert.equals("machines/AutomaticArm/down_menu.png", arm.image())
   }
@@ -187,9 +190,22 @@ describe "tests de menuManager" {
   test "la última página llena los slots desde arriba y deja libres los de abajo" {
     self.startWithPlace()
     menuManager.nextPage()
+    menuManager.nextPage()
     const sizes = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).size() })
-    assert.equals([1, 1, 1, 0], sizes)
+    assert.equals([1, 1, 0, 0], sizes)
     assert.notThat(game.hasVisual(overlay))
+  }
+
+  test "pasar de la última página no hace nada" {
+    self.startWithPlace()
+    3.times({ _ => menuManager.nextPage() })
+    assert.equals(machineManager.pageCount() - 1, placeMenu.currentPage())
+  }
+
+  test "volver de la primera página no hace nada" {
+    self.startWithPlace()
+    menuManager.prevPage()
+    assert.equals(0, placeMenu.currentPage())
   }
 
   test "un click en la zona interactiva con edit no cambia la máquina elegida" {

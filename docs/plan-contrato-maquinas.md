@@ -40,7 +40,7 @@ Antes de cambiar el diseño, los tests tienen que pasar. Hoy fallan 23, todos po
 | Falla | Arreglo |
 |---|---|
 | `Could not resolve reference to instantiated module Carne` (8 tests) | En `test/animationTest.wtest:9`, cambiar `import src.simulation.ingredientes.*` por `import src.food.ingredientes.*` |
-| `a Sprite does not understand play(...)` (9) y `a Sink does not understand offsetX()` (4) | `use()` pasó a ser abstracto en `Machine`, así que `Sprite` y `Sink` (las máquinas de prueba de `test/animationTest.wtest`) quedaron abstractas. Agregarles `override method use() {}` |
+| `a Sprite does not understand play(...)` (9) y `a Sink does not understand drawOffsetX()` (4) | `use()` pasó a ser abstracto en `Machine`, así que `Sprite` y `Sink` (las máquinas de prueba de `test/animationTest.wtest`) quedaron abstractas. Agregarles `override method use() {}` |
 | `menuManagerTest`: la última página (2 tests) | El catálogo pasó de 6 a 7 máquinas (se agregó `Fryer`). Actualizar lo que esperan: la última página ahora tiene 3 máquinas (`[1, 1, 1, 0]`), y el test "clickear un slot libre…" hace click en `game.at(22, 4)`, que ahora es el slot de `Fryer`: cambiarlo por la celda del slot 4, que es el que queda libre |
 
 También:

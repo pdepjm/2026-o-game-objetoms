@@ -6,8 +6,10 @@ import machines.machineManager.*
 
 object place {
 	method name() = "place"
+    // Si no entra (celda ocupada o parte fuera del tablero), no coloca nada
     method onClick(pos) {
-		board.push(pos, machineManager.createMachine())
+		const machine = machineManager.createMachine()
+		if (board.canPlace(pos, machine)) board.push(pos, machine)
     }
 }
 object delete {

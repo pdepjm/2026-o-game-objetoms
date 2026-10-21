@@ -14,7 +14,5 @@
 | Q / E | Página anterior / siguiente del menú | `menuManager` |
 | 1 / 2 / 3 | Velocidad de la simulación x1 / x2 / x3 | `simulationEngine.speed` |
 | 5 | Prender / apagar la simulación | `simulationEngine.toggle` |
-| M | Prender / apagar el medidor de carga | `stressMeter` (ver [`stressTest/`](../stressTest/README.md)) |
-| L | Llenar el tablero para la prueba de carga | `stressTestBoard` |
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).

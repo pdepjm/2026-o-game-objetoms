@@ -16,6 +16,7 @@ import board.*
 import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import machines.inventory.*
+import cellPosition.*
 
 // Reproduce animaciones frame a frame (carpetas de PNG, ver FrameAnimation) con el animationEngine.
 class MachineAnimator {
@@ -109,9 +110,9 @@ class MachineSprite inherits MachineAnimator {
 	
 	// ----------- DESPLAZAMIENTO DE LA IMAGEN -----------
 	// Sirven para desplazar la imagen antes de colocarla
-	method offsetX() = 0
+	method drawOffsetX() = 0
 	
-	method offsetY() = 0
+	method drawOffsetY() = 0
 	
 	// ----------- IMAGENES -----------
 	method image() = image
@@ -218,11 +219,10 @@ class Machine inherits MachineSprite {
 	// El inventario se encarga de despertar a las que esperan al liberar un item.
 	const inventory = new Inventory(capacity = self.capacity())
 
-	// La máquina hacia la que apunta (null si no hay ninguna).
-	// Se calcula una sola vez al prender la simulación: con la simulación prendida
-	// no se puede editar el tablero, así que no cambia.
-	// El brazo robot no lo usa, ya que su dirección cambia con la simulación prendida
-	// (ver outputTarget en AutomaticArm).
+	// La máquina a la que entrega (null si no hay ninguna): la que está en outputTarget().
+	// Se calcula al prender la simulación: con la simulación prendida no se puede editar
+	// el tablero, así que no cambia. Si una máquina cambia de dirección mientras corre
+	// (el brazo), la vuelve a calcular con nextMachine().
 	var next = null
 
 	// Cada máquina guarda su propia dirección (un objeto de directions.wlk).
@@ -242,12 +242,20 @@ class Machine inherits MachineSprite {
 
 	// La celda del tablero que ocupa. Es position sin el desplazamiento del dibujo:
 	// para casi todas las máquinas son iguales, pero no para las que se dibujan corridas.
-	method cell() = game.at(position.x() - self.offsetX(), position.y() - self.offsetY())
+	method cell() = game.at(position.x() - self.drawOffsetX(), position.y() - self.drawOffsetY())
 	
-	// Busca en el tablero la máquina hacia la que apunta (null si no hay ninguna).
-	// Es una consulta cara con muchas máquinas: durante la simulación se usa next.
-	method nextMachine() = board.machineAt(direction.move(self.cell()))
+	// La CELDA a la que entrega (no la máquina: ésa es next). Por defecto, la pegada a su
+	// borde de adelante. Sobrescribirlo si el dibujo marca la salida en otra celda.
+	method outputTarget() = direction.output(self.cell(), self.width(), self.height())
+
+	// Busca en el tablero la máquina que está en outputTarget() (null si no hay ninguna).
+	// Durante la simulación se usa next, que la guarda.
+	method nextMachine() = board.machineAt(self.outputTarget())
 	
+	// Simboliza la cantidad de celdas que ocupa
+	method width() = 1
+	method height() = 1
+
 	//----------- CICLO DE LA SIMULACION -----------
 	// Se llama al prender la simulación: busca a su vecina y pasa a la imagen animada
 	method start() {
@@ -292,9 +300,6 @@ class Machine inherits MachineSprite {
 
 	//----------- ITEMS: SALIDA -----------
 
-	// A quién se le entregan los items (por defecto, la máquina hacia la que apunta)
-	method outputTarget() = next
-
 	// Qué item se entrega (por defecto, el primero del inventario)
 	method itemToPush() = if (inventory.isEmpty()) null else inventory.first()
 
@@ -307,7 +312,7 @@ class Machine inherits MachineSprite {
 	// actuar: entre el intento y la entrega pueden pasar cosas.
 	method tryPush() {
 		const item = self.itemToPush()
-		const target = self.outputTarget()
+		const target = next
 		if (item != null && target != null) {
 			if (target.canReceive(item)) {
 				inventory.release(item)

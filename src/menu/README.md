@@ -30,7 +30,7 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 ## `placeMenu.wlk`
 
 - Muestra 4 máquinas por página, en 4 slots de arriba hacia abajo. El orden sale de `machineManager` (ver [`machines/README.md`](../machines/README.md)).
-- Las páginas se cambian con Q y E. Hoy hay 2 (`prev` va a la primera y `next` a la segunda).
+- Las páginas se cambian con Q y E. Cada página muestra 4 máquinas; `prev` y `next` avanzan de a una, sin pasarse de la primera ni de la última.
 - Al hacer click en un slot elige esa máquina (`machineManager.select`) y mueve el marco (`overlay`) encima.
 - `MenuItem`: cada máquina dibujada en el panel. Le pide la imagen a una máquina de muestra (`menuImage(dirección)`), así cada tipo decide qué mostrar (el brazo, por ejemplo, siempre muestra la misma porque no rota).
 - `overlay`: el marco sobre la máquina elegida. Sólo se dibuja si esa máquina está en la página que se ve.
