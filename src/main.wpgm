@@ -5,6 +5,7 @@ import food.foodClasses.*
 import food.foodTypes.*
 import directions.*
 import simulation.simulationEngine.*
+import sound.musicManager.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -21,7 +22,7 @@ program BuffetAlbertEinstein {
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()
 
-
+	game.schedule(500, {musicManager.playBackground() })
 
 	game.start()
 }
