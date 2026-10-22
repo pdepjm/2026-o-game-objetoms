@@ -8,6 +8,7 @@ import src.menu.placeMenu.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
 import src.machines.machineManager.*
+import src.machines.types.dispenser.*
 import src.directions.*
 
 describe "tests de menuManager" {
@@ -21,6 +22,17 @@ describe "tests de menuManager" {
 
   method menuIsEmpty() = [1, 2, 3, 4].all({ slot => self.slotVisuals(slot).isEmpty() })
 
+  // todo lo que hay dibujado en la zona interactiva
+  method zoneVisuals() = (21..24).flatMap({ x => (0..14).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
+
+  // elige edit y clickea un dispenser colocado en el tablero, así el panel tiene qué mostrar
+  method editADispenser() {
+    menuManager.setUp()
+    board.push(game.at(8, 8), new Dispenser())
+    toolsManager.select(edit)
+    toolsManager.onClick(game.at(8, 8))
+  }
+
   // el juego arranca sin herramienta: para probar place hay que elegirla
   method startWithPlace() {
     menuManager.setUp()
@@ -31,7 +43,6 @@ describe "tests de menuManager" {
     menuManager.setUp()
     assert.equals(null, toolsManager.selectedTool())
     assert.notThat(game.hasVisual(overlay))
-    assert.notThat(game.hasVisual(infoText))
     assert.that(self.menuIsEmpty())
   }
 
@@ -52,7 +63,6 @@ describe "tests de menuManager" {
   test "elegir place muestra el panel de máquinas" {
     self.startWithPlace()
     assert.that(game.hasVisual(overlay))
-    assert.notThat(game.hasVisual(infoText))
     assert.equals("tools/place_selected.png", toolBar.image())
   }
 
@@ -65,12 +75,12 @@ describe "tests de menuManager" {
     assert.equals("tools/default.png", toolBar.image())
   }
 
-  test "al deseleccionar edit se saca el texto Info" {
-    menuManager.setUp()
-    toolsManager.select(edit)
+  test "al deseleccionar edit se saca lo que mostraba" {
+    self.editADispenser()
+    assert.notThat(self.zoneVisuals().isEmpty())
     toolsManager.select(edit)
     assert.equals(null, toolsManager.selectedTool())
-    assert.notThat(game.hasVisual(infoText))
+    assert.that(self.zoneVisuals().isEmpty())
   }
 
   test "elegir la herramienta por tercera vez la vuelve a seleccionar" {
@@ -82,19 +92,16 @@ describe "tests de menuManager" {
     assert.equals("tools/place_selected.png", toolBar.image())
   }
 
-  test "con edit se muestra el texto Info y se saca el panel de place" {
+  test "con edit se saca el panel de place y no se muestra nada hasta elegir una maquina" {
     self.startWithPlace()
     toolsManager.select(edit)
-    assert.that(game.hasVisual(infoText))
     assert.notThat(game.hasVisual(overlay))
-    assert.that(self.menuIsEmpty())
+    assert.that(self.zoneVisuals().isEmpty())
   }
 
-  test "volver a place saca el texto Info y vuelve a dibujar las máquinas" {
-    self.startWithPlace()
-    toolsManager.select(edit)
+  test "volver a place saca lo de edit y vuelve a dibujar las máquinas" {
+    self.editADispenser()
     toolsManager.select(place)
-    assert.notThat(game.hasVisual(infoText))
     assert.that(game.hasVisual(overlay))
     assert.equals(1, self.slotVisuals(1).size())
   }
@@ -102,10 +109,8 @@ describe "tests de menuManager" {
   test "con delete o rotate la zona interactiva queda vacía" {
     self.startWithPlace()
     toolsManager.select(delete)
-    assert.notThat(game.hasVisual(infoText))
     assert.notThat(game.hasVisual(overlay))
     toolsManager.select(rotate)
-    assert.notThat(game.hasVisual(infoText))
     assert.notThat(game.hasVisual(overlay))
   }
 

@@ -12,7 +12,7 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 |---|---|
 | `menuManager.wlk` | `menuManager`: el que conoce a todos los menús y les reenvía los eventos. También `Zone` y `emptyMenu` |
 | `placeMenu.wlk` | El panel de la herramienta **place**: las máquinas para elegir, con páginas y un marco sobre la elegida |
-| `editMenu.wlk` | El panel de la herramienta **edit**. Por ahora sólo muestra "Info" |
+| `editMenu.wlk` | El panel de la herramienta **edit**: los settings de la máquina elegida, agrupados por categoría |
 | `toolBar.wlk` | La barra que muestra qué herramienta está elegida |
 | `levelInfoMenu.wlk` | Vacío, reservado para la información del nivel |
 
@@ -43,4 +43,21 @@ Muestra `tools/<herramienta>_selected.png`, o `tools/default.png` si no hay ning
 
 ## `editMenu.wlk`
 
-Por ahora sólo dibuja el texto "Info" (`infoText`). Más adelante va a mostrar la información de la máquina.
+Muestra los settings de la máquina elegida con la herramienta edit (ver [`machines/README.md`](../machines/README.md#configuración-settings)). **No sabe de qué máquina se trata**: le pide `settings()` y dibuja lo que devuelve.
+
+- Se dibuja de arriba hacia abajo, una línea por vez. Por cada categoría: el título en mayúsculas y, por cada setting de esa categoría, su nombre y sus opciones de a 4 por fila (el ancho de la zona):
+
+  ```
+  PRODUCCION              ← categoría (una sola vez, aunque tenga varios settings)
+  Ingrediente             ← setting
+  [lechuga][pan][papa frita][papa]
+  [tomate]
+  Velocidad               ← otro setting de la misma categoría
+  Lenta  Normal  Rapida
+  ```
+
+- Las opciones con `image` se dibujan con su imagen (`OptionImage`) y las otras con su `label` (`MenuText`).
+- Click en una opción: se la aplica a su setting (`setting.select(option)`). `OptionSlot` recuerda qué opción de qué setting hay en cada celda.
+- Hay una marca (`OptionMarker`) sobre la opción elegida de **cada** setting.
+- Se redibuja sólo cuando cambia la máquina elegida; un click sólo mueve las marcas.
+- Una máquina sin settings no muestra nada.

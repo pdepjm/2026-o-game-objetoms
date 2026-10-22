@@ -1,5 +1,6 @@
 import board.*
 import machines.machineManager.*
+import menu.editMenu.*
 
 // HERRAMIENTAS
 // Por el momento, todas las herramientas deben contener el metodo onClick
@@ -20,7 +21,9 @@ object delete {
 }
 object edit {
 	method name() = "edit"
-	method onClick(pos) {}
+	method onClick(pos) {
+		editMenu.selectMachine(pos)
+	}
 }
 object rotate {
 	method name() = "rotate"

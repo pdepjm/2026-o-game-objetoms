@@ -203,15 +203,19 @@ describe "tests de Assembler con items puestos a mano" {
 //                      tomate (10, 5)
 describe "tests de una cadena que termina en el Assembler" {
 
-  const bunDispenser = new Dispenser(product = { => new Item(kind = cutBun) })
-  const lettuceDispenser = new Dispenser(product = { => new Item(kind = cutLettuce) })
-  const meatDispenser = new Dispenser(product = { => new Item(kind = cookedMeat) })
-  const tomatoDispenser = new Dispenser(product = { => new Item(kind = cutTomato) })
+  const bunDispenser = new Dispenser()
+  const lettuceDispenser = new Dispenser()
+  const meatDispenser = new Dispenser()
+  const tomatoDispenser = new Dispenser()
   const belt = new Belt()
   const assembler = new Assembler()
   const sink = new Sink()
 
   method initialize() {
+    bunDispenser.product(cutBun)
+    lettuceDispenser.product(cutLettuce)
+    meatDispenser.product(cookedMeat)
+    tomatoDispenser.product(cutTomato)
     toolsManager.currentDirection(right)
     board.push(game.at(8, 6), bunDispenser)
     board.push(game.at(9, 6), belt)

@@ -19,10 +19,7 @@ object machineManager{
 		{ => new Assembler() },
 		{ => new CuttingMachine() },
 		{ => new Oven() },
-		{ => new Dispenser(product = {=> new Item(kind = bun)})},
-		{ => new Dispenser(product = {=> new Item(kind = lettuce)})},
-		{ => new Dispenser(product = {=> new Item(kind = tomato)})},
-		{ => new Dispenser(product = {=> new Item(kind = meat)})},
+		{ => new Dispenser()},
 		{ => new AutomaticArm()},
 		{ => new Fryer() }
 	]

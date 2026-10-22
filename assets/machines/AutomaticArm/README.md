@@ -12,14 +12,16 @@ Lo que tiene de distinto:
 ## Cómo funciona en el juego
 
 1. Se coloca mirando hacia abajo (`down_game.png`), sin importar la dirección elegida.
-2. Cuando una máquina vecina (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente desde el lado `S`:
-   1. Si no está mirando hacia `S`, **gira hacia ese lado**: animación `<hacia donde mira>_to_<S>_rotate`.
-   2. **Lo agarra y gira hacia el lado contrario**: animación `<S>_to_<contrario de S>_catch`. El ingrediente viaja con la pinza hasta la celda contraria.
-   3. **Lo entrega a la máquina de la celda contraria** y queda quieto mirando hacia ahí (`<contrario de S>_game.png`).
+2. Cuando una máquina vecina (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente. **La entrada es fija: siempre es el lado izquierdo (`left`)**, venga de donde venga el ingrediente:
+   1. Si no está mirando hacia la izquierda, **gira hacia ese lado**: animación `<hacia donde mira>_to_left_rotate`.
+   2. **Lo agarra y gira hacia el lado de salida `T`**: animación `left_to_<T>_catch`. El ingrediente viaja con la pinza hasta la celda de ese lado.
+   3. **Lo entrega a la máquina de la celda de `T`** y queda quieto mirando hacia ahí (`<T>_game.png`).
+
+   `T` se configura con la herramienta edit, **relativo al recorrido del ingrediente** (entra por la izquierda y viaja hacia la derecha): *Recto* → `right`, *Izquierda* → `up`, *Derecha* → `down`. Es el setting `OutputSideSetting` (ver [`machines/README.md`](../../../src/machines/README.md#configuración-settings)).
 3. Mientras tiene un ingrediente no acepta otro. Si la máquina de la celda contraria está llena, espera a que se libere; si no hay ninguna máquina, se queda con el ingrediente.
 4. Al apagar la simulación suelta lo que tenía y vuelve a mirar hacia abajo.
 
-Por ejemplo, con una cinta a la izquierda y otra a la derecha:
+Por ejemplo, con la salida en *Recto*, una cinta a la izquierda y otra a la derecha:
 
 ```
  [Belt →] [ Brazo ] [Belt →]
@@ -28,7 +30,7 @@ Por ejemplo, con una cinta a la izquierda y otra a la derecha:
 `down_to_left_rotate` → `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
 
 > [!NOTE]
-> Entregar del lado contrario es **momentáneo**, para poder probar el brazo hasta que tenga su lógica definitiva (ver la clase `AutomaticArm` en `src/machines/types/automaticArm.wlk`).
+> Configurar hacia dónde entrega no se pierde al apagar la simulación: es configuración, no estado (`reset()` sólo vuelve a mirar hacia abajo).
 
 ### Las celdas alrededor del brazo
 
@@ -54,7 +56,7 @@ Si se cambia el tamaño de las imágenes, hay que cambiar también `drawOffsetX(
 ### Qué animaciones se usan hoy
 
 - **`_rotate`: las 12.** El brazo puede estar mirando hacia cualquier lado cuando le llega un ingrediente desde cualquier otro.
-- **`_catch`: sólo las 4 entre lados opuestos** (`down_to_up`, `up_to_down`, `left_to_right`, `right_to_left`), porque siempre entrega del lado contrario. Las de 90° (`down_to_left`, etc.) quedan listas para cuando el brazo pueda entregar hacia un costado.
+- **`_catch`: sólo las 3 que salen de `left`** (`left_to_right`, `left_to_up`, `left_to_down`), porque la entrada es fija. Las demás quedan listas para cuando el brazo tenga otras entradas.
 
 ### Para que no se vean saltos
 

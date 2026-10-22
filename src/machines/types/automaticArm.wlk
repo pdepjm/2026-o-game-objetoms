@@ -1,23 +1,23 @@
 import machines.machineClasses.*
+import machines.settings.*
 import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import directions.*
 import board.*
 
-// Brazo automático: agarra el item que le llega de un lado y lo deja del lado contrario.
-// No rota: siempre se coloca mirando hacia abajo, y gira solo según de dónde le llegue el item.
+// Brazo automático: agarra el item que le llega por la izquierda (la entrada es fija) y lo
+// entrega recto, a la izquierda o a la derecha de su recorrido, según cómo se configure.
+// No rota: siempre se coloca mirando hacia abajo, y gira solo para agarrar y entregar.
 // Se anima frame a frame (PNG por frame, con play de MachineAnimator) y no con GIFs.
 //
-// Cuando le llega un item desde el lado S:
-// 1. Si no está mirando hacia S, gira hacia ahí (animación rotate).
-// 2. Lo agarra y gira hacia el lado contrario (animación catch), llevando el item.
+// Cuando le llega un item:
+// 1. Si no está mirando hacia la entrada, gira hacia ahí (animación rotate).
+// 2. Lo agarra y gira hacia el lado de salida (animación catch), llevando el item.
 // 3. Lo entrega a la máquina de esa celda (tryPush). Si está llena, espera a que se libere.
 // Mientras tiene un item no acepta otro.
 //
-// MOMENTÁNEO: entregar del lado contrario es para probar el brazo hasta que tenga su lógica.
-//
 // El item no viaja a la celda del brazo (por eso sobrescribe onReceive): el brazo lo
-// gira y lo lleva al lado opuesto. Cada animación termina en la etapa segura del
+// gira y lo lleva a la celda de salida. Cada animación termina en la etapa segura del
 // animationEngine (bloques pendientes), así el bloque puede girar, mover el item y
 // entregar directo, sin perder pasos.
 class AutomaticArm inherits Machine {
@@ -25,6 +25,10 @@ class AutomaticArm inherits Machine {
 	// Frames que hay en cada carpeta de animación (los genera assets/machines/gifToFrames.py)
 	const rotateFrames = 7
 	const catchFrames = 28
+
+	// Siempre recibe por la izquierda; hacia dónde entrega se configura (recto, izquierda o derecha)
+	const inputSide = left
+	const outputSetting = new OutputSideSetting(value = straightOut)
 
 	var from = null       // lado del que vino el item
 	var grabbed = false   // ¿ya lo llevó al lado contrario?
@@ -44,6 +48,8 @@ class AutomaticArm inherits Machine {
 	override method rotate() {}
 
 	override method menuImage(aDirection) = super(down)
+
+	override method settings() = [outputSetting]
 
 	// ----------- DIBUJO -----------
 	// Se dibuja sobre 3x3 celdas, centrado en la suya
@@ -71,19 +77,13 @@ class AutomaticArm inherits Machine {
 	// El item no se anima hasta la celda del brazo: el brazo gira hacia él y lo lleva
 	// al lado opuesto. Por eso se sobrescribe onReceive (y no receive).
 	override method onReceive(item) {
-		from = self.sideOf(item.destinoFinal())
+		from = inputSide
 		grabbed = false
 		if (direction == from) self.carry() else self.turnToItem()
 	}
 
-	// Lado del brazo en el que está esa posición (una celda vecina)
-	method sideOf(aPosition) {
-		const cell = self.cell()
-		return if (aPosition.x() > cell.x()) right
-			else if (aPosition.x() < cell.x()) left
-			else if (aPosition.y() > cell.y()) up
-			else down
-	}
+	// Lado por el que entrega, según lo configurado (relativo al lado de entrada)
+	method outputSide() = outputSetting.value().sideFor(inputSide)
 
 	// Gira hacia el lado del que vino el item
 	method turnToItem() {
@@ -95,7 +95,7 @@ class AutomaticArm inherits Machine {
 
 	// Lo agarra y gira hacia el lado contrario. El item viaja a la otra celda mientras tanto.
 	method carry() {
-		const to = from.invert()
+		const to = self.outputSide()
 		self.itemToPush().moveInSteps(to.move(self.cell()), catchFrames)
 		self.showCatch(from, to, {
 			direction = to

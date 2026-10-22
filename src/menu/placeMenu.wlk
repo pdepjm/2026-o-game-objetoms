@@ -135,8 +135,6 @@ object placeMenu{
             game.addVisual(renderedMenuItem)
             renderedItems.add(renderedMenuItem)
         })
-
-
     }
 
     // Actualiza la imagen de los items del menú. Lo llama toolsManager cuando cambia

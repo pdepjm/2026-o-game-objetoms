@@ -238,6 +238,16 @@ class Machine inherits MachineSprite {
 		self.showStatic()
 	}
 	
+	// ----------- CONFIGURACION -----------
+	// Los settings que acepta (ver settings.wlk), que el menú de la herramienta edit deja cambiar.
+	// Por defecto no tiene ninguno; la sobrescriben las máquinas configurables.
+	method settings() = []
+
+	// Energía que consume: la base más lo que suma cada setting con su opción elegida
+	method energyConsumption() = self.baseEnergy() + self.settings().sum({ setting => setting.energyCost() })
+
+	method baseEnergy() = 0
+
 	//----------- UBICACION EN EL TABLERO -----------
 
 	// La celda del tablero que ocupa. Es position sin el desplazamiento del dibujo:

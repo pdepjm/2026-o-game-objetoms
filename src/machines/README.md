@@ -5,6 +5,7 @@ Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles 
 | Archivo | Qué tiene |
 |---|---|
 | `machineClasses.wlk` | Las clases base de todas las máquinas: `MachineAnimator`, `MachineSprite` y `Machine` |
+| `settings.wlk` | Las configuraciones de las máquinas: `Setting`, sus opciones y categorías (ver [Configuración](#configuración-settings)) |
 | `inventory.wlk` | `Inventory`: los items que guarda una máquina y los que esperan que se libere lugar |
 | `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk` |
 | `machineManager.wlk` | El catálogo de máquinas del menú y cuál está elegida para colocar |
@@ -74,6 +75,13 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 |---|---|---|
 | `capacity()` | `1` | guarda varios items (el Assembler) |
 
+**Configuración** (ver [Configuración](#configuración-settings))
+
+| Método | Por defecto | Sobrescribirlo cuando… |
+|---|---|---|
+| `settings()` | `[]` | acepta configuraciones: devuelve sus settings (el Dispenser: ingrediente y velocidad; el brazo: hacia dónde entrega) |
+| `baseEnergy()` | `0` | consume energía aunque no tenga ningún setting. `energyConsumption()` suma ésta más la de cada setting |
+
 **Salida**
 
 | Método | Por defecto | Sobrescribirlo cuando… |
@@ -115,6 +123,31 @@ Son las herramientas que la base les da a las subclases. Si una subclase las rei
 | `animateWork(pasos, bloque)` | Se ve trabajando durante `pasos` y después ejecuta el bloque. Sirve para cualquier máquina que tarde, no sólo las que procesan |
 | `playTimed(imágenes, pasos, bloque)`, `holdImage(ruta, pasos, bloque)` | Lo que usa `animateWork` por dentro: frames ajustados a una duración, o una imagen fija (un GIF) durante esos pasos |
 | `cell()`, `nextMachine()`, `direction()` | Ubicación en el tablero |
+
+## Configuración (settings)
+
+Lo que se cambia con la herramienta edit. Cada máquina declara los settings que acepta en `settings()`, y el menú los dibuja sin saber de qué máquina se trata (ver [`menu/README.md`](../menu/README.md)).
+
+Un `Setting` (en `settings.wlk`) guarda el valor elegido para **esa máquina** y dice:
+
+| Método | Qué es |
+|---|---|
+| `name()` | Cómo se llama en el menú ("Velocidad") |
+| `category()` | En qué grupo va en el menú (`production`, `movement`). Los settings de una misma categoría se muestran bajo un mismo título |
+| `options()` | Las opciones que ofrece, cada una con su `value`, su `image` o `label` y su `energyCost` |
+| `value()` | El valor elegido. Es lo que lee la máquina |
+| `energyCost()` | La energía de la opción elegida (la suma `energyConsumption()` de la máquina) |
+
+Hay settings genéricos para reutilizar: `ProductSetting` (qué ingrediente), `SpeedSetting` (multiplicador de ritmo: `0.5`, `1` o `2`) y `OutputSideSetting` (hacia dónde entrega, relativo a la entrada: `straightOut`, `leftOut` o `rightOut`).
+
+Para que una máquina acepte una configuración:
+
+1. Declarar el setting como atributo: `const speedSetting = new SpeedSetting(value = 1)`.
+2. Devolverlo en `settings()`.
+3. Leer `speedSetting.value()` donde la máquina lo necesite (el Dispenser: `intervalMs() = 5000 / speedSetting.value()`).
+
+> [!IMPORTANT]
+> **La configuración no es estado de la simulación**: `reset()` no la toca. Si una máquina necesita guardar algo que SÍ cambia mientras corre, va en otro atributo (el brazo guarda hacia dónde mira en `direction`, y hacia dónde entrega en su setting).
 
 ## Máquinas que procesan
 
@@ -192,8 +225,8 @@ class Oven inherits ProcessingMachine {
 | Máquina | Qué hace | Cómo se anima | Sobrescribe |
 |---|---|---|---|
 | `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `runningImage` |
-| `Dispenser` | Crea un ingrediente cada 1 segundo y se lo entrega a la de adelante | Frame a frame (todavía sin animación) | `name`, `canReceive`, `start`, `onPushed` |
-| `AutomaticArm` | Agarra el item que le llega de un lado y lo entrega del lado contrario (provisorio): al girar vuelve a calcular `next`. No rota, ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `onReceive`, `reset` y el dibujo |
+| `Dispenser` | Crea un ingrediente y se lo entrega a la de adelante. Se configura qué ingrediente (papa por defecto) y a qué velocidad (un item cada 5 segundos a velocidad normal) | Frame a frame (todavía sin animación) | `name`, `canReceive`, `start`, `onPushed` |
+| `AutomaticArm` | Agarra el item que le llega por la izquierda (entrada fija) y lo entrega recto, a la izquierda o a la derecha de su recorrido, según su configuración: al girar vuelve a calcular `next`. No rota, ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `onReceive`, `reset` y el dibujo |
 | `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `foodProcess`, `workImages` |
 | `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato | Sin animación | `name`, `capacity`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` |
 | `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |

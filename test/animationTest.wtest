@@ -1,6 +1,7 @@
 // test/animationTest.wtest
 import wollok.game.*
 import src.machines.types.automaticArm.*
+import src.machines.settings.*
 import src.machines.types.belt.*
 import src.tools.toolsManager.*
 import src.directions.*
@@ -221,10 +222,51 @@ describe "tests del AutomaticArm" {
     assert.equals(self.image("left_to_right_catch/0.png"), arm.image())
   }
   
-  test "si el item llega del lado al que mira lo agarra sin girar antes" {
+  test "siempre recibe por la izquierda, venga el item de donde venga" {
     simulationEngine.run()
     self.itemFrom(down)
-    assert.equals(self.image("down_to_up_catch/0.png"), arm.image())
+    assert.equals(self.image("down_to_left_rotate/0.png"), arm.image())
+  }
+
+  test "configurado a la izquierda lo agarra y gira hacia arriba" {
+    arm.settings().first().value(leftOut)
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(catchStart)
+    assert.equals(self.image("left_to_up_catch/0.png"), arm.image())
+  }
+
+  test "configurado a la derecha lo agarra y gira hacia abajo" {
+    arm.settings().first().value(rightOut)
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(catchStart)
+    assert.equals(self.image("left_to_down_catch/0.png"), arm.image())
+  }
+
+  test "configurado a la izquierda entrega a la maquina de arriba" {
+    arm.settings().first().value(leftOut)
+    board.push(game.at(10, 7), sink)
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered)
+    assert.equals([carried], sink.received())
+  }
+
+  test "configurado a la derecha entrega a la maquina de abajo" {
+    arm.settings().first().value(rightOut)
+    board.push(game.at(10, 5), sink)
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered)
+    assert.equals([carried], sink.received())
+  }
+
+  test "apagar la simulacion no cambia hacia donde entrega" {
+    arm.settings().first().value(rightOut)
+    simulationEngine.run()
+    simulationEngine.stop()
+    assert.equals(down, arm.outputSide())
   }
   
   test "al terminar queda quieto mirando hacia el lado contrario" {

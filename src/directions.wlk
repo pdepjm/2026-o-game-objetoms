@@ -3,6 +3,7 @@ import wollok.game.*
 object right {
 	method name() = "right"		// Este metodo se utiliza para obtener las imagenes de las maquinas rotadas
     method next() = down		// Este metodo se utiliza para rotar las maquinas que ya fueron colocadas
+	method previous() = up		// El giro contrario a next
 	method move(position) = position.right(1)		// Es metodo esta pensado para dirigir los ingredientes hacia algun lugar
 	method invert() = left
 	method output(startPoint, width, height) = startPoint.right(width)
@@ -10,6 +11,7 @@ object right {
 object down {
 	method name() = "down"
     method next() = left
+	method previous() = right		// El giro contrario a next
 	method move(position) = position.down(1)
 	method invert() = up
 	method output(startPoint, width, height) = startPoint.down(1)
@@ -17,6 +19,7 @@ object down {
 object left {
 	method name() = "left"
     method next() = up
+	method previous() = down		// El giro contrario a next
 	method move(position) = position.left(1)
 	method invert() = right
 	method output(startPoint, width, height) = startPoint.left(1)
@@ -24,6 +27,7 @@ object left {
 object up {
 	method name() = "up"
     method next() = right
+	method previous() = left		// El giro contrario a next
 	method move(position) = position.up(1)
 	method invert() = down
 	method output(startPoint, width, height) = startPoint.up(height)
