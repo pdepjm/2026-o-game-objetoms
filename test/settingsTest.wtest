@@ -7,6 +7,7 @@ import src.machines.machineClasses.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
 import src.machines.types.automaticArm.*
+import src.machines.types.smartRoboticArm.*
 import src.menu.menuManager.*
 import src.menu.editMenu.*
 import src.tools.toolsManager.*
@@ -113,7 +114,9 @@ describe "tests de los settings de las maquinas" {
   }
 
   test "el brazo entrega recto por defecto" {
-    assert.equals(right, new AutomaticArm().outputSide())
+    const arm = new AutomaticArm()
+    4.times({ _ => if (arm.inputSide() != left) arm.rotate() })
+    assert.equals(right, arm.outputSide())
   }
 }
 
@@ -127,6 +130,7 @@ describe "tests del panel de edit" {
   method initialize() {
     menuManager.setUp()
     board.push(game.at(8, 8), dispenser)
+    4.times({ _ => if (arm.inputSide() != left) arm.rotate() })
     board.push(game.at(8, 4), arm)
     toolsManager.select(edit)
   }
@@ -214,5 +218,26 @@ describe "tests del panel de edit" {
     toolsManager.onClick(game.at(8, 8))
     toolsManager.onClick(game.at(15, 3))
     assert.equals(0, self.markers().size())
+  }
+
+  // El brazo inteligente dibuja una columna por salida: Izq. (x 21), Recto (x 22) y Der. (x 23)
+  test "el brazo inteligente muestra una columna de ingredientes por salida" {
+    const smart = new SmartRoboticArm()
+    board.push(game.at(14, 8), smart)
+    toolsManager.onClick(game.at(14, 8))
+    const headers = self.texts().filter({ text => text.position().y() == 13 }).map({ text => text.text() })
+    assert.equals(3, headers.size())
+  }
+
+  test "clickear un ingrediente de la columna lo prende en esa salida" {
+    const smart = new SmartRoboticArm()
+    board.push(game.at(14, 8), smart)
+    toolsManager.onClick(game.at(14, 8))
+    const before = self.markers().size()
+    self.clickPanel(21, 12)
+    assert.equals(1, smart.settings().find({ setting => setting.name() == "Izq." }).value().size())
+    assert.equals(before + 1, self.markers().size())
+    self.clickPanel(21, 12)
+    assert.equals(before, self.markers().size())
   }
 }

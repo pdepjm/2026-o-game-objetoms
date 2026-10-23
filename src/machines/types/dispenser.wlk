@@ -50,7 +50,7 @@ class Dispenser inherits Machine {
 		const target = next
 		if (target != null) {
 			const item = new Item(kind = self.product())
-			if (target.canReceive(item)) {
+			if (target.canReceiveFrom(self, item)) {
 				item.position(self.position())
 				simulationEngine.addItem(item)
 				inventory.add(item)

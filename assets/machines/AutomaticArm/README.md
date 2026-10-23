@@ -5,21 +5,22 @@ Guía para modificar las imágenes del brazo automático. Es una máquina **fram
 Lo que tiene de distinto:
 
 - Ocupa **3x3 celdas**: sus imágenes del tablero son de **150x150**.
-- **No rota**: ni con la herramienta de rotar ni con W/A/S/D en el menú. Siempre se coloca mirando hacia abajo (`down`).
+- **Rotar mueve su entrada**: la dirección elegida (W/A/S/D) o la herramienta de rotar definen por qué lado recibe. El menú, por ahora, muestra siempre `down_menu.png`.
 - **Sus animaciones van de una dirección a otra**: las carpetas se llaman `<desde>_to_<hasta>_<accion>/`, en vez de `<direccion>_<accion>/`.
 - **Al prender la simulación sigue quieto**: sólo se anima cuando le llega un ingrediente.
 
 ## Cómo funciona en el juego
 
-1. Se coloca mirando hacia abajo (`down_game.png`), sin importar la dirección elegida.
-2. Cuando una máquina vecina (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente. **La entrada es fija: siempre es el lado izquierdo (`left`)**, venga de donde venga el ingrediente:
-   1. Si no está mirando hacia la izquierda, **gira hacia ese lado**: animación `<hacia donde mira>_to_left_rotate`.
-   2. **Lo agarra y gira hacia el lado de salida `T`**: animación `left_to_<T>_catch`. El ingrediente viaja con la pinza hasta la celda de ese lado.
+1. Se coloca mirando hacia su entrada `I` (`<I>_game.png`): el lado de la dirección elegida, que cambia al rotarlo.
+2. Cuando la máquina que está en `I` (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente. **Es la única entrada: de otro lado no recibe**:
+   1. Si no está mirando hacia `I`, **gira hacia ese lado**: animación `<hacia donde mira>_to_<I>_rotate`.
+   2. **Lo agarra y gira hacia el lado de salida `T`**: animación `<I>_to_<T>_catch`. El ingrediente viaja con la pinza hasta la celda de ese lado.
    3. **Lo entrega a la máquina de la celda de `T`** y queda quieto mirando hacia ahí (`<T>_game.png`).
 
-   `T` se configura con la herramienta edit, **relativo al recorrido del ingrediente** (entra por la izquierda y viaja hacia la derecha): *Recto* → `right`, *Izquierda* → `up`, *Derecha* → `down`. Es el setting `OutputSideSetting` (ver [`machines/README.md`](../../../src/machines/README.md#configuración-settings)).
-3. Mientras tiene un ingrediente no acepta otro. Si la máquina de la celda contraria está llena, espera a que se libere; si no hay ninguna máquina, se queda con el ingrediente.
-4. Al apagar la simulación suelta lo que tenía y vuelve a mirar hacia abajo.
+   `T` se configura con la herramienta edit, **relativo al recorrido del ingrediente** (entra por `I` y viaja hacia el lado opuesto). Con `I = left`: *Recto* → `right`, *Izquierda* → `up`, *Derecha* → `down`. Es el setting `OutputSideSetting` (ver [`machines/README.md`](../../../src/machines/README.md#configuración-settings)).
+3. **También agarra de una cinta que no le apunta**: si pasa un ingrediente por la cinta de su entrada y el brazo está libre, se lo lleva (`tryGrab`). Si estaba ocupado, el ingrediente sigue su camino; al quedar libre, agarra el que haya esperando.
+4. Mientras tiene un ingrediente no acepta otro. Si la máquina de la celda contraria está llena, espera a que se libere; si no hay ninguna máquina, se queda con el ingrediente.
+5. Al apagar la simulación suelta lo que tenía y vuelve a mirar hacia la entrada.
 
 Por ejemplo, con la salida en *Recto*, una cinta a la izquierda y otra a la derecha:
 
@@ -27,10 +28,13 @@ Por ejemplo, con la salida en *Recto*, una cinta a la izquierda y otra a la dere
  [Belt →] [ Brazo ] [Belt →]
 ```
 
-`down_to_left_rotate` → `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
+(entrada `left`) `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
 
 > [!NOTE]
-> Configurar hacia dónde entrega no se pierde al apagar la simulación: es configuración, no estado (`reset()` sólo vuelve a mirar hacia abajo).
+> `SmartRoboticArm` comparte estas imágenes. Es el mismo brazo con tres salidas, cada una con su filtro de items (ver [`machines/README.md`](../../../src/machines/README.md)).
+
+> [!NOTE]
+> Configurar hacia dónde entrega no se pierde al apagar la simulación: es configuración, no estado (`reset()` sólo vuelve a mirar hacia la entrada).
 
 ### Las celdas alrededor del brazo
 
@@ -46,8 +50,8 @@ Si se cambia el tamaño de las imágenes, hay que cambiar también `drawOffsetX(
 | Archivo | Tamaño | Para qué se usa |
 |---|---|---|
 | `<dir>_game.png` | 150x150 | El brazo quieto mirando hacia `<dir>`. Se usan los 4: es la pose en la que queda después de entregar |
-| `down_menu.png` | 100x100 | El brazo en el menú de máquinas (siempre éste, porque no rota) |
-| `left_menu.png`, `right_menu.png`, `up_menu.png` | — | **No se usan** (el brazo no rota). Se pueden borrar |
+| `down_menu.png` | 100x100 | El brazo en el menú de máquinas (por ahora siempre éste) |
+| `left_menu.png`, `right_menu.png`, `up_menu.png` | — | **No se usan todavía**: quedan para el menú con rotación |
 | `<desde>_to_<hasta>_rotate/` | 150x150 cada PNG | Girar de `<desde>` a `<hasta>`: **7 frames** (`0.png` a `6.png`) |
 | `<desde>_to_<hasta>_catch/` | 150x150 cada PNG | Agarrar y girar de `<desde>` a `<hasta>`: **28 frames** (`0.png` a `27.png`) |
 
@@ -56,7 +60,7 @@ Si se cambia el tamaño de las imágenes, hay que cambiar también `drawOffsetX(
 ### Qué animaciones se usan hoy
 
 - **`_rotate`: las 12.** El brazo puede estar mirando hacia cualquier lado cuando le llega un ingrediente desde cualquier otro.
-- **`_catch`: sólo las 3 que salen de `left`** (`left_to_right`, `left_to_up`, `left_to_down`), porque la entrada es fija. Las demás quedan listas para cuando el brazo tenga otras entradas.
+- **`_catch`: las 12.** Salen del lado de la entrada, que ahora puede ser cualquiera.
 
 ### Para que no se vean saltos
 

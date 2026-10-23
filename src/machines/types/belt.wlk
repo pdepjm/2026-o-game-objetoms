@@ -9,4 +9,7 @@ class Belt inherits Machine {
 
 	// La cinta se anima con GIF mientras la simulación corre
 	override method runningImage() = self.gifImage()
+
+	// Un brazo puede agarrar el item que lleva, aunque la cinta no le apunte
+	override method grabbableItem() = self.itemToPush()
 }

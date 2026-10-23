@@ -85,11 +85,16 @@ object editMenu{
             self.addText(category.name().toUpperCase(), row)
             row -= 1
 
-            self.settings().filter({ setting => setting.category() == category }).forEach({ setting =>
+            const inCategory = self.settings().filter({ setting => setting.category() == category })
+
+            inCategory.filter({ setting => setting.column() == null }).forEach({ setting =>
                 self.addText(setting.name(), row)
                 row -= 1
                 row = self.renderOptions(setting, row)
             })
+
+            const columned = inCategory.filter({ setting => setting.column() != null })
+            if (!columned.isEmpty()) row = self.renderColumns(columned, row)
         })
 
         self.updateMarkers()
@@ -114,8 +119,37 @@ object editMenu{
         return firstRow - (index / self.columns()).roundUp()
     }
 
+    // Dibuja los settings que van en columna: el nombre arriba y sus opciones una debajo de la otra.
+    // Devuelve la primera fila que queda libre.
+    method renderColumns(settings, firstRow) {
+        var lastRow = firstRow
+
+        settings.forEach({ setting =>
+            self.addText(setting.name(), firstRow, setting.column())
+
+            var index = 0
+
+            setting.options().forEach({ option =>
+                const position = menuManager.interactiveZone().at(setting.column(), firstRow - 1 - index)
+                const visual = new OptionImage(image = option.image(), position = position)
+
+                game.addVisual(visual)
+                renderedItems.add(visual)
+                slots.add(new OptionSlot(setting = setting, option = option, position = position))
+                index += 1
+            })
+            lastRow = lastRow.min(firstRow - 1 - setting.options().size())
+        })
+
+        return lastRow
+    }
+
     method addText(text, row) {
-        const label = new MenuText(text = text, position = menuManager.interactiveZone().at(0, row))
+        self.addText(text, row, 0)
+    }
+
+    method addText(text, row, column) {
+        const label = new MenuText(text = text, position = menuManager.interactiveZone().at(column, row))
 
         game.addVisual(label)
         renderedItems.add(label)

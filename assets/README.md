@@ -66,6 +66,7 @@ Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la
 | `Fryer` | `machines/Fryer/` |
 | `Dispenser` | `machines/Dispenser/` |
 | `AutomaticArm` | `machines/AutomaticArm/` (caso especial, ver abajo) |
+| `SmartRoboticArm` | usa las imágenes de `machines/AutomaticArm/` (`assetFolder()`) |
 
 Hay **dos tipos de máquinas**, según cómo se animan. Todas tienen, para cada una de las 4 direcciones (`up`, `down`, `left`, `right`):
 
@@ -101,7 +102,7 @@ Algunas máquinas no siguen esta convención y tienen su propio README en su car
 
 | Máquina | Qué tiene de distinto | Guía |
 |---|---|---|
-| `AutomaticArm` | Ocupa 3x3 celdas (imágenes de 150x150), no rota, y en vez de `.gif` usa carpetas de PNG por frame que se reproducen cuando le llega un ingrediente | [`machines/AutomaticArm/README.md`](machines/AutomaticArm/README.md) |
+| `AutomaticArm` | Ocupa 3x3 celdas (imágenes de 150x150), rota moviendo su entrada, y en vez de `.gif` usa carpetas de PNG por frame que se reproducen cuando le llega un ingrediente | [`machines/AutomaticArm/README.md`](machines/AutomaticArm/README.md) |
 
 ### Generar las rotaciones
 

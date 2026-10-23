@@ -66,6 +66,9 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (el Assembler: `super(item) && recipe.stillNeeds(item, inventory.items())`) o ninguno (`false`). Las que procesan ya lo tienen resuelto en `ProcessingMachine` |
+| `acceptsSource(source)` | de cualquiera, salvo que sea `armOnly()` (entonces sólo de un brazo) | acepta items sólo de ciertas máquinas (el brazo: sólo de la que está en su entrada). Quien entrega pregunta `canReceiveFrom(source, item)`, que junta `acceptsSource` y `canReceive`: no se sobrescribe |
+| `grabbableItem()` | `null` | un brazo puede agarrar el item que tiene, aunque no le apunte (la cinta: `itemToPush()`). Para sacárselo, el brazo usa `surrender(item)` |
+| `armOnly()` | `false` | sólo trabaja con un brazo: sólo recibe de un brazo y sólo entrega a un brazo (la freidora) |
 | `onReceive(item)` | anima el item hasta su celda y, al llegar, llama a `onArrived(item)` | el item no viaja a su celda (el brazo) |
 | `onArrived(item)` | `self.tryPush()`: lo pasa a la siguiente, como una cinta | la máquina hace algo con el item: procesarlo, juntarlo con otros… |
 
@@ -95,16 +98,16 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `start()` | busca `next` y pasa a `runningImage()` | arranca sola (el Dispenser agenda su primer item). **Siempre llamar a `super()`** |
-| `reset()` | vacía el inventario y las esperas, corta la animación y vuelve a la imagen quieta | tiene estado propio (el brazo: `from`, `grabbed` y volver `direction` a `down`). Reiniciar ese estado **antes** de `super()`, que muestra `staticImage()` |
+| `reset()` | vacía el inventario y las esperas, corta la animación y vuelve a la imagen quieta | tiene estado propio (el brazo: `from`, `grabbed` y volver `direction` a su entrada). Reiniciar ese estado **antes** de `super()`, que muestra `staticImage()` |
 
 **Dibujo** (en `MachineSprite`)
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `runningImage()` | la imagen quieta | se anima con GIF: `override method runningImage() = self.gifImage()` |
-| `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction`. Ninguna máquina lo necesita hoy: el brazo guarda en `direction` hacia dónde mira |
+| `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction`. El brazo lo sobrescribe: su `direction` es hacia dónde mira la pinza, no hacia dónde está rotado |
 | `drawOffsetX()` / `drawOffsetX()` | `0` | se dibuja corrida (el brazo, que ocupa 3x3 celdas) |
-| `rotate()` / `menuImage(dir)` | rota normalmente | no rota (el brazo) |
+| `rotate()` / `menuImage(dir)` | rota normalmente | rota distinto (el brazo: mueve su entrada) o el menú muestra otra cosa |
 | `workImages()` | `[self.runningImage()]`: se ve quieta mientras trabaja | se anima frame a frame mientras trabaja (la cortadora: `self.actionAnimation("cut", 17).frames()`) |
 | `animateWork(pasos, bloque)` | reproduce `workImages()` ajustadas a `pasos` (con `TimedAnimation`), vuelve a la imagen andando y ejecuta el bloque | usa un GIF mientras trabaja: `self.holdImage(self.gifImage(), pasos, bloque)` (el horno) |
 
@@ -147,7 +150,7 @@ Para que una máquina acepte una configuración:
 3. Leer `speedSetting.value()` donde la máquina lo necesite (el Dispenser: `intervalMs() = 5000 / speedSetting.value()`).
 
 > [!IMPORTANT]
-> **La configuración no es estado de la simulación**: `reset()` no la toca. Si una máquina necesita guardar algo que SÍ cambia mientras corre, va en otro atributo (el brazo guarda hacia dónde mira en `direction`, y hacia dónde entrega en su setting).
+> **La configuración no es estado de la simulación**: `reset()` no la toca. Si una máquina necesita guardar algo que SÍ cambia mientras corre, va en otro atributo (el brazo guarda su entrada en `inputSide`, hacia dónde mira la pinza en `direction`, y hacia dónde entrega en su setting).
 
 ## Máquinas que procesan
 
@@ -226,11 +229,12 @@ class Oven inherits ProcessingMachine {
 |---|---|---|---|
 | `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `runningImage` |
 | `Dispenser` | Crea un ingrediente y se lo entrega a la de adelante. Se configura qué ingrediente (papa por defecto) y a qué velocidad (un item cada 5 segundos a velocidad normal) | Frame a frame (todavía sin animación) | `name`, `canReceive`, `start`, `onPushed` |
-| `AutomaticArm` | Agarra el item que le llega por la izquierda (entrada fija) y lo entrega recto, a la izquierda o a la derecha de su recorrido, según su configuración: al girar vuelve a calcular `next`. No rota, ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `onReceive`, `reset` y el dibujo |
+| `AutomaticArm` | Agarra el item que le llega por su única entrada y lo entrega recto, a la izquierda o a la derecha de su recorrido, según su configuración: al girar vuelve a calcular `next`. La entrada es la dirección elegida al colocarlo y rotar la mueve; sólo recibe de la máquina que está ahí, y además agarra los items que pasan por una cinta ahí, aunque la cinta no le apunte. Ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `onReceive`, `acceptsSource`, `rotate`, `reset` y el dibujo |
+| `SmartRoboticArm` | Un brazo con tres salidas (izquierda, recta y derecha), cada una con los ingredientes que deja salir (una columna en el panel de edit; sin ingredientes, esa salida no se usa). Entrega cada item por la primera salida que lo acepta (recta, izquierda, derecha) y no toma los que ninguna acepta | Los de `AutomaticArm` | `name`, `settings`, `canReceive`, `outputSideFor` |
 | `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `foodProcess`, `workImages` |
 | `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato | Sin animación | `name`, `capacity`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` |
 | `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |
-| `Fryer` | Todavía sin lógica: no acepta items | — | `name`, `canReceive` (`false`) |
+| `Fryer` | Fríe lo que le entrega un brazo: es `armOnly`, no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | Sin animación (todavía sin imágenes) | `name`, `foodProcess`, `armOnly`, `grabbableItem`, `onProcessed` |
 
 Por defecto una máquina es **frame a frame**: con la simulación prendida se ve quieta y se anima cuando hace algo. Las imágenes de cada tipo se explican en [`assets/README.md`](../../assets/README.md), y el brazo tiene su propia guía en [`assets/machines/AutomaticArm/README.md`](../../assets/machines/AutomaticArm/README.md).
 

@@ -225,6 +225,10 @@ class Machine inherits MachineSprite {
 	// (el brazo), la vuelve a calcular con nextMachine().
 	var next = null
 
+	// Los brazos que miran a esta máquina como su entrada: se les avisa cuando llega un item,
+	// por si pueden agarrarlo (ver grabbableItem). Se anotan al prender la simulación.
+	const grabbers = []
+
 	// Cada máquina guarda su propia dirección (un objeto de directions.wlk).
 	// Nace con la dirección seleccionada al momento de colocarla.
 	var direction = toolsManager.currentDirection()
@@ -260,7 +264,11 @@ class Machine inherits MachineSprite {
 
 	// Busca en el tablero la máquina que está en outputTarget() (null si no hay ninguna).
 	// Durante la simulación se usa next, que la guarda.
-	method nextMachine() = board.machineAt(self.outputTarget())
+	// Una máquina que sólo trabaja con el brazo (armOnly) no entrega a otra cosa que no sea un brazo.
+	method nextMachine() {
+		const machine = board.machineAt(self.outputTarget())
+		return if (self.armOnly() && machine != null && !machine.isArm()) null else machine
+	}
 	
 	// Simboliza la cantidad de celdas que ocupa
 	method width() = 1
@@ -276,6 +284,7 @@ class Machine inherits MachineSprite {
 	// Vuelve la máquina a su estado inicial (sin items y quieta), al apagar la simulación.
 	// Las que tengan estado propio lo reinician ANTES de llamar a super().
 	method reset() {
+		grabbers.clear()
 		inventory.clear()
 		self.stopAnimation()
 		self.showStatic()
@@ -288,11 +297,29 @@ class Machine inherits MachineSprite {
 	// y las que no aceptan ninguno, con false.
 	method canReceive(item) = inventory.hasRoom()
 
+	// ¿Acepta items que le entrega `source`? Por defecto de cualquiera, salvo que sea armOnly.
+	method acceptsSource(source) = !self.armOnly() || source.isArm()
+
+	// Lo que se pregunta antes de entregar: quién lo entrega y qué item es.
+	// Las máquinas sobrescriben canReceive (qué items) y acceptsSource (de quién), no éste.
+	method canReceiveFrom(source, item) = self.acceptsSource(source) && self.canReceive(item)
+
+	// Una máquina armOnly sólo recibe de un brazo y sólo entrega a un brazo (la freidora)
+	method armOnly() = false
+
+	method isArm() = false
+
 	// Otra máquina le entrega un item. No se sobrescribe: guarda el item
 	// y llama a onReceive, donde cada máquina define qué le pasa.
 	method receive(item) {
 		inventory.add(item)
 		self.onReceive(item)
+		self.notifyGrabbers()
+	}
+
+	// Avisa a los brazos que la miran que hay algo para agarrar (llegó un item, o terminó de procesarse)
+	method notifyGrabbers() {
+		grabbers.forEach({ grabber => simulationEngine.after(1, { grabber.tryGrab() }) })
 	}
 
 	// Qué le pasa al item que acaba de llegar. Por defecto se anima hasta la celda
@@ -304,8 +331,22 @@ class Machine inherits MachineSprite {
 
 	// El item terminó de llegar. Por defecto se entrega a la siguiente, como una cinta.
 	// Las que hacen algo con el item (procesarlo, juntarlo con otros) lo sobrescriben.
+	// OJO: si un brazo se lo llevó mientras venía en camino, ya no hay nada que entregar.
 	method onArrived(item) {
-		self.tryPush()
+		if (inventory.items().contains(item)) self.tryPush()
+	}
+
+	// El item que un brazo puede agarrar sin que esta máquina se lo entregue (null si no hay ninguno).
+	// Sólo la cinta lo ofrece: a una máquina que está procesando no se le saca el item.
+	method grabbableItem() = null
+
+	// Un brazo se llevó el item: deja de ser de esta máquina y despierta a las que esperaban lugar
+	method surrender(item) {
+		inventory.release(item)
+	}
+
+	method addGrabber(arm) {
+		grabbers.add(arm)
 	}
 
 	//----------- ITEMS: SALIDA -----------
@@ -324,7 +365,7 @@ class Machine inherits MachineSprite {
 		const item = self.itemToPush()
 		const target = next
 		if (item != null && target != null) {
-			if (target.canReceive(item)) {
+			if (target.canReceiveFrom(self, item)) {
 				inventory.release(item)
 				target.receive(item)
 				self.onPushed(item)
@@ -364,13 +405,20 @@ class ProcessingMachine inherits Machine {
 
 
 
+	// Se llama cuando terminó de procesar un item (por defecto, no hace nada). Lo usa la freidora para quemarlo.
+	method onProcessed(item) {}
+
 	override method onArrived(item) {
 
 		self.animateWork(item.processTime(), {
 
-			item.process(self.foodProcess())
-
-			self.tryPush()
+			// Un brazo pudo haberse llevado el item mientras trabajaba: entonces ya no es de esta máquina
+			if (self.heldItems().contains(item)) {
+				item.process(self.foodProcess())
+				self.tryPush()
+				self.notifyGrabbers()
+				self.onProcessed(item)
+			}
 
 		})
 

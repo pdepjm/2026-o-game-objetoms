@@ -22,6 +22,14 @@ object cutPotato inherits IngredientKind {
 }
 object friedPotato inherits IngredientKind {
     override method image() = potatoFamily.image("cooked")
+
+    // Si se queda en la freidora, se quema
+    override method initialize() {
+        self.turnsInto(burning, burntPotato)
+    }
+}
+object burntPotato inherits IngredientKind {
+    override method image() = potatoFamily.image("burnt")
 }
 // ---------------------------------------------------------------------------------------
 

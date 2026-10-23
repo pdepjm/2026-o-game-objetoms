@@ -5,6 +5,7 @@ import src.food.foodTypes.*
 import machines.types.belt.*
 import machines.types.dispenser.*
 import machines.types.automaticArm.*
+import machines.types.smartRoboticArm.*
 import machines.types.assembler.*
 import machines.types.oven.*
 import machines.types.cuttingMachine.*
@@ -21,6 +22,7 @@ object machineManager{
 		{ => new Oven() },
 		{ => new Dispenser()},
 		{ => new AutomaticArm()},
+		{ => new SmartRoboticArm()},
 		{ => new Fryer() }
 	]
 

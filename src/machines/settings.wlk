@@ -42,6 +42,10 @@ class Setting {
 	method category()
 	method options()
 
+	// null: el panel lo dibuja con los demás, de a 4 opciones por fila. Un número: el panel lo dibuja
+	// en esa columna, con sus opciones una debajo de la otra (ver editMenu).
+	method column() = null
+
 	// ----------- ELECCION -----------
 	method select(option) {
 		value = option.value()
@@ -102,4 +106,29 @@ object leftOut {
 
 object rightOut {
 	method sideFor(inputSide) = inputSide.invert().next()
+}
+
+// ----------- FILTROS DE ITEMS -----------
+// Qué items deja salir una máquina por una de sus salidas: los de los kinds elegidos (un kind es un
+// filtro de sí mismo, ver accepts en foodClasses.wlk). Cada opción prende o apaga un kind, y sin
+// ninguno elegido no sale nada por esa salida. Se dibuja en una columna del panel (ver column()).
+class ItemSetSetting inherits Setting {
+	const outputName
+	const columnIndex
+	const kinds = []
+
+	override method name() = outputName
+	override method category() = movement
+	override method column() = columnIndex
+
+	override method options() = kinds.map({ kind => new SettingOption(value = kind, image = kind.image()) })
+
+	// Prende o apaga ese kind. Arma una lista nueva: la inicial puede estar compartida con otra salida.
+	override method select(option) {
+		value = if (self.isSelected(option)) value.filter({ kind => kind != option.value() }) else value + [option.value()]
+	}
+
+	override method isSelected(option) = value.contains(option.value())
+
+	method accepts(item) = value.any({ kind => kind.accepts(item) })
 }
