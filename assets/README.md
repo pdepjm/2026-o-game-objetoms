@@ -191,8 +191,12 @@ food/
 | cortado | `cut` |
 | cocinado | `cooked` |
 | frito | `fried` |
+| quemado | `burnt` |
 
 Hay imágenes de papa, lechuga, tomate, pan, carne y hamburguesa. Las rutas las arman las familias de `src/food/foodPaths.wlk`.
+
+> [!NOTE]
+> Falta `potatoes/potato_burnt.png` (y su `.svg`): la usa `burntPotato`, la papa que se quema en la freidora.
 
 ### Tamaño del dibujo
 

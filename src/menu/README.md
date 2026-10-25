@@ -56,8 +56,18 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
   Lenta  Normal  Rapida
   ```
 
-- Las opciones con `image` se dibujan con su imagen (`OptionImage`) y las otras con su `label` (`MenuText`).
+- Un setting con `column()` (no `null`) se dibuja distinto: después de los demás settings de su categoría, en **esa columna**, con su nombre arriba y sus opciones una debajo de la otra. Los settings en columna de una misma categoría quedan uno al lado del otro. Así se ven las tres salidas del brazo inteligente (`ItemSetSetting`):
+
+  ```
+  MOVIMIENTO
+  Izq.  Recto  Der.       ← un setting por columna (column() = 0, 1 y 2)
+  [papa][papa] [papa]
+  [lech][lech] [lech]
+  ...
+  ```
+
+- Las opciones con `image` se dibujan con su imagen (`OptionImage`) y las otras con su `label` (`MenuText`). En columna, siempre con su imagen.
 - Click en una opción: se la aplica a su setting (`setting.select(option)`). `OptionSlot` recuerda qué opción de qué setting hay en cada celda.
-- Hay una marca (`OptionMarker`) sobre la opción elegida de **cada** setting.
+- Hay una marca (`OptionMarker`) sobre cada opción elegida (`isSelected`) de **cada** setting. Un setting que permite elegir varias (`ItemSetSetting`) muestra varias marcas.
 - Se redibuja sólo cuando cambia la máquina elegida; un click sólo mueve las marcas.
 - Una máquina sin settings no muestra nada.

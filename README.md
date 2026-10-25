@@ -16,6 +16,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`src/tools/README.md`](src/tools/README.md) | Las herramientas del jugador y la dirección elegida |
 | [`src/input/README.md`](src/input/README.md) | Las teclas y los clicks |
 | [`src/levels/README.md`](src/levels/README.md) | Niveles (todavía sin usar) |
+| [`Plan-Implementacion-Niveles.md`](docs/Plan-Implementacion-Niveles.md) | **El plan para implementar los niveles**, por fases y con checklist |
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |
 | [`Diagrama de clase`](https://lucid.app/lucidchart/a3679667-4ca6-4fa7-b44c-518a1db91a84/edit?invitationId=inv_417f2848-4415-43b1-b901-ad3450eb3ba1) |
