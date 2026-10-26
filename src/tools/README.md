@@ -14,6 +14,7 @@ Las herramientas con las que el jugador construye, y la dirección con la que se
 - **Clicks (`onClick`):**
   - en el tablero, se lo pasa a la herramienta elegida, **sólo si la simulación está apagada** (así no se edita el tablero mientras corre);
   - en la zona interactiva del menú, se lo pasa a `menuManager`.
+- **`reset()`:** vuelve a como arranca el juego: sin herramienta y con dirección `right`, y se lo avisa a `menuManager` (cierra el panel activo y actualiza las imágenes del menú). No usa `select(null)`, porque `select` alterna. Al cerrarse el panel de edit, `editMenu` olvida la máquina elegida: por eso, al reiniciar, se llama después de `board.clear()`.
 
 ## `userTools.wlk`
 
@@ -23,7 +24,7 @@ Cada herramienta es un objeto que entiende `name()` y `onClick(posición)`:
 |---|---|---|
 | `place` | P | Coloca la máquina elegida en el menú, mirando hacia la dirección actual |
 | `delete` | X | Quita la máquina de esa celda (y los ingredientes que tenía) |
-| `edit` | Z | Todavía nada (muestra el panel de info) |
+| `edit` | Z | Elige esa máquina y muestra sus settings en el panel de edit |
 | `rotate` | R | Rota la máquina de esa celda (en el brazo automático mueve su entrada) |
 
 `name()` se usa para la imagen de la barra (`assets/tools/<name>_selected.png`).

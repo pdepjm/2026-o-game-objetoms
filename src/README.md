@@ -28,7 +28,9 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 - El tablero jugable va de **x 5 a 19** y de **y 1 a 13** (`inBoard`). El resto de la pantalla son los menús.
 - Por dentro es una grilla de casillas (`Cell`) que se arma una sola vez. Buscar una máquina es ir directo a su casilla, sin recorrer nada. Por eso no es un `Dictionary`: el comentario del archivo explica por qué era lento.
 - `push(posición, máquina)` la coloca: le fija la posición del dibujo (con su `drawOffsetX`/`drawOffsetY`), la agrega a la pantalla y la anota en el `simulationEngine`. `pop(posición)` hace lo contrario, y se lleva los ingredientes que tenía encima.
-- **No usar `push` ni `pop` con la simulación prendida:** las máquinas ya calcularon a sus vecinas. Los clicks se bloquean en `toolsManager`.
+- `machines()`: las máquinas colocadas, cada una una sola vez (una de 2x2 ocupa 4 casillas, pero aparece una vez).
+- `clear()`: saca todas las máquinas (hace `pop` de cada una), con los ingredientes que tengan encima. Sirve para empezar de cero, por ejemplo al cargar un nivel.
+- **No usar `push`, `pop` ni `clear` con la simulación prendida:** las máquinas ya calcularon a sus vecinas. Los clicks se bloquean en `toolsManager`; `clear` no lo controla, así que antes hay que apagarla (`simulationEngine.reset()`).
 
 ### `cellPosition.wlk`
 

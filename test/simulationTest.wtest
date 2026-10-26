@@ -238,4 +238,38 @@ describe "tests de simulacion" {
     self.steps(1)
     assert.equals(1, firstBelt.heldItems().size())
   }
+
+  // reset(): volver a como arranca el juego (fase 1 del plan de niveles)
+
+  test "reset con la simulacion prendida la apaga y borra los items" {
+    self.oneBelt()
+    simulationEngine.run()
+    self.steps(dispenseSteps)
+    assert.notThat(simulationEngine.allItems().isEmpty())
+    simulationEngine.reset()
+    assert.notThat(simulationEngine.running())
+    assert.that(simulationEngine.allItems().isEmpty())
+  }
+
+  test "reset vuelve la velocidad a 1" {
+    simulationEngine.speed(3)
+    simulationEngine.reset()
+    assert.equals(1, simulationEngine.speed())
+  }
+
+  test "reset con la simulacion apagada la deja apagada" {
+    simulationEngine.reset()
+    assert.notThat(simulationEngine.running())
+  }
+
+  test "reset no saca las maquinas: siguen en el tablero y al prender vuelven a funcionar" {
+    self.oneBelt()
+    simulationEngine.run()
+    simulationEngine.reset()
+    assert.that(board.isThereAMachine(game.at(5, 5)))
+    assert.that(board.isThereAMachine(game.at(6, 5)))
+    simulationEngine.run()
+    self.steps(dispenseSteps)
+    assert.equals(1, firstBelt.heldItems().size())
+  }
 }

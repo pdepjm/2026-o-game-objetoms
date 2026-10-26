@@ -15,7 +15,7 @@ import machines.types.fryer.*
 object machineManager{
 	// El orden de la lista define el orden en el menú.
 	// Cada elemento es una lambda que crea una máquina nueva.
-	const machines = [
+	const allMachines = [
 		{ => new Belt() },
 		{ => new Assembler() },
 		{ => new CuttingMachine() },
@@ -25,8 +25,18 @@ object machineManager{
 		{ => new SmartRoboticArm()},
 		{ => new Fryer() }
 	]
+	var machines = allMachines
+
 
 	var selectedMachine = machines.first()
+
+	method allMachines() = allMachines
+
+	// Cambia las maquinas disponibles para colocar
+	method changeCatalog(factories) {
+		machines = factories
+		selectedMachine = factories.first()
+	}
 
 	// Nueva instancia de la máquina seleccionada
 	method createMachine() = selectedMachine.apply()

@@ -257,8 +257,10 @@ class Oven inherits ProcessingMachine {
 Por defecto una máquina es **frame a frame**: con la simulación prendida se ve quieta y se anima cuando hace algo. Las imágenes de cada tipo se explican en [`assets/README.md`](../../assets/README.md), y el brazo tiene su propia guía en [`assets/machines/AutomaticArm/README.md`](../../assets/machines/AutomaticArm/README.md).
 
 ## `machineManager.wlk`: el catálogo
-- `machines`: la lista de máquinas que se pueden colocar. **El orden de la lista es el orden del menú**, de a 4 por página.
+- `allMachines`: todas las máquinas del juego. **El orden de la lista es el orden del menú**, de a 4 por página.
+- `machines`: las que se pueden colocar ahora. Al arrancar, todas (`allMachines`).
 - Cada elemento es un bloque que crea una máquina nueva (`{ => new Belt() }`), así cada colocación usa una instancia distinta.
+- `changeCatalog(bloques)`: cambia las máquinas que se pueden colocar (por ejemplo, las de un nivel) y elige la primera, así no queda elegida una que el catálogo nuevo no tiene. **No redibuja el menú**: quien lo llama tiene que llamar también a `placeMenu.resetPage()`.
 - `select(...)` y `createMachine()`: la máquina elegida en el menú y una instancia nueva de ella para colocar.
 
 ## Agregar una máquina nueva

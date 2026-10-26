@@ -42,4 +42,11 @@ object toolsManager{
 		else if (menuManager.inInteractiveMenu(pos))
 			menuManager.onClick(pos)
 	}
+
+	method reset() {
+		selectedTool = null
+		currentDirection = right
+		menuManager.toolChanged(null)
+		menuManager.directionChanged()
+	}
 }

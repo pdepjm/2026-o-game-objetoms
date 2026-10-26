@@ -49,8 +49,13 @@ object board {
 		})
 	})
 
+	method machines() = grid.flatMap({ column => column.map({ cell => cell.machine()})}).filter({machine => machine != null}).asSet().asList()
 
 	// métodos públicos
+
+	method clear() {
+		self.machines().forEach({machine => self.pop(machine.cell())})
+	}
 
 	//obtener la máquina de una posición (null si no hay, o si está fuera del tablero).
 	// Fuera del tablero pasa, por ejemplo, con una cinta del borde que apunta hacia afuera.

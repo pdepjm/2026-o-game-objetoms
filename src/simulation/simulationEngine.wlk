@@ -90,6 +90,11 @@ object simulationEngine {
 		console.println("Simulation: " + running)
 	}
 
+	method reset(){
+		if(running) self.stop()
+		speed = 1
+	}
+
 	// Prende la simulación: cada máquina busca a su vecina y agenda lo que necesite.
 	// Mientras está prendida no se puede editar el tablero (ver toolsManager).
 	method run() {

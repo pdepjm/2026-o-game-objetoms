@@ -11,7 +11,7 @@ Plan para pasar del modo libre de hoy (todas las máquinas, sin objetivo) a **ni
 ## Estado general
 
 - [x] [Fase 0: Estabilidad](#fase-0-estabilidad) (pendiente: el arte del brazo inteligente en el tablero, y volver a escribir los tests borrados en [0.4](#04-tests-que-rompieron-las-recetas-nuevas))
-- [ ] [Fase 1: Poder reiniciar todo](#fase-1-poder-reiniciar-todo)
+- [x] [Fase 1: Poder reiniciar todo](#fase-1-poder-reiniciar-todo)
 - [ ] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
 - [ ] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager) ← con 0 a 3 ya hay un primer nivel jugable
 - [ ] [Fase 4: Máquinas fijas y parametrizadas](#fase-4-máquinas-fijas-y-parametrizadas)
@@ -136,34 +136,181 @@ Conviene volver a escribirlos cuando se definan las recetas: creando el Assemble
 
 ## Fase 1: Poder reiniciar todo
 
-**Para qué:** poder sacar todo lo del tablero y volver al estado inicial. Sin esto no se puede cargar un nivel ni volver a empezarlo.
+**Para qué:** poder dejar el juego como recién abierto sin cerrarlo: sin máquinas, con la simulación apagada, el menú en la primera página y sin herramienta elegida. Sin esto no se puede cargar un nivel ni volver a empezarlo.
 **Depende de:** nada.
-**Archivos:** `board.wlk`, `simulationEngine.wlk`, `machineManager.wlk`, `placeMenu.wlk`, `toolsManager.wlk`.
+**Archivos:** `src/board.wlk`, `src/simulation/simulationEngine.wlk`, `src/machines/machineManager.wlk`, `src/menu/placeMenu.wlk`, `src/tools/toolsManager.wlk`.
 
-1. **`board.machines()`:** las máquinas colocadas, sin repetir. Una máquina de 2x2 ocupa 4 casillas, por eso el `asSet()`:
+> [!NOTE]
+> En esta fase **el juego no cambia**: nadie llama todavía a lo nuevo (lo va a usar `levelManager.load` en la fase 3). Todo se comprueba con tests.
 
-   ```wollok
-   method machines() = grid.flatMap({ column => column.map({ cell => cell.machine() }) })
-   	.filter({ machine => machine != null }).asSet().asList()
-   ```
+### 1.1 Qué queda "sucio" hoy
 
-2. **`board.clear()`:** hace `self.pop(machine.cell())` de cada una de `machines()`. Como `pop`, **sólo se usa con la simulación apagada**.
-3. **`simulationEngine.reset()`:** si está prendida, `stop()`; después, `speed = 1`. **No toca `simulatedObjects`**: las máquinas se sacan del engine con `board.clear()`, que llama a `pop`.
-4. **`machineManager`:**
-   - Mover la lista de hoy a `const allMachines = [...]` y agregar `method allMachines() = allMachines`.
-   - `var machines = allMachines` (antes era `const`).
-   - `method catalog(factories)`: `machines = factories` y `selectedMachine = factories.first()`.
-5. **`placeMenu.resetPage()`:** `currentPage = 0` y, si está visible, `self.renderItems()` (que también actualiza el overlay).
-6. **`toolsManager.reset()`:** `selectedTool = null` y `currentDirection = right`, y avisar a los menús: `menuManager.toolChanged(null)` y `menuManager.directionChanged()`.
+Si hoy se quisiera pasar del nivel 1 al 2, todos estos objetos globales guardan algo del nivel anterior. La tabla dice qué guarda cada uno y qué lo limpia:
 
-**Tests** (`test/boardTest.wtest` y `test/menuManagerTest.wtest`):
+| Objeto | Qué guarda | Lo limpia |
+|---|---|---|
+| `board` | Las máquinas en la grilla y sus visuals | `board.clear()` ([1.2](#12-board-listar-y-sacar-todas-las-máquinas)) |
+| `simulationEngine` | Si está prendida, la velocidad, la agenda y `simulatedObjects` | `simulationEngine.reset()` ([1.3](#13-simulationenginereset)) apaga y vuelve a velocidad 1; `board.clear()` saca las máquinas de `simulatedObjects` (cada `pop` lo hace) |
+| `animationEngine` | Los items que se están moviendo | `simulationEngine.stop()`, que ya lo hace y que `reset()` llama |
+| `machineManager` | La lista de máquinas del menú y la elegida | `machineManager.changeCatalog(...)` ([1.4](#14-machinemanager-un-catálogo-que-se-puede-cambiar)) |
+| `placeMenu` | La página que se ve y el overlay | `placeMenu.resetPage()` ([1.5](#15-placemenuresetpage)) |
+| `toolsManager` | La herramienta elegida y la dirección para colocar | `toolsManager.reset()` ([1.6](#16-toolsmanagerreset)) |
+| `menuManager` | El panel activo | `toolsManager.reset()`, que le avisa que no hay herramienta y cierra el panel |
+| `editMenu` | La máquina elegida con edit | `toolsManager.reset()`: al cerrar el panel, `editMenu.hide()` ya la olvida |
 
-- `board.machines()` devuelve cada máquina una sola vez, también las de 2x2.
-- `board.clear()` deja el tablero vacío, sin visuals de máquinas ni de items, y `simulationEngine.allItems()` vacío.
-- Después de `machineManager.catalog([...])`, `placeMenu` está en la página 0 y la máquina elegida es la primera del catálogo nuevo.
-- `toolsManager.reset()` deja sin herramienta y con dirección `right`.
+**No hace falta limpiar:**
 
-**Listo cuando:** se puede llamar, en este orden, `simulationEngine.reset()`, `board.clear()` y `toolsManager.reset()`, y el juego queda como recién abierto.
+- `simulationEngine.currentStep`: sólo crece, y la agenda funciona con cualquier valor.
+- Los settings de las máquinas: se van con las máquinas.
+
+### 1.2 `board`: listar y sacar todas las máquinas
+
+Archivo: `src/board.wlk`.
+
+```wollok
+// Las máquinas colocadas, cada una una sola vez (una de 2x2 está en 4 casillas)
+method machines() = grid.flatMap({ column => column.map({ cell => cell.machine() }) })
+	.filter({ machine => machine != null }).asSet().asList()
+
+// Saca todas las máquinas, con los items que tengan encima.
+// Como push y pop, sólo con la simulación apagada.
+method clear() {
+	self.machines().forEach({ machine => self.pop(machine.cell()) })
+}
+```
+
+- `machine.cell()` es la celda donde se colocó (la de abajo a la izquierda en las de 2x2), así que `pop` la encuentra y libera todas sus casillas.
+- `pop` ya hace todo lo demás: saca los items que tenía encima, saca la máquina del `simulationEngine` y de la pantalla.
+- **No controla si la simulación está prendida:** quien lo llama tiene que apagarla antes (`simulationEngine.reset()`, ver [1.7](#17-el-orden)).
+
+### 1.3 `simulationEngine.reset()`
+
+Archivo: `src/simulation/simulationEngine.wlk`.
+
+```wollok
+// Vuelve a como arranca el juego: apagada y a velocidad normal.
+// No saca las máquinas: se van del engine cuando el board las saca (board.clear(), que llama a pop).
+method reset() {
+	if (running) self.stop()
+	speed = 1
+}
+```
+
+- **Por qué no vacía `simulatedObjects`:** si lo hiciera, el engine se olvidaría de máquinas que siguen en el tablero (y, desde la fase 2, de los platitos, que no se sacan nunca). Cada objeto se ocupa de lo suyo: el board de las máquinas, el engine de prender y apagar.
+- Con la simulación apagada, `reset()` sólo vuelve la velocidad a 1.
+
+### 1.4 `machineManager`: un catálogo que se puede cambiar
+
+Archivo: `src/machines/machineManager.wlk`.
+
+```wollok
+// Todas las máquinas del juego, en el orden del menú (la lista de hoy)
+const allMachines = [
+	{ => new Belt() },
+	// ... el resto, igual que ahora
+]
+
+// Las que se ofrecen en el menú. Al arrancar, todas.
+var machines = allMachines
+
+var selectedMachine = allMachines.first()
+
+method allMachines() = allMachines
+
+// Cambia las máquinas que ofrece el menú (por ejemplo, las de un nivel) y elige la primera
+method changeCatalog(factories) {
+	machines = factories
+	selectedMachine = factories.first()
+}
+```
+
+- Lo demás (`machinesOfPage`, `pageCount`, `createMachine`, `selectedName`) no cambia: ya trabaja con `machines`.
+- **Por qué se elige la primera:** si quedara elegida una máquina del catálogo anterior, el jugador podría colocar una máquina que el nivel no ofrece.
+- Un catálogo vacío no tiene sentido: el menú no tendría nada y `first()` falla. **No se controla**: el que llama tiene que pasar al menos una máquina.
+- `changeCatalog` **no redibuja el menú**: eso lo hace `placeMenu.resetPage()`. Quien cambia el catálogo llama a los dos (en la fase 3, `levelManager.load`).
+
+### 1.5 `placeMenu.resetPage()`
+
+Archivo: `src/menu/placeMenu.wlk`.
+
+```wollok
+// Vuelve a la primera página (por ejemplo, al cambiar el catálogo). Sólo redibuja si se está viendo.
+method resetPage() {
+	currentPage = 0
+	if (visible) self.renderItems()
+}
+```
+
+- **Por qué hace falta:** si el catálogo nuevo tiene menos páginas que el anterior, `currentPage` podría apuntar a una página que ya no existe y el menú quedaría vacío.
+- `renderItems()` también llama a `updateOverlay()`, así que el overlay queda sobre la máquina elegida (la primera).
+- Si el panel no se ve, no dibuja nada: se dibuja bien la próxima vez que se elige place (`show()`).
+
+### 1.6 `toolsManager.reset()`
+
+Archivo: `src/tools/toolsManager.wlk`.
+
+```wollok
+// Vuelve a como arranca el juego: sin herramienta y colocando hacia la derecha.
+// Avisa a los menús, como cuando el jugador cambia de herramienta o de dirección.
+method reset() {
+	selectedTool = null
+	currentDirection = right
+	menuManager.toolChanged(null)
+	menuManager.directionChanged()
+}
+```
+
+- **No se usa `select(null)`:** `select` alterna (elegir la herramienta activa la deselecciona), así que no sirve para "dejar sin herramienta".
+- `menuManager.toolChanged(null)` cierra el panel activo y actualiza la barra de herramientas. Si el panel era el de edit, `editMenu.hide()` olvida la máquina elegida: eso importa porque esa máquina ya no está en el tablero.
+- `menuManager.directionChanged()` actualiza las imágenes del menú de place, que muestran la dirección.
+
+### 1.7 El orden
+
+Para reiniciar todo, siempre en este orden (es el que va a usar `levelManager.load` en la fase 3):
+
+1. `simulationEngine.reset()`: primero se apaga, porque `board.clear()` no se debe usar con la simulación prendida (las máquinas ya calcularon a sus vecinas).
+2. `board.clear()`.
+3. `toolsManager.reset()`: después de sacar las máquinas, así `editMenu` no queda apuntando a una que ya no existe.
+4. `machineManager.changeCatalog(...)` y `placeMenu.resetPage()`: aunque el catálogo sea el mismo, así el menú vuelve a la primera página con la primera máquina elegida.
+
+### 1.8 Tests
+
+**`test/boardTest.wtest`:**
+
+- `machines()` con el tablero vacío es `[]`.
+- `machines()` con una cinta y un ensamblador (2x2) devuelve 2 máquinas: cada una una sola vez.
+- `clear()` saca la cinta y el ensamblador: ninguna de sus 5 casillas tiene máquina y ninguna de las dos está en pantalla (`game.hasVisual`).
+- Después de `clear()` se puede volver a colocar en las mismas celdas.
+- Después de `clear()`, el engine ya no las conoce: con un Dispenser y una cinta, `clear()`, prender la simulación y avanzar lo que tarda en dispensar no crea ningún item.
+
+**`test/simulationTest.wtest`:**
+
+- `reset()` con la simulación prendida la apaga y borra los items.
+- `reset()` vuelve la velocidad a 1 (después de `speed(3)`).
+- `reset()` con la simulación apagada la deja apagada.
+- `reset()` no saca las máquinas: después siguen en el tablero, y al prender vuelven a funcionar.
+
+**`test/menuManagerTest.wtest`:**
+
+- `changeCatalog([horno, cinta])`: la máquina elegida es el horno y `pageCount()` es 1.
+- Con place elegido, `changeCatalog(...)` y `resetPage()`: los slots 1 y 2 muestran el horno y la cinta, y los slots 3 y 4 quedan vacíos.
+- `resetPage()` después de pasar a la segunda página vuelve a la primera (`currentPage()` es 0).
+- `toolsManager.reset()` deja sin herramienta, con dirección `right`, la zona interactiva vacía y la barra con `tools/default.png`.
+- `toolsManager.reset()` con edit mostrando un Dispenser: la zona interactiva queda vacía, y al volver a elegir edit no muestra nada hasta clickear otra máquina.
+
+**Un test de todo junto** (en `test/boardTest.wtest`):
+
+- Con máquinas colocadas, la simulación prendida a x3, la herramienta delete elegida, la dirección `up` y el menú en la segunda página: después de los pasos de [1.7](#17-el-orden), el tablero está vacío, la simulación apagada a x1, sin herramienta, con dirección `right` y en la primera página.
+
+### 1.9 Documentación
+
+- [`src/README.md`](../src/README.md) (sección `board.wlk`): `machines()` y `clear()`.
+- [`src/simulation/README.md`](../src/simulation/README.md): `reset()`, y por qué no saca las máquinas.
+- [`src/machines/README.md`](../src/machines/README.md) (sección `machineManager.wlk`): `allMachines`, `changeCatalog(...)` y que no redibuja.
+- [`src/menu/README.md`](../src/menu/README.md): `placeMenu.resetPage()`.
+- [`src/tools/README.md`](../src/tools/README.md): `toolsManager.reset()`.
+
+**Listo cuando:** los tests de 1.8 pasan, todos los anteriores siguen pasando, y los pasos de [1.7](#17-el-orden) dejan el juego como recién abierto.
 
 ---
 
@@ -364,7 +511,7 @@ Primero se apaga y se limpia, después se arma:
 2. `board.clear()`: saca las máquinas (los platitos quedan).
 3. `toolsManager.reset()`: sin herramienta y dirección `right`.
 4. `currentLevel = level` y `completed = false`.
-5. `machineManager.catalog(level.availableMachines())` y `placeMenu.resetPage()`.
+5. `machineManager.changeCatalog(level.availableMachines())` y `placeMenu.resetPage()`.
 6. `level.placeFixedMachines()`.
 7. `level.goal().reset()`.
 8. `levelInfoMenu.show(level)`.

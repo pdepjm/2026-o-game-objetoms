@@ -16,6 +16,7 @@ Es el **único reloj del juego**. Wollok Game le manda `tick()` cada 100 ms (`ti
   - **Prendida** (tecla 5): corren los pasos y el tablero queda bloqueado.
 - **`run()`:** prende la simulación y le manda `start()` a cada máquina.
 - **`stop()`:** la apaga, vacía la agenda, borra los ingredientes y le manda `reset()` a cada máquina.
+- **`reset()`:** vuelve a como arranca el juego: si está prendida la apaga (`stop()`) y pone la velocidad en 1. **No saca las máquinas**: se van del engine cuando el tablero las saca (`board.clear()`, que llama a `pop`). Así el engine nunca se olvida de una máquina que sigue en el tablero.
 - **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Se puede agendar a cualquier cantidad de pasos.
 - **Cómo se guarda:** la agenda es una ronda de `slotCount` (64) casilleros, y una acción que vence en el paso `p` va al casillero `p % slotCount`. Así cada paso revisa un solo casillero, no todas las acciones pendientes. Cada acción es un `ScheduledAction`, que recuerda en qué paso vence (`dueStep`): una acción a más de 64 pasos espera en su casillero las vueltas que haga falta. `slotCount` no es un límite; sólo conviene que sea mayor que las demoras que se agendan seguido.
 - **El bloque dice qué se hace:** `after(5, { self.onArrived(item) })`. Nadie tiene que deducir por qué lo despertaron.
