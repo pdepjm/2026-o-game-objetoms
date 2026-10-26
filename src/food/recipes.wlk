@@ -29,7 +29,7 @@ object pizzaPepperoniRecipe inherits Recipe(result = pizzaPepperoni) {
     }
 }
 
-object doubleBurgerRecibe inherits Recipe(result = doubleBurger) {
+object doubleBurgerRecipe inherits Recipe(result = doubleBurger) {
     override method initialize() {
         requirements.add(new Requirement(kind = cutBun, amount = 1))
         requirements.add(new Requirement(kind = cutLettuce, amount = 1))
