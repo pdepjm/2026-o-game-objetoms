@@ -35,7 +35,7 @@ DEFAULT_SCALE = 0.65
 # Se dibuja más grande y se achica al final, para suavizar los bordes
 SUPERSAMPLE = 4
 
-BROWSER_COMMANDS = ["msedge", "microsoft-edge", "google-chrome", "chrome", "chromium", "chromium-browser"]
+BROWSER_COMMANDS = ["msedge", "microsoft-edge", "google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser"]
 BROWSER_PATHS = [
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
     r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
