@@ -11,7 +11,8 @@ class Dispenser inherits Machine {
 	// Por defecto papa y velocidad normal. Los ingredientes son los que ofrece el menú.
 	const productSetting = new ProductSetting(
 		value = potato,
-		kinds = [lettuce, bun, friedPotato, potato, tomato, meat]
+		kinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon,
+				 pizzaDough, egg, salami, sausage]
 	)
 	const speedSetting = new SpeedSetting(value = 1)
 

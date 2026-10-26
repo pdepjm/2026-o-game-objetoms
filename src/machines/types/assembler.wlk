@@ -9,7 +9,7 @@ import cellPosition.*
 // cuando la receta se puede armar, lo que tiene es justo lo que hace falta y se consume todo.
 class Assembler inherits Machine {
 	// La receta que arma (por ahora fija: sólo existe burgerRecipe)
-	const recipe = burgerRecipe
+	const recipe = pizzaPepperoniRecipe
 
 	// El plato armado, a la espera de ser entregado. No está en el inventario
 	// (ahí sólo van los ingredientes), por eso se guarda aparte.

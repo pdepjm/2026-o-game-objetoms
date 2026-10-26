@@ -19,7 +19,10 @@ class ArmRoute {
 // Por defecto sólo sale por la recta, y deja pasar todo (como el automático).
 class SmartRoboticArm inherits AutomaticArm {
 	// Los ingredientes que se pueden elegir en cada salida
-	const kinds = [potato, cutPotato, friedPotato, burntPotato, lettuce, cutLettuce, tomato, cutTomato, bun, cutBun, meat, cookedMeat]
+	const kinds = [potato, cutPotato, friedPotato, burntPotato, lettuce, cutLettuce, tomato, 
+				   cutTomato, bun, cutBun, meat, cookedMeat, cheese, cheeseCutted, cheeseFeta, 
+				   salami, salamiCutted, pizzaDough, pizzaDoughCooked, egg, eggFryed, sausage,
+				   sausageCooked, bacon, baconCooked]
 
 	// En el orden de prioridad
 	const routes = [
