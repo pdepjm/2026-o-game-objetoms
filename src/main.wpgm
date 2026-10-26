@@ -5,6 +5,7 @@ import food.foodClasses.*
 import food.foodTypes.*
 import directions.*
 import simulation.simulationEngine.*
+import machines.types.deliverySlot.*
 
 program BuffetAlbertEinstein {
 	game.title("Pepita")
@@ -17,6 +18,7 @@ program BuffetAlbertEinstein {
 
 	userController.setUp()
 	menuManager.setUp()
+	deliveryPoints.setUp()
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()

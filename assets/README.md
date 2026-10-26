@@ -66,6 +66,7 @@ Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la
 | `Fryer` | `machines/Fryer/` |
 | `Dispenser` | `machines/Dispenser/` |
 | `AutomaticArm` | `machines/AutomaticArm/` (caso especial, ver abajo) |
+| `DeliverySlot` | Ninguna: no se dibuja, porque los platitos ya están en `background.png` |
 | `SmartRoboticArm` | `machines/SmartRoboticArm/` sólo para el menú (`down_menu.png`). En el tablero usa las de `machines/AutomaticArm/` (`assetFolder()`): sus `_game.png` son de 50x50 y faltan sus animaciones, así que todavía no se usan |
 
 Hay **dos tipos de máquinas**, según cómo se animan. Todas tienen, para cada una de las 4 direcciones (`up`, `down`, `left`, `right`):

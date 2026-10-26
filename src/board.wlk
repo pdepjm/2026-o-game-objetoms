@@ -12,6 +12,7 @@ class Cell {
 object board {
 	const maxColumn = 19
 	const maxRow = 13
+	const deliverySlots = []
 	//
 	// OJO: el machine = null explícito es necesario. Por un bug de Wollok, un objeto creado
 	// mientras se inicializa otro objeto (como acá, dentro de board) no toma bien el valor
@@ -51,7 +52,12 @@ object board {
 
 	method machines() = grid.flatMap({ column => column.map({ cell => cell.machine()})}).filter({machine => machine != null}).asSet().asList()
 
+
 	// métodos públicos
+	method addDeliverySlot(slot) {
+		deliverySlots.add(slot)
+		simulationEngine.addSimulatedObject(slot)
+	}
 
 	method clear() {
 		self.machines().forEach({machine => self.pop(machine.cell())})
@@ -60,8 +66,8 @@ object board {
 	//obtener la máquina de una posición (null si no hay, o si está fuera del tablero).
 	// Fuera del tablero pasa, por ejemplo, con una cinta del borde que apunta hacia afuera.
 	method machineAt(position) =
-		if (self.inBoard(position)) self.cellAt(position).machine() else null
-
+		if (self.inBoard(position)) self.cellAt(position).machine() 
+		else deliverySlots.findOrDefault({ slot => slot.cell() == position }, null)
 
 	//pushear elemento al tablero. La máquina queda registrada en el simulationEngine.
 	// OJO: push y pop no se deben usar con la simulación prendida, porque las máquinas

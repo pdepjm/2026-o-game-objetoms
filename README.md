@@ -15,7 +15,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`src/menu/README.md`](src/menu/README.md) | Los menús de la pantalla |
 | [`src/tools/README.md`](src/tools/README.md) | Las herramientas del jugador y la dirección elegida |
 | [`src/input/README.md`](src/input/README.md) | Las teclas y los clicks |
-| [`src/levels/README.md`](src/levels/README.md) | Niveles (todavía sin usar) |
+| [`src/levels/README.md`](src/levels/README.md) | Niveles (en construcción): por ahora, los objetivos |
 | [`Plan-Implementacion-Niveles.md`](docs/Plan-Implementacion-Niveles.md) | **El plan para implementar los niveles**, por fases y con checklist |
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |

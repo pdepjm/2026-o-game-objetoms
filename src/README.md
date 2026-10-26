@@ -12,14 +12,14 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 | [`menu/`](menu/README.md) | Los menús de la derecha: barra de herramientas y paneles (place, edit) |
 | [`tools/`](tools/README.md) | Las herramientas del jugador (colocar, borrar, editar, rotar) y la dirección elegida |
 | [`input/`](input/README.md) | Las teclas y los clicks |
-| [`levels/`](levels/README.md) | Niveles (todavía sin usar) |
+| [`levels/`](levels/README.md) | Niveles (en construcción): por ahora, los objetivos |
 
 ## Archivos de esta carpeta
 
 | Archivo | Qué hace |
 |---|---|
-| `main.wpgm` | El programa que arranca el juego: arma la ventana (25x16 celdas de 50 px), el fondo, los controles, los menús y el reloj de la simulación |
-| `board.wlk` | El tablero (`board`): qué máquina hay en cada celda, y colocar o quitar máquinas |
+| `main.wpgm` | El programa que arranca el juego: arma la ventana (25x16 celdas de 50 px), el fondo, los controles, los menús, los puntos de entrega (`deliveryPoints.setUp()`) y el reloj de la simulación |
+| `board.wlk` | El tablero (`board`): qué máquina hay en cada celda, colocar o quitar máquinas, y los puntos de entrega de afuera del tablero |
 | `directions.wlk` | Las 4 direcciones (`up`, `down`, `left`, `right`): su nombre, cuál sigue al rotar, cuál es la opuesta y cómo moverse una celda hacia ellas |
 | `cellPosition.wlk` | `CellPosition`: una posición de celda que se dibuja más rápido que una común (ver más abajo) |
 
@@ -30,6 +30,10 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 - `push(posición, máquina)` la coloca: le fija la posición del dibujo (con su `drawOffsetX`/`drawOffsetY`), la agrega a la pantalla y la anota en el `simulationEngine`. `pop(posición)` hace lo contrario, y se lleva los ingredientes que tenía encima.
 - `machines()`: las máquinas colocadas, cada una una sola vez (una de 2x2 ocupa 4 casillas, pero aparece una vez).
 - `clear()`: saca todas las máquinas (hace `pop` de cada una), con los ingredientes que tengan encima. Sirve para empezar de cero, por ejemplo al cargar un nivel.
+- **Puntos de entrega:** los dos platitos del fondo, en (16, 14) y (17, 14), están **fuera** del tablero, pero las cintas y los brazos les entregan como a cualquier máquina (ver `DeliverySlot` en [`machines/README.md`](machines/README.md#types-las-máquinas)).
+  - `addDeliverySlot(platito)`: lo anota en `deliverySlots` y lo registra en el `simulationEngine`, para que al apagar la simulación se borre el plato que estaba viajando hacia él y el platito quede vacío. Lo llama `deliveryPoints.setUp()`.
+  - `machineAt(posición)`: dentro del tablero busca en la grilla; afuera, entre los `deliverySlots` (y si no hay ninguno ahí, `null`).
+  - Como `inBoard` no los incluye, no se puede colocar nada encima ni hacerles click. Tampoco están en la grilla, así que `machines()` y `clear()` no los ven: son parte del escenario, no del nivel.
 - **No usar `push`, `pop` ni `clear` con la simulación prendida:** las máquinas ya calcularon a sus vecinas. Los clicks se bloquean en `toolsManager`; `clear` no lo controla, así que antes hay que apagarla (`simulationEngine.reset()`).
 
 ### `cellPosition.wlk`

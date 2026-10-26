@@ -7,10 +7,10 @@ Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles 
 | `machineClasses.wlk` | Las clases base de todas las máquinas: `MachineAnimator`, `MachineSprite` y `Machine` |
 | `settings.wlk` | Las configuraciones de las máquinas: `Setting`, sus opciones y categorías (ver [Configuración](#configuración-settings)) |
 | `inventory.wlk` | `Inventory`: los items que guarda una máquina y los que esperan que se libere lugar |
-| `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `smartRoboticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk` |
+| `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `smartRoboticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk`, `deliverySlot.wlk` |
 | `machineManager.wlk` | El catálogo de máquinas del menú y cuál está elegida para colocar |
 
-> **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
+> **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo), `main.wpgm` (para crear los puntos de entrega con `deliveryPoints.setUp()`) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
 
 ## Las clases base
 
@@ -253,6 +253,7 @@ class Oven inherits ProcessingMachine {
 | `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato | Sin animación | `name`, `capacity`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` |
 | `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |
 | `Fryer` | Fríe lo que le entrega un brazo: es `armOnly`, no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | GIF, sólo mientras fríe | `name`, `foodProcess`, `animateWork`, `armOnly`, `grabbableItem`, `onProcessed` |
+| `DeliverySlot` | Un platito del fondo, donde se entrega la comida. El item viaja hasta él y, al llegar, sale del juego y se le avisa a `levelManager.delivered(item)`, que lo cuenta para el objetivo del nivel. No entrega a nadie. **No lo coloca el jugador ni está en el menú**: los crea `deliveryPoints` (en el mismo archivo), que tiene sus dos posiciones, (16, 14) y (17, 14), y en `setUp()` se los pasa al `board` (lo llama `main.wpgm`) | No se dibuja: el fondo ya muestra los platitos | `name`, `nextMachine`, `onArrived` |
 
 Por defecto una máquina es **frame a frame**: con la simulación prendida se ve quieta y se anima cuando hace algo. Las imágenes de cada tipo se explican en [`assets/README.md`](../../assets/README.md), y el brazo tiene su propia guía en [`assets/machines/AutomaticArm/README.md`](../../assets/machines/AutomaticArm/README.md).
 
