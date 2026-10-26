@@ -15,7 +15,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`src/menu/README.md`](src/menu/README.md) | Los menús de la pantalla |
 | [`src/tools/README.md`](src/tools/README.md) | Las herramientas del jugador y la dirección elegida |
 | [`src/input/README.md`](src/input/README.md) | Las teclas y los clicks |
-| [`src/levels/README.md`](src/levels/README.md) | Niveles (en construcción): por ahora, los objetivos |
+| [`src/levels/README.md`](src/levels/README.md) | Los niveles, sus objetivos y cómo agregar uno |
 | [`Plan-Implementacion-Niveles.md`](docs/Plan-Implementacion-Niveles.md) | **El plan para implementar los niveles**, por fases y con checklist |
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |
@@ -67,6 +67,16 @@ Es tu tarea automatizar todos los procesos del buffet.
 **2**: establece la velocidad en x2
 **3**: establece la velocidad en x3
 **5**: Inicia o termina la simulación
+
+### Niveles
+**N**: Pasar al siguiente nivel (sólo después de ganar el actual)
+
+**0**: Reiniciar el nivel (borra también lo que se construyó)
+
+**L**: Modo libre (todas las máquinas, sin objetivo)
+
+> [!NOTE]
+> El juego arranca en el nivel 1. La información del nivel (su objetivo y si se ganó) se ve a la izquierda.
 
 ## TAMAÑOS
 

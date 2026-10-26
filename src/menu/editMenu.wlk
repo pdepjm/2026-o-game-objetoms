@@ -1,5 +1,6 @@
 import wollok.game.*
 import menu.menuManager.*
+import menu.menuText.*
 import board.*
 
 // Panel de la zona interactiva mientras la herramienta activa es edit.
@@ -181,14 +182,6 @@ object editMenu{
 class OptionImage {
     const property image
     const property position
-}
-
-// Un texto: el título de una categoría, el nombre de un setting o una opción sin imagen
-class MenuText {
-    const property text
-    const property position
-
-    method textColor() = "FFFFFFFF"
 }
 
 // Qué opción de qué setting hay dibujada en una posición

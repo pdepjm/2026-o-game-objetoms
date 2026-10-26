@@ -12,8 +12,8 @@ Plan para pasar del modo libre de hoy (todas las máquinas, sin objetivo) a **ni
 
 - [x] [Fase 0: Estabilidad](#fase-0-estabilidad) (pendiente: el arte del brazo inteligente en el tablero, y volver a escribir los tests borrados en [0.4](#04-tests-que-rompieron-las-recetas-nuevas))
 - [x] [Fase 1: Poder reiniciar todo](#fase-1-poder-reiniciar-todo)
-- [ ] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
-- [ ] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager) ← con 0 a 3 ya hay un primer nivel jugable
+- [x] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
+- [x] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager) (pendiente: que `level1` se pueda ganar usando la freidora, ver [3.3](#33-los-niveles-concretos))
 - [ ] [Fase 4: Máquinas fijas y parametrizadas](#fase-4-máquinas-fijas-y-parametrizadas)
 - [ ] [Fase 5: Entrada para el tutorial](#fase-5-entrada-para-el-tutorial)
 - [ ] [Fase 6: Energía](#fase-6-energía) (opcional)
@@ -428,55 +428,75 @@ Si más adelante hace falta combinar objetivos ("3 hamburguesas y 2 papas"), se 
 **Para qué:** que exista el concepto de nivel, que se pueda cargar, ganar, reiniciar y pasar al siguiente, y que se vea en pantalla.
 **Depende de:** fases 1 y 2.
 
+> [!NOTE]
+> Esta fase describe **cómo quedó implementada**. Lo que cambió respecto del plan original: los niveles concretos están en `levelsTypes.wlk` (no `levels.wlk`); los objetivos, junto con `Level` en `levelClasses.wlk` (no en `goals.wlk`); un nivel tiene **una lista** de objetivos; y los métodos de las teclas se llaman `loadNext()` y `loadFreePlay()`.
+
 ### 3.1 Archivos
 
 | Archivo | Qué tiene |
 |---|---|
-| `src/levels/levelClasses.wlk` (nuevo) | La clase `Level` |
-| `src/levels/levels.wlk` (nuevo) | Los niveles concretos: `freePlay` y `level1` |
-| `src/levels/levelManager.wlk` (de la fase 2) | Se completa: el nivel actual, cargarlo, ganar, reiniciarlo y pasar al siguiente |
-| `src/levels/niveles.wlk` | **Se borra** (`Nivel` vacío, reemplazado por `Level`) |
+| `src/levels/levelClasses.wlk` | La clase `Level` y los objetivos (`DeliveryGoal` y `noGoal`, de la fase 2) |
+| `src/levels/levelsTypes.wlk` (nuevo) | Los niveles concretos: `freePlay` y `level1`. Es el único archivo de niveles que conoce las máquinas concretas |
+| `src/levels/levelManager.wlk` | `levelManager`: el nivel actual, cargarlo, ganar, reiniciarlo y pasar al siguiente |
+| `src/levels/niveles.wlk` | **Borrado** (`Nivel` vacío, reemplazado por `Level`) |
 | `src/menu/menuText.wlk` (nuevo) | `MenuText`, movido desde `editMenu.wlk` para que lo usen los dos menús |
-| `src/menu/levelInfoMenu.wlk` | Hoy vacío: pasa a mostrar la información del nivel |
+| `src/menu/levelInfoMenu.wlk` | La información del nivel, en la zona de la izquierda |
 | `src/input/userController.wlk` | Las teclas nuevas |
 | `src/main.wpgm` | Llama a `levelManager.start()` |
 
 > [!IMPORTANT]
-> **Primera tarea: comprobar los imports circulares.** `deliverySlot.wlk` importa `levelManager`, y `levelManager` importa `machineManager`, que importa todas las máquinas. Correr los tests apenas se crea `levelManager.wlk` completo. Si Wollok no lo resuelve, el `DeliverySlot` recibe a quién avisar al crearlo (`const listener`) y `deliveryPoints` le pasa `levelManager`.
+> **Imports circulares:** `deliverySlot.wlk` importa `levelManager`, y `levelManager` importa los niveles, que importan las máquinas. Wollok lo resuelve bien.
+>
+> **Pero no hay que poner comentarios dentro de una lista** (por ejemplo, entre los bloques de `availableMachines`): Wollok no puede leer el archivo, y todo el juego y todos los tests fallan con `Could not resolve reference to level1`. Los comentarios van arriba del atributo.
 
 ### 3.2 `Level`: sólo datos
 
-Archivo: `src/levels/levelClasses.wlk`.
+Archivo: `src/levels/levelClasses.wlk`. Un nivel dice cómo es, y `levelManager` lo usa. Para que `levelManager` no recorra los objetivos, el nivel habla con ellos:
 
 ```wollok
 class Level {
 	const property name
-	const property availableMachines          // factories, como el catálogo de machineManager
-	const property fixedMachines = []         // Placements (fase 4); hasta entonces, vacío
-	const property goal
+	const property availableMachines          // Las máquinas disponibles para colocar
+	const property fixedMachines = []         // Máquinas colocadas desde el comienzo (fase 4)
+	const property goals                      // Lo que hay que cumplir para ganar: TODOS los objetivos
 
-	// Coloca las máquinas que trae el nivel. Con fixedMachines vacío no hace nada.
 	method placeFixedMachines() {
 		fixedMachines.forEach({ placement => board.push(placement.position(), placement.create()) })
 	}
+
+	method delivered(item) { goals.forEach({ goal => goal.delivered(item) }) }
+	method goalsMet() = goals.all({ goal => goal.isMet() })
+	method resetGoals() { goals.forEach({ goal => goal.reset() }) }
+	// Una línea por objetivo, para la info del nivel. noGoal no tiene texto: no suma línea.
+	method progressLines() = goals.map({ goal => goal.progressText() }).filter({ text => text != "" })
 }
 ```
 
+**Se gana cuando se cumplen todos los objetivos.** Con `noGoal`, nunca.
+
 ### 3.3 Los niveles concretos
 
-Archivo: `src/levels/levels.wlk`. Son objetos bien conocidos, con la misma forma que `burgerRecipe`:
+Archivo: `src/levels/levelsTypes.wlk`. Son objetos bien conocidos, con la misma forma que `burgerRecipe`:
 
 ```wollok
-// Modo libre: todas las máquinas y sin objetivo. Es el juego de hoy, para probar.
-object freePlay inherits Level(name = "Libre", availableMachines = machineManager.allMachines(), goal = noGoal) {}
+// Modo libre: todas las máquinas y sin objetivo, para probar
+object freePlay inherits Level(name = "Libre", availableMachines = machineManager.allMachines(), goals = [noGoal]) {}
 
-// Primer nivel: cortar papas y entregarlas
+// Primer nivel: freír papas y entregarlas
 object level1 inherits Level(
 	name = "Nivel 1",
-	availableMachines = [{ => new Belt() }, { => new Dispenser() }, { => new CuttingMachine() }],
-	goal = new DeliveryGoal(kind = cutPotato, amount = 3, label = "Papas cortadas")
+	availableMachines = [
+		{ => new Belt() }, { => new Dispenser() }, { => new CuttingMachine() },
+		{ => new Fryer() }, { => new AutomaticArm() }
+	],
+	goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")]
 ) {}
 ```
+
+> [!WARNING]
+> **Hoy `level1` no se puede ganar usando la freidora.** La freidora sólo trabaja con brazos, y el brazo común le saca la papa **apenas entra**, todavía cortada (hay un test que lo comprueba en `smartArmTest`). Para sacarla frita hace falta el brazo inteligente, con su salida filtrando papas fritas, y `level1` no lo ofrece.
+>
+> Además, el Dispenser puede largar papas fritas directamente: hoy **la única forma de ganar es ésa**, sin procesar nada. Se arregla en la [fase 4](#43-máquinas-configurables), limitando sus ingredientes (`availableKinds`). Ver también [Decisiones](#decisiones).
 
 ### 3.4 `levelManager`
 
@@ -487,8 +507,9 @@ Archivo: `src/levels/levelManager.wlk`.
 | Atributo | Qué guarda |
 |---|---|
 | `const levels = [level1]` | Los niveles en el orden en que se juegan. `freePlay` **no** está en la lista |
-| `var currentLevel = null` | El nivel cargado |
-| `var completed = false` | Si ya se cumplió el objetivo del nivel cargado |
+| `var indexCurrentLevel = 0` | La posición del nivel actual en `levels` (la usa `loadNext()`) |
+| `var currentLevel = freePlay` | El nivel cargado. Arranca en `freePlay` y no en `null`: así una entrega o la tecla 5 antes de `start()` no rompen |
+| `var completed = false` | Si ya se cumplieron los objetivos del nivel cargado |
 
 **Métodos:**
 
@@ -497,28 +518,27 @@ Archivo: `src/levels/levelManager.wlk`.
 | `start()` | Lo llama `main.wpgm` una sola vez: `self.load(levels.first())` |
 | `load(level)` | Arma el nivel desde cero (ver [3.5](#35-el-orden-de-load)) |
 | `restart()` | `self.load(currentLevel)`. Borra también lo que construyó el jugador |
+| `loadNext()` | Si `completed` y `hasNext()`, carga el siguiente de `levels`. Si no, no hace nada (no se saltean niveles) |
+| `loadFreePlay()` | `self.load(freePlay)`. Así `userController` no tiene que conocer los niveles |
 | `hasNext()` | `true` si `currentLevel` está en `levels` y no es el último. Con `freePlay` es `false` |
-| `next()` | Si `completed` y `hasNext()`, carga el siguiente de `levels`. Si no, no hace nada |
 | `toggleSimulation()` | Lo que hace la tecla 5 (ver [3.6](#36-la-tecla-5-pasa-por-levelmanager)) |
 | `delivered(item)` | Lo llama `DeliverySlot` (ver [3.7](#37-entregar-y-ganar)) |
-| `currentLevel()`, `completed()` | Getters, para los menús y los tests |
+| `currentLevel()`, `completed()` | Getters, para los tests |
 
 ### 3.5 El orden de `load`
 
 Primero se apaga y se limpia, después se arma:
 
-1. `simulationEngine.reset()`: apaga la simulación (si estaba prendida), saca los items y vuelve a velocidad 1.
-2. `board.clear()`: saca las máquinas (los platitos quedan).
-3. `toolsManager.reset()`: sin herramienta y dirección `right`.
-4. `currentLevel = level` y `completed = false`.
-5. `machineManager.changeCatalog(level.availableMachines())` y `placeMenu.resetPage()`.
-6. `level.placeFixedMachines()`.
-7. `level.goal().reset()`.
-8. `levelInfoMenu.show(level)`.
+1. `simulationEngine.reset()`, `board.clear()` y `toolsManager.reset()` (en `_clear()`): apaga la simulación, saca las máquinas (los platitos quedan) y deja sin herramienta.
+2. `currentLevel = level` y `completed = false`.
+3. `machineManager.changeCatalog(level.availableMachines())` y `placeMenu.resetPage()`.
+4. `level.placeFixedMachines()`.
+5. `level.resetGoals()`.
+6. `levelInfoMenu.show(level)`.
 
 ### 3.6 La tecla 5 pasa por `levelManager`
 
-Hoy `userController` llama directo a `simulationEngine.toggle()`. Pasa a llamar a `levelManager.toggleSimulation()`:
+`userController` ya no llama directo a `simulationEngine.toggle()`, sino a `levelManager.toggleSimulation()`:
 
 ```wollok
 method toggleSimulation() {
@@ -526,14 +546,14 @@ method toggleSimulation() {
 		simulationEngine.toggle()
 		// Al apagar se borran los items: el progreso vuelve a cero
 		if (!simulationEngine.running()) {
-			currentLevel.goal().reset()
-			levelInfoMenu.updateProgress(currentLevel.goal())
+			currentLevel.resetGoals()
+			levelInfoMenu.updateProgress(currentLevel)
 		}
 	}
 }
 ```
 
-Con el nivel completo, la tecla 5 no hace nada: hay que pasar al siguiente (N) o reiniciar (0).
+Con el nivel completo, la tecla 5 no hace nada: hay que pasar al siguiente (N) o reiniciar (0). Así `simulationEngine` sigue sin saber nada de niveles.
 
 ### 3.7 Entregar y ganar
 
@@ -542,9 +562,9 @@ Con el nivel completo, la tecla 5 no hace nada: hay que pasar al siguiente (N) o
 ```wollok
 method delivered(item) {
 	if (!completed) {
-		currentLevel.goal().delivered(item)
-		levelInfoMenu.updateProgress(currentLevel.goal())
-		if (currentLevel.goal().isMet()) self.won()
+		currentLevel.delivered(item)
+		levelInfoMenu.updateProgress(currentLevel)
+		if (currentLevel.goalsMet()) self.won()
 	}
 }
 
@@ -566,54 +586,54 @@ Archivo: `src/menu/levelInfoMenu.wlk`. Usa la zona `levelInfoZone` (x 0 a 4, y 1
 | Fila (y) | Qué muestra |
 |---|---|
 | 13 | El nombre del nivel, en mayúsculas |
-| 11 | `OBJETIVO` (no se muestra si `progressText()` es `""`) |
-| 10 | `goal.progressText()` |
-| 8 | Al ganar: `¡Nivel completo!`, o `¡Fin del juego!` si no hay siguiente |
-| 7 | Al ganar: `N: siguiente`, o `0: reiniciar` si no hay siguiente |
-| 5 a 1 | Reservadas para el mensaje del tutorial (fase 5) |
+| 11 | `OBJETIVO` (no se muestra si el nivel no tiene objetivos con texto, como `freePlay`) |
+| 10 a 8 | Una línea por objetivo (`level.progressLines()`): como máximo 3 |
+| 6 | Al ganar: `¡Nivel completo!`, o `¡Fin del juego!` si no hay siguiente |
+| 5 | Al ganar: `N: siguiente`, o `0: reiniciar` si no hay siguiente |
+| 4 a 1 | Libres: reservadas para el mensaje del tutorial (fase 5) |
 
 | Método | Lo llama | Qué hace |
 |---|---|---|
-| `show(level)` | `levelManager.load` | Borra todo lo que había y dibuja las filas 13 a 10 |
-| `updateProgress(goal)` | `levelManager` al entregar y al apagar | Reemplaza sólo el texto de la fila 10 |
-| `showCompleted(hasNext)` | `levelManager.finishLevel` | Agrega las filas 8 y 7 |
+| `show(level)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
+| `updateProgress(level)` | `levelManager`, al entregar y al apagar | Reemplaza sólo las líneas de los objetivos |
+| `showCompleted(hasNext)` | `levelManager.finishLevel` | Agrega las filas 6 y 5 |
+| `positionOfRow(fila)` | Los tests | La posición en pantalla de una fila |
 
 - **Sólo se actualiza cuando lo llaman**, nunca en cada frame (ver la regla de rendimiento en [`src/README.md`](../src/README.md#convenciones)). `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
-- Wollok no corta el texto en varias líneas: los textos tienen que ser cortos (unos 15 caracteres).
-- Con `freePlay` muestra sólo `LIBRE`.
+- Guarda lo dibujado en tres listas (nombre y título, progreso, y mensaje de nivel completo) para reemplazar sólo lo que cambia.
+- Wollok no corta el texto en varias líneas: los textos tienen que ser cortos (unos 15 o 20 caracteres).
+- Comprobado en el juego: los textos quedan centrados en la zona y no se cortan.
 
 ### 3.9 Teclas
 
-Archivo: `src/input/userController.wlk`. Hoy se usan Q, E, P, X, Z, R, W, A, S, D, 1, 2, 3 y 5.
+Archivo: `src/input/userController.wlk`.
 
 | Tecla | Qué hace |
 |---|---|
 | 5 | `levelManager.toggleSimulation()` (antes, `simulationEngine.toggle()`) |
-| N | `levelManager.next()` |
+| N | `levelManager.loadNext()` |
 | 0 | `levelManager.restart()` (la R ya es rotar) |
-| L | `levelManager.load(freePlay)`: pasar al modo libre |
+| L | `levelManager.loadFreePlay()`: pasar al modo libre |
 
 ### 3.10 Documentación
 
-- Reescribir [`src/levels/README.md`](../src/levels/README.md): `Level`, `levelManager`, el orden de `load`, cómo se gana y **cómo agregar un nivel**.
+- [`src/levels/README.md`](../src/levels/README.md): `Level`, objetivos, `levelManager`, el orden de `load`, cómo se gana y **cómo agregar un nivel**.
 - [`src/menu/README.md`](../src/menu/README.md): `levelInfoMenu` y `MenuText` en su archivo.
 - [`src/input/README.md`](../src/input/README.md) y la sección de teclas de [`README.md`](../README.md).
 
 ### 3.11 Tests
 
-En `test/levelManagerTest.wtest` (nuevo):
+En `test/levelManagerTest.wtest` (20 tests):
 
-- `load(level1)`: el catálogo es el de `level1`, `placeMenu` está en la página 0 y la máquina elegida es la cinta.
-- `load` con la simulación prendida la apaga y saca items y máquinas; los platitos quedan.
-- Entregar una papa cortada actualiza el progreso; una papa entera, no.
-- Al entregar la tercera papa cortada, `completed()` es `true`; la simulación sigue prendida en ese paso y se apaga en el siguiente.
-- Después de ganar, otra entrega no cambia el progreso y `toggleSimulation()` no prende la simulación.
-- Apagar la simulación sin haber ganado vuelve el progreso a cero.
-- `next()` sin haber ganado no cambia de nivel.
-- `restart()` vuelve el progreso a cero y saca las máquinas que colocó el jugador.
-- Con `freePlay`, entregar cualquier cosa nunca completa el nivel, y `hasNext()` es `false`.
+- **Cargar:** al arrancar se carga `level1`, sin completar; el catálogo es el de `level1`, en la primera página, con la cinta elegida; cargar con la simulación prendida la apaga y saca las máquinas, pero no los platitos.
+- **Entregar:** el progreso arranca en cero; entregar papas fritas suma; entregar papas enteras o cortadas no; apagar la simulación sin haber ganado vuelve a cero.
+- **Ganar:** con la tercera papa frita se completa, y la simulación se apaga en el paso siguiente (no en el mismo); al ganar, el progreso no se borra; después de ganar, la tecla 5 no vuelve a prender.
+- **Siguiente, reiniciar y modo libre:** `loadNext()` sin ganar no cambia de nivel; el último nivel no tiene siguiente; `restart()` vuelve a cero, saca lo construido y, después de ganar, vuelve a dejar jugar; el modo libre tiene todas las máquinas, nunca se completa y no tiene siguiente.
+- **Lo que se ve:** nombre, título y progreso en sus filas; una entrega reemplaza el texto sin dejar el anterior; al ganar el último nivel se ve `¡Fin del juego!` y `0: reiniciar`; al volver a cargar se borra ese mensaje; el modo libre muestra sólo `LIBRE`.
 
-**Listo cuando:** al abrir el juego arranca el nivel 1, se ve su objetivo a la izquierda, se puede ganar entregando 3 papas cortadas, y las teclas N, 0 y L funcionan.
+En `test/smartArmTest.wtest`: el brazo común saca la papa de la freidora antes de que se fría, y el inteligente (filtrando papas fritas) espera a que se fría.
+
+**Listo cuando:** al abrir el juego arranca el nivel 1, se ve su objetivo a la izquierda, se puede ganar entregando 3 papas fritas, y las teclas N, 0 y L funcionan. Hoy se cumple todo, salvo que el nivel 1 sólo se gana con el atajo del Dispenser (ver la advertencia de [3.3](#33-los-niveles-concretos)).
 
 ---
 
@@ -658,16 +678,21 @@ Para que cada nivel arme su catálogo y sus máquinas fijas con factories distin
 
 ### 4.4 Usarlo en `level1`
 
-`level1` pasa a traer el Dispenser colocado y bloqueado, que sólo larga papas, y lo saca del catálogo:
+`level1` pasa a traer el Dispenser colocado y bloqueado, que sólo larga papas, y lo saca del catálogo. Así se cierra el atajo de largar papas fritas directamente (ver [3.3](#33-los-niveles-concretos)):
 
 ```wollok
 object level1 inherits Level(
 	name = "Nivel 1",
-	availableMachines = [{ => new Belt() }, { => new CuttingMachine() }],
+	availableMachines = [
+		{ => new Belt() }, { => new CuttingMachine() }, { => new Fryer() },
+		{ => new AutomaticArm() }, { => new SmartRoboticArm() }
+	],
 	fixedMachines = [new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction = right, availableKinds = [potato]) })],
-	goal = new DeliveryGoal(kind = cutPotato, amount = 3, label = "Papas cortadas")
+	goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")]
 ) {}
 ```
+
+El brazo inteligente está en el catálogo porque, sin el atajo, es la única forma de sacar papas fritas de la freidora (ver [Decisiones](#decisiones)).
 
 **Tests:**
 
@@ -711,7 +736,7 @@ object noTutorial {
 	method allowsSimulationToggle() = true
 
 	// ----------- MENSAJE -----------
-	// Las líneas que muestra levelInfoMenu en las filas 5 a 1 (cortas: unos 15 caracteres cada una)
+	// Las líneas que muestra levelInfoMenu en las filas 4 a 1 (cortas: unos 15 caracteres cada una)
 	method messageLines() = []
 }
 ```
@@ -743,14 +768,14 @@ Los métodos de `levelManager` no hacen otra cosa que reenviar. **No se emite na
 
 ### 5.4 Mensaje
 
-`levelInfoMenu.showTutorialMessage(lines)`: borra las filas 5 a 1 y escribe una línea por fila. Con `[]` (lo que devuelve `noTutorial`) quedan vacías.
+`levelInfoMenu.showTutorialMessage(lines)`: borra las filas 4 a 1 y escribe una línea por fila. Con `[]` (lo que devuelve `noTutorial`) quedan vacías.
 
 **Tests** (`test/tutorialTest.wtest`, nuevo). Usan un tutorial de prueba que guarda los eventos que recibe y no deja usar `delete`:
 
 - Colocar, rotar y borrar una máquina le llega al tutorial, en ese orden.
 - Con ese tutorial, `delete` no borra.
 - Prender la simulación le llega como `onSimulationToggled(true)`.
-- Su `messageLines()` se ve en las filas 5 a 1.
+- Su `messageLines()` se ve en las filas 4 a 1.
 
 > [!NOTE]
 > Cuando se implemente, **el tutorial es un nivel más**: un `Level` (por ejemplo, el nivel 0) con su propio `tutorial`. Una forma posible es una lista de pasos, cada uno con sus líneas de mensaje, lo que permite hacer y el evento que lo da por cumplido.
@@ -789,5 +814,6 @@ Lo que el equipo todavía puede cambiar. **El plan implementa la opción "por de
 | ¿El progreso se pierde al apagar? | Sí: el objetivo se cumple en una sola corrida | Acumular entre corridas | 3 |
 | Modo libre | Existe (`freePlay`, tecla L) | Sacarlo | 3 |
 | Teclas | N (siguiente), 0 (reiniciar), L (libre) | Otras | 3 |
+| ¿Cómo se sacan papas fritas de la freidora en `level1`? | Con el brazo inteligente filtrando papas fritas: `level1` lo ofrece desde la fase 4 (hoy no lo tiene) | Que el brazo común espere a que el item esté procesado antes de sacarlo de la freidora (cambia su comportamiento en todos los niveles) | 3 y 4 |
 | ¿Las máquinas fijas se pueden editar? | Sí, pero no borrar ni rotar | No se pueden tocar | 4 |
 | ¿Hay límite de energía? | No se implementa hasta decidirlo (fase 6 opcional) | Implementar la fase 6 | 6 |

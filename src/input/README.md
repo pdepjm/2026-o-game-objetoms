@@ -13,6 +13,9 @@
 | W / A / S / D | Dirección para colocar: arriba / izquierda / abajo / derecha | `toolsManager.currentDirection` |
 | Q / E | Página anterior / siguiente del menú | `menuManager` |
 | 1 / 2 / 3 | Velocidad de la simulación x1 / x2 / x3 | `simulationEngine.speed` |
-| 5 | Prender / apagar la simulación | `simulationEngine.toggle` |
+| 5 | Prender / apagar la simulación (con el nivel completo, no hace nada) | `levelManager.toggleSimulation` |
+| N | Pasar al siguiente nivel (sólo después de ganar) | `levelManager.loadNext` |
+| 0 | Reiniciar el nivel (borra también lo que se construyó) | `levelManager.restart` |
+| L | Pasar al modo libre: todas las máquinas y sin objetivo | `levelManager.loadFreePlay` |
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).

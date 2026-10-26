@@ -12,13 +12,13 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 | [`menu/`](menu/README.md) | Los menús de la derecha: barra de herramientas y paneles (place, edit) |
 | [`tools/`](tools/README.md) | Las herramientas del jugador (colocar, borrar, editar, rotar) y la dirección elegida |
 | [`input/`](input/README.md) | Las teclas y los clicks |
-| [`levels/`](levels/README.md) | Niveles (en construcción): por ahora, los objetivos |
+| [`levels/`](levels/README.md) | Los niveles: qué máquinas se usan, qué hay que entregar, y `levelManager`, que los carga |
 
 ## Archivos de esta carpeta
 
 | Archivo | Qué hace |
 |---|---|
-| `main.wpgm` | El programa que arranca el juego: arma la ventana (25x16 celdas de 50 px), el fondo, los controles, los menús, los puntos de entrega (`deliveryPoints.setUp()`) y el reloj de la simulación |
+| `main.wpgm` | El programa que arranca el juego: arma la ventana (25x16 celdas de 50 px), el fondo, los controles, los menús, los puntos de entrega (`deliveryPoints.setUp()`), el primer nivel (`levelManager.start()`) y el reloj de la simulación |
 | `board.wlk` | El tablero (`board`): qué máquina hay en cada celda, colocar o quitar máquinas, y los puntos de entrega de afuera del tablero |
 | `directions.wlk` | Las 4 direcciones (`up`, `down`, `left`, `right`): su nombre, cuál sigue al rotar, cuál es la opuesta y cómo moverse una celda hacia ellas |
 | `cellPosition.wlk` | `CellPosition`: una posición de celda que se dibuja más rápido que una común (ver más abajo) |

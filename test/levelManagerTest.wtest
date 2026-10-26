@@ -1,0 +1,199 @@
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.machines.machineManager.*
+import src.machines.types.belt.*
+import src.machines.types.deliverySlot.*
+import src.menu.menuManager.*
+import src.menu.placeMenu.*
+import src.menu.levelInfoMenu.*
+import src.simulation.simulationEngine.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.levels.levelClasses.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+
+// level1: cinta, dispenser, cortadora, freidora y brazo; hay que entregar 3 papas fritas
+describe "tests de levelManager" {
+
+  method initialize() {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.start()
+  }
+
+  method deliver(kind, amount) {
+    amount.times({ _ => levelManager.delivered(new Item(kind = kind)) })
+  }
+
+  method progress() = levelManager.currentLevel().progressLines()
+
+  // Cuántas máquinas ofrece el menú, sumando todas sus páginas
+  method catalogSize() = (0 .. machineManager.pageCount() - 1).sum({ page => machineManager.machinesOfPage(page).size() })
+
+  // CARGAR
+
+  test "al arrancar se carga el primer nivel, sin completar" {
+    assert.equals(level1, levelManager.currentLevel())
+    assert.notThat(levelManager.completed())
+  }
+
+  test "cargar un nivel deja su catalogo, la primera pagina y la primera maquina elegida" {
+    assert.equals(level1.availableMachines().size(), self.catalogSize())
+    assert.equals(0, placeMenu.currentPage())
+    assert.equals("Belt", machineManager.selectedName())
+  }
+
+  test "cargar un nivel con la simulacion prendida la apaga y saca las maquinas, pero no los platitos" {
+    board.push(game.at(10, 5), new Belt(direction = right))
+    simulationEngine.run()
+    levelManager.load(level1)
+    assert.notThat(simulationEngine.running())
+    assert.that(board.machines().isEmpty())
+    assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
+  }
+
+  // ENTREGAR
+
+  test "un nivel nuevo arranca con el progreso en cero" {
+    assert.equals(["Papas Fritas: 0/3"], self.progress())
+  }
+
+  test "entregar lo que pide el objetivo suma al progreso" {
+    self.deliver(friedPotato, 1)
+    assert.equals(["Papas Fritas: 1/3"], self.progress())
+  }
+
+  test "entregar otra cosa no suma al progreso" {
+    self.deliver(potato, 2)
+    self.deliver(cutPotato, 2)
+    assert.equals(["Papas Fritas: 0/3"], self.progress())
+  }
+
+  test "apagar la simulacion sin haber ganado vuelve el progreso a cero" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 2)
+    levelManager.toggleSimulation()
+    assert.notThat(simulationEngine.running())
+    assert.equals(["Papas Fritas: 0/3"], self.progress())
+  }
+
+  // GANAR
+
+  test "al cumplir el objetivo se completa, y la simulacion se apaga en el paso siguiente y no en el mismo" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 3)
+    assert.that(levelManager.completed())
+    assert.that(simulationEngine.running())
+    simulationEngine.step()
+    assert.notThat(simulationEngine.running())
+  }
+
+  test "al ganar, el progreso no se borra aunque se apague la simulacion" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 3)
+    simulationEngine.step()
+    assert.equals(["Papas Fritas: 3/3"], self.progress())
+  }
+
+  test "despues de ganar, la tecla 5 no vuelve a prender la simulacion" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 3)
+    simulationEngine.step()
+    levelManager.toggleSimulation()
+    assert.notThat(simulationEngine.running())
+  }
+
+  // SIGUIENTE, REINICIAR Y MODO LIBRE
+
+  test "loadNext sin haber ganado no cambia de nivel" {
+    levelManager.loadNext()
+    assert.equals(level1, levelManager.currentLevel())
+  }
+
+  test "el ultimo nivel no tiene siguiente" {
+    assert.notThat(levelManager.hasNext())
+  }
+
+  test "restart vuelve el progreso a cero y saca las maquinas que coloco el jugador" {
+    board.push(game.at(10, 5), new Belt(direction = right))
+    self.deliver(friedPotato, 2)
+    levelManager.restart()
+    assert.that(board.machines().isEmpty())
+    assert.equals(["Papas Fritas: 0/3"], self.progress())
+  }
+
+  test "restart despues de ganar vuelve a dejar jugar" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 3)
+    simulationEngine.step()
+    levelManager.restart()
+    assert.notThat(levelManager.completed())
+    levelManager.toggleSimulation()
+    assert.that(simulationEngine.running())
+  }
+
+  test "el modo libre tiene todas las maquinas, nunca se completa y no tiene siguiente" {
+    levelManager.loadFreePlay()
+    assert.equals(freePlay, levelManager.currentLevel())
+    assert.equals(machineManager.allMachines().size(), self.catalogSize())
+    self.deliver(friedPotato, 10)
+    assert.notThat(levelManager.completed())
+    assert.notThat(levelManager.hasNext())
+  }
+}
+
+// Lo que se ve en la zona de la izquierda
+describe "tests de levelInfoMenu" {
+
+  method initialize() {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.start()
+  }
+
+  // Los textos dibujados en una fila de la info del nivel
+  method textsAt(row) = game.getObjectsIn(levelInfoMenu.positionOfRow(row)).map({ visual => visual.text() })
+
+  method deliver(kind, amount) {
+    amount.times({ _ => levelManager.delivered(new Item(kind = kind)) })
+  }
+
+  test "al cargar un nivel muestra su nombre, el titulo y el progreso de su objetivo" {
+    assert.equals(["NIVEL 1"], self.textsAt(13))
+    assert.equals(["OBJETIVO"], self.textsAt(11))
+    assert.equals(["Papas Fritas: 0/3"], self.textsAt(10))
+  }
+
+  test "una entrega reemplaza el texto del progreso, sin dejar el anterior" {
+    self.deliver(friedPotato, 1)
+    assert.equals(["Papas Fritas: 1/3"], self.textsAt(10))
+  }
+
+  test "al ganar el ultimo nivel muestra el fin del juego y la tecla para reiniciar" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 3)
+    simulationEngine.step()
+    assert.equals(["¡Fin del juego!"], self.textsAt(6))
+    assert.equals(["0: reiniciar"], self.textsAt(5))
+  }
+
+  test "al volver a cargar el nivel se borra el mensaje de nivel completo" {
+    simulationEngine.run()
+    self.deliver(friedPotato, 3)
+    simulationEngine.step()
+    levelManager.restart()
+    assert.that(self.textsAt(6).isEmpty())
+    assert.equals(["Papas Fritas: 0/3"], self.textsAt(10))
+  }
+
+  test "el modo libre muestra solo su nombre" {
+    levelManager.loadFreePlay()
+    assert.equals(["LIBRE"], self.textsAt(13))
+    assert.that(self.textsAt(11).isEmpty())
+    assert.that(self.textsAt(10).isEmpty())
+  }
+}

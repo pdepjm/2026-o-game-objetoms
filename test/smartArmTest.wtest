@@ -3,6 +3,7 @@ import wollok.game.*
 import src.machines.types.smartRoboticArm.*
 import src.machines.types.fryer.*
 import src.machines.types.belt.*
+import src.machines.types.automaticArm.*
 import src.machines.settings.*
 import src.directions.*
 import src.tools.toolsManager.*
@@ -218,5 +219,41 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = new Fryer()
     board.push(game.at(9, 6), aFryer)
     assert.equals(arm, aFryer.nextMachine())
+  }
+}
+
+// Sacar las papas de la freidora: el brazo común se las lleva apenas entran, sin freír; el inteligente,
+// con su salida filtrando papas fritas, espera a que se frían. Por eso level1 ofrece los dos brazos.
+describe "tests de sacar papas fritas de la freidora" {
+
+  const fryer = new Fryer(direction = right)
+
+  // Coloca la freidora en (10, 5), el brazo a su derecha recibiendo desde ella, y una cinta de salida.
+  // Le da una papa cortada a la freidora y devuelve qué era la papa cuando salió de ahí (null si nunca salió).
+  method kindTakenOutBy(arm) {
+    board.push(game.at(10, 5), fryer)
+    board.push(game.at(11, 5), arm)
+    board.push(game.at(12, 5), new Belt(direction = right))
+    simulationEngine.run()
+    const item = new Item(kind = cutPotato)
+    item.position(fryer.position())
+    simulationEngine.addItem(item)
+    fryer.receive(item)
+    var kindWhenTaken = null
+    (1..200).forEach({ _ =>
+      simulationEngine.step()
+      if (kindWhenTaken == null && !fryer.heldItems().contains(item)) kindWhenTaken = item.kind()
+    })
+    return kindWhenTaken
+  }
+
+  test "el brazo comun saca la papa de la freidora antes de que se fria" {
+    assert.equals(cutPotato, self.kindTakenOutBy(new AutomaticArm(direction = left)))
+  }
+
+  test "el brazo inteligente que filtra papas fritas espera a que se fria para sacarla" {
+    const arm = new SmartRoboticArm(direction = left)
+    arm.settings().find({ setting => setting.name() == "Recto" }).value([friedPotato])
+    assert.equals(friedPotato, self.kindTakenOutBy(arm))
   }
 }

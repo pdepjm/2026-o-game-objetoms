@@ -14,7 +14,8 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 | `placeMenu.wlk` | El panel de la herramienta **place**: las máquinas para elegir, con páginas y un marco sobre la elegida |
 | `editMenu.wlk` | El panel de la herramienta **edit**: los settings de la máquina elegida, agrupados por categoría |
 | `toolBar.wlk` | La barra que muestra qué herramienta está elegida |
-| `levelInfoMenu.wlk` | Vacío, reservado para la información del nivel |
+| `levelInfoMenu.wlk` | La información del nivel, en la zona de la izquierda: nombre, objetivos y si se ganó |
+| `menuText.wlk` | `MenuText`: un texto de los menús. Lo usan `editMenu` y `levelInfoMenu` |
 
 ## `menuManager.wlk`
 
@@ -72,3 +73,26 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
 - Hay una marca (`OptionMarker`) sobre cada opción elegida (`isSelected`) de **cada** setting. Un setting que permite elegir varias (`ItemSetSetting`) muestra varias marcas.
 - Se redibuja sólo cuando cambia la máquina elegida; un click sólo mueve las marcas.
 - Una máquina sin settings no muestra nada.
+
+## `levelInfoMenu.wlk`
+
+Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14), en la columna del centro (x 2). **No decide nada**: le avisa `levelManager` (ver [`levels/README.md`](../levels/README.md)).
+
+| Fila (y) | Qué muestra |
+|---|---|
+| 13 | El nombre del nivel, en mayúsculas |
+| 11 | `OBJETIVO` (no aparece si el nivel no tiene objetivos con texto, como el modo libre) |
+| 10 a 8 | Una línea por objetivo (`level.progressLines()`): como máximo 3 |
+| 6 y 5 | Al ganar: `¡Nivel completo!` y `N: siguiente`, o `¡Fin del juego!` y `0: reiniciar` si no hay otro nivel |
+| 4 a 1 | Libres (reservadas para el mensaje del tutorial) |
+
+| Método | Lo llama | Qué hace |
+|---|---|---|
+| `show(nivel)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
+| `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo las líneas de los objetivos |
+| `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega las filas 6 y 5 |
+
+- **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
+- Guarda lo dibujado en tres listas (el nombre y el título, el progreso, y el mensaje de nivel completo) para reemplazar sólo lo que cambia.
+- Wollok no corta el texto en varias líneas: con 5 celdas de ancho, los textos tienen que ser cortos (unos 15 o 20 caracteres).
+- `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).

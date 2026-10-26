@@ -7,6 +7,7 @@ import tools.toolsManager.*
 import tools.userTools.*
 import directions.*
 import simulation.simulationEngine.*
+import levels.levelManager.*
 
 object userController {
 	method setUp() {
@@ -19,7 +20,12 @@ object userController {
 		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
 
 		// 5: prende/apaga la simulación. Al apagarla se borran los ingredientes.
-		keyboard.num5().onPressDo({ => simulationEngine.toggle() })
+		keyboard.num5().onPressDo({ => levelManager.toggleSimulation() })
+
+		// NIVELES: siguiente (sólo después de ganar), reiniciar (borra lo construido) y modo libre
+		keyboard.n().onPressDo({ => levelManager.loadNext() })
+		keyboard.num0().onPressDo({ => levelManager.restart() })
+		keyboard.l().onPressDo({ => levelManager.loadFreePlay() })
 
 		keyboard.q().onPressDo({ => menuManager.prevPage() })
 		keyboard.e().onPressDo({ => menuManager.nextPage() })

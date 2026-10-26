@@ -10,7 +10,7 @@ Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles 
 | `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `smartRoboticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk`, `deliverySlot.wlk` |
 | `machineManager.wlk` | El catálogo de máquinas del menú y cuál está elegida para colocar |
 
-> **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo), `main.wpgm` (para crear los puntos de entrega con `deliveryPoints.setUp()`) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
+> **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo), `main.wpgm` (para crear los puntos de entrega con `deliveryPoints.setUp()`), `levels/levelsTypes.wlk` (cada nivel arma su catálogo) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
 
 ## Las clases base
 
