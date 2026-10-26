@@ -201,7 +201,41 @@ describe "tests de simulacion" {
     assert.equals(0, simulationEngine.pendingActions())
   }
 
-  test "no se puede agendar más lejos que la cantidad de casilleros" {
-    assert.throwsException({ simulationEngine.after(100, {}) })
+  test "se puede agendar más lejos que la cantidad de casilleros" {
+    var ran = false
+    simulationEngine.after(100, { ran = true })
+    self.steps(99)
+    assert.notThat(ran)
+    self.steps(1)
+    assert.that(ran)
+  }
+
+  test "una acción lejana no se ejecuta en una vuelta anterior de su casillero" {
+    // 100 pasos cae en el mismo casillero que 36 (100 % 64): en el paso 36 todavía no vence
+    var ran = false
+    simulationEngine.after(100, { ran = true })
+    self.steps(36)
+    assert.notThat(ran)
+    assert.equals(1, simulationEngine.pendingActions())
+  }
+
+  test "acciones del mismo casillero en distintas vueltas se ejecutan cada una a su paso" {
+    const ran = []
+    simulationEngine.after(10, { ran.add("cerca") })
+    simulationEngine.after(74, { ran.add("lejos") })
+    self.steps(10)
+    assert.equals(["cerca"], ran)
+    self.steps(64)
+    assert.equals(["cerca", "lejos"], ran)
+  }
+
+  test "un dispenser en velocidad lenta prende la simulacion y dispensa a los 100 pasos" {
+    dispenser.settings().last().value(0.5)
+    self.oneBelt()
+    simulationEngine.run()
+    self.steps(99)
+    assert.that(firstBelt.heldItems().isEmpty())
+    self.steps(1)
+    assert.equals(1, firstBelt.heldItems().size())
   }
 }

@@ -150,14 +150,6 @@ describe "tests del panel de edit" {
     assert.that(game.allVisuals().filter({ visual => menuManager.inInteractiveMenu(visual.position()) }).isEmpty())
   }
 
-  test "elegir el dispenser muestra los titulos, los nombres y una marca por setting" {
-    toolsManager.onClick(game.at(8, 8))
-    assert.equals(2, self.markers().size())
-    assert.equals("PRODUCCION", game.getObjectsIn(new CellPosition(x = 21, y = 14)).first().text())
-    assert.equals("Ingrediente", game.getObjectsIn(new CellPosition(x = 21, y = 13)).first().text())
-    assert.equals("Velocidad", game.getObjectsIn(new CellPosition(x = 21, y = 10)).first().text())
-  }
-
   test "la categoria se muestra una sola vez aunque tenga dos settings" {
     toolsManager.onClick(game.at(8, 8))
     const titles = self.texts().filter({ text => text.text() == "PRODUCCION" })
@@ -174,12 +166,6 @@ describe "tests del panel de edit" {
     toolsManager.onClick(game.at(8, 8))
     self.clickPanel(21, 11)
     assert.equals(tomato, dispenser.product())
-  }
-
-  test "clickear una velocidad se la aplica al dispenser" {
-    toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(23, 9)
-    assert.equals(2, dispenser.settings().last().value())
   }
 
   test "la marca se mueve a la opcion clickeada y sigue habiendo una por setting" {

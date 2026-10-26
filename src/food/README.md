@@ -47,9 +47,6 @@ Una familia por ingrediente con más de un estado. `image(estado)` arma la ruta 
 
 Platos (`DishKind`): `burger`.
 
-> [!NOTE]
-> `burntPotato` usa `potatoFamily.image("burnt")`, pero todavía no existe `assets/food/Ingredients/potatoes/potato_burnt.png`.
-
 ## `recipesClasses.wlk`
 
 - `Requirement`: un kind y cuántos hacen falta (`amount`).

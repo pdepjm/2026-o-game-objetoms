@@ -33,6 +33,10 @@ class SmartRoboticArm inherits AutomaticArm {
 
 	override method name() = "SmartRoboticArm"
 
+	// En el menú se ve con su propia imagen (machines/SmartRoboticArm/). En el tablero sigue usando
+	// las del brazo común (assetFolder), porque las suyas todavía no son de 150x150 ni tienen animaciones.
+	override method menuImage(aDirection) = "machines/" + self.name() + "/down_menu.png"
+
 	override method settings() = routes.map({ route => route.filter() })
 
 	// La salida que deja pasar a ese item (null si ninguna)

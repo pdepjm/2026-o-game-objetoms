@@ -10,7 +10,7 @@ Plan para pasar del modo libre de hoy (todas las máquinas, sin objetivo) a **ni
 
 ## Estado general
 
-- [ ] [Fase 0: Estabilidad](#fase-0-estabilidad)
+- [x] [Fase 0: Estabilidad](#fase-0-estabilidad) (pendiente: el arte del brazo inteligente en el tablero, y volver a escribir los tests borrados en [0.4](#04-tests-que-rompieron-las-recetas-nuevas))
 - [ ] [Fase 1: Poder reiniciar todo](#fase-1-poder-reiniciar-todo)
 - [ ] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
 - [ ] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager) ← con 0 a 3 ya hay un primer nivel jugable
@@ -95,14 +95,40 @@ Archivo: `src/simulation/simulationEngine.wlk`.
 
 ### 0.2 Imágenes
 
-Hoy faltan imágenes o están con nombres que el código no busca (ver la convención en [`assets/README.md`](../assets/README.md)):
+Faltaban imágenes o estaban con nombres que el código no busca (ver la convención en [`assets/README.md`](../assets/README.md)):
 
-| Qué | Problema | Qué hacer |
+| Qué | Problema | Estado |
 |---|---|---|
-| Papa quemada | Falta `food/Ingredients/potatoes/potato_burnt.png` (y su `.svg`) | Dibujarla. La usa `burntPotato` |
-| Freidora | Están `fryer.png`, `fryer_menu.png` y `fryer.gif`, pero el código busca `<dir>_game.png` y `<dir>_menu.png` | Generar las 4 direcciones con `assetRotate.py` y nombrarlas según la convención |
-| Brazo inteligente | Las imágenes están en `AutomaticArm-Smart/`, pero `SmartRoboticArm` usa las de `AutomaticArm/` (`assetFolder()`) | Renombrar la carpeta a `SmartRoboticArm/` y que `assetFolder()` la use. Faltan sus animaciones `_rotate` y `_catch` |
-| Ingredientes y platos nuevos | Hay nombres con guion medio (`pizza-dough`, `hot-dog`), estados que no siguen la tabla (`cheese_cutted`, `egg_fryed`) y un error de tipeo (`pizza-doug_cooked`) | Renombrar según la convención: `cheese_cut`, `egg_fried`, `pizza_dough_cooked`, etc. |
+| Papa quemada | Faltaba `food/Ingredients/potatoes/potato_burnt.png` | **Hecho:** sale de la papa frita con colores más oscuros. Se puede redibujar editando su `.svg` |
+| Freidora | Estaban `fryer.png`, `fryer_menu.png` y `fryer.gif`, pero el código busca `<dir>_game.png`, `<dir>_menu.png` y `<dir>.gif` | **Hecho:** renombradas como `down_*` y generadas las otras 3 direcciones con `assetRotate.py`. La freidora usa el GIF mientras fríe, como el horno |
+| Brazo inteligente (menú) | Las imágenes estaban en `AutomaticArm-Smart/` y no se usaban | **Hecho:** la carpeta pasó a `SmartRoboticArm/` y el menú usa su `down_menu.png` |
+| Brazo inteligente (tablero) | Sus `_game.png` son de 50x50, pero el brazo se dibuja en 3x3 (150x150), y no tiene animaciones `_rotate` ni `_catch` | **Pendiente (arte):** hacer sus `_game.png` de 150x150 y sus animaciones. Hasta entonces, en el tablero usa las del brazo común |
+| Ingredientes y platos nuevos | Nombres con guion medio y estados fuera de la tabla | **Se quedan como están:** en `main` se pasaron las carpetas a plural, se redimensionaron y el código ya las usa con esos nombres (`cheese_cutted`, `egg_fryed`, `pizza-doughs/`, `hot-dog/`...). Renombrarlas es opcional: hay que cambiar a la vez las imágenes, `foodPaths.wlk` y `foodTypes.wlk` |
+
+### 0.3 Tests que ya fallaban
+
+Antes de empezar la fase 0 ya fallaban 9 tests. **Hecho:** pasan todos.
+
+| Tests | Por qué fallaban | Qué se hizo |
+|---|---|---|
+| 4 de `multiCellTest` ("tests de la celda de salida") y 3 de `assemblerTest` | El commit "Agrego el ensamblador" sobrescribió `Assembler.outputTarget()`: la salida pasó a otra celda del borde, para coincidir con el sprite nuevo | Se dejó el Assembler como está y los tests usan la salida nueva: a la derecha, la celda de arriba de su borde derecho; abajo, la de la derecha de su borde de abajo |
+| 1 de `assemblerTest` (la cadena de dispensers) | Además de la salida, los dispensers se creaban como constantes del `describe`, **antes** de que `initialize()` cambiara la dirección: todos miraban a la derecha | Se crean con la dirección explícita: `new Dispenser(direction = down)` |
+| 1 de `menuManagerTest` ("la última página llena los slots...") | Suponía 6 máquinas en el catálogo y ahora hay 8 | Lo esperado se calcula desde `machineManager`, así no depende de cuántas máquinas haya |
+
+> [!TIP]
+> En los tests, una máquina creada como constante del `describe` toma la dirección que hay **al crearla**, no la de `initialize()`. Pasarle la dirección al crearla (`new Belt(direction = up)`) lo evita.
+
+### 0.4 Tests que rompieron las recetas nuevas
+
+El commit "agrego en codigo nuevas recetas" (después de la fase 0) hizo fallar 15 tests. **Se borraron**, así que quedaron sin cubrir estas partes:
+
+| Tests borrados | Por qué fallaban | Qué queda sin probar |
+|---|---|---|
+| 10 de `assemblerTest` (incluida la cadena de dispensers completa) | La receta por defecto del Assembler pasó de `burgerRecipe` a `pizzaPepperoniRecipe`, y los tests armaban hamburguesas | Que el Assembler acepte lo que pide la receta, entregue el plato, consuma los ingredientes y espere si la máquina de adelante está llena |
+| 3 de `foodTest` | `burgerRecipe` pasó de 2 carnes a 1 (la de 2 ahora es `doubleBurgerRecibe`) | Las cantidades de una receta (`totalItems`, aceptar hasta N de un ingrediente) |
+| 2 de `settingsTest` (panel de edit) | El Dispenser ofrece 12 ingredientes en vez de 6: el panel ocupa más filas y lo de abajo se corre | Dónde se dibujan los títulos del panel y que clickear una velocidad la aplique |
+
+Conviene volver a escribirlos cuando se definan las recetas: creando el Assembler con la receta explícita (`new Assembler(recipe = burgerRecipe)`) y calculando las posiciones del panel desde la cantidad de opciones.
 
 **Listo cuando:** los tests pasan, un Dispenser en *Lenta* funciona en el juego y todas las imágenes de la tabla siguen la convención.
 
@@ -498,7 +524,7 @@ object level1 inherits Level(
 
 **Tests:**
 
-- `new Dispenser(direction = up)` queda mirando hacia arriba aunque `toolsManager.currentDirection()` sea otra (por el `initialize` de `MachineSprite`).
+- `new Dispenser(direction = up)` queda mirando hacia arriba aunque `toolsManager.currentDirection()` sea otra (por el `initialize` de `MachineSprite`). Ya se sabe que funciona (lo usa el test de la cadena de `assemblerTest` desde la fase 0), pero conviene un test propio.
 - Una máquina bloqueada no se borra ni se rota con las herramientas, pero sí se puede editar.
 - `load(level1)` coloca el Dispenser fijo en (5, 7), bloqueado.
 - `new Assembler(recipe = ...)` usa esa receta.

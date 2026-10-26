@@ -16,7 +16,8 @@ Es el **único reloj del juego**. Wollok Game le manda `tick()` cada 100 ms (`ti
   - **Prendida** (tecla 5): corren los pasos y el tablero queda bloqueado.
 - **`run()`:** prende la simulación y le manda `start()` a cada máquina.
 - **`stop()`:** la apaga, vacía la agenda, borra los ingredientes y le manda `reset()` a cada máquina.
-- **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Como máximo se agenda a 63 pasos (`slotCount - 1`).
+- **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Se puede agendar a cualquier cantidad de pasos.
+- **Cómo se guarda:** la agenda es una ronda de `slotCount` (64) casilleros, y una acción que vence en el paso `p` va al casillero `p % slotCount`. Así cada paso revisa un solo casillero, no todas las acciones pendientes. Cada acción es un `ScheduledAction`, que recuerda en qué paso vence (`dueStep`): una acción a más de 64 pasos espera en su casillero las vueltas que haga falta. `slotCount` no es un límite; sólo conviene que sea mayor que las demoras que se agendan seguido.
 - **El bloque dice qué se hace:** `after(5, { self.onArrived(item) })`. Nadie tiene que deducir por qué lo despertaron.
 - **En cada paso (`step()`):** primero ejecuta las acciones agendadas y después avanza las animaciones (`animationEngine.tick()`).
 - **Items:** `addItem` pone un ingrediente en pantalla; `removeItem` lo saca del tablero (lo usan las máquinas que consumen ingredientes, como el Assembler); `allItems` devuelve todos los que tienen las máquinas encima (`heldItems()` de cada una).

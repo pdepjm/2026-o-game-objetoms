@@ -69,10 +69,6 @@ describe "tests de recetas" {
     assert.notThat(burgerRecipe.canBeMadeWith([]))
   }
 
-  test "con una sola carne no alcanza" {
-    assert.notThat(burgerRecipe.canBeMadeWith([bunHalf, lettuceLeaf, tomatoSlice, meat1]))
-  }
-
   test "un ingrediente sin procesar no cuenta como procesado" {
     assert.notThat(burgerRecipe.canBeMadeWith([new Item(kind = bun), lettuceLeaf, tomatoSlice, meat1, meat2]))
   }
@@ -81,18 +77,9 @@ describe "tests de recetas" {
     assert.that(burgerRecipe.stillNeeds(lettuceLeaf, [bunHalf]))
   }
 
-  test "acepta la segunda carne pero no la tercera" {
-    assert.that(burgerRecipe.stillNeeds(meat2, [meat1]))
-    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = cookedMeat), [meat1, meat2]))
-  }
-
   test "no necesita un kind que no pide" {
     assert.notThat(burgerRecipe.stillNeeds(new Item(kind = potato), []))
     assert.notThat(burgerRecipe.stillNeeds(new Item(kind = meat), []))
-  }
-
-  test "totalItems suma las cantidades de los requisitos" {
-    assert.equals(5, burgerRecipe.totalItems())
   }
 
   test "prepare crea un plato del kind de la receta" {

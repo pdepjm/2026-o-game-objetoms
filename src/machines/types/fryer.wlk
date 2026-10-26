@@ -15,6 +15,11 @@ class Fryer inherits ProcessingMachine {
 
 	override method foodProcess() = frying
 
+	// Como el horno: quieta cuando está vacía, el GIF sólo mientras fríe
+	override method animateWork(steps, afterBlock) {
+		self.holdImage(self.gifImage(), steps, afterBlock)
+	}
+
 	override method armOnly() = true
 
 	override method grabbableItem() = self.itemToPush()
