@@ -31,42 +31,51 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 
 
-## KEYS
-**Q**: Pagina anterior
-
-**E**: Pagina siguiente
-
-**P**: Herramienta de Place
-
-**X**: Herramienta de Delete
-
-**Z**: Herramienta de Edit
+## Controles
 
 > [!NOTE]
-> El juego arranca sin ninguna herramienta elegida. Volver a tocar la tecla de la herramienta activa la deselecciona.
+> **Modo de herramientas:** El juego inicia sin ninguna herramienta seleccionada. Presionar la tecla de una herramienta la activa, y volver a presionarla la deselecciona (vuelve a `null`).
+> Mientras la simulación está corriendo (Play), la edición del tablero queda bloqueada para proteger la integridad del circuito.
 
-### Rotaciones
-**R**: Herramienta de Rotar
+## - BINDING
+| Control | Herramienta | Acción al hacer click en el tablero |  
+|:---:|---|---|
+| <kbd>Click</kbd> | **Interactuar** | Aplica la herramienta activa en el tablero o selecciona opciones en el menú lateral |  
 
-> [!NOTE] 
-> La herramienta unicamente rota los objetos ya colocados
 
-**W**: Rotar hacia arriba
+### - TOOLS (MENÚ)
+| Tecla | Herramienta | Comportamiento |  
+|:---:|---|---|
+| <kbd>Z</kbd> | **Construir (Place)** | Coloca la máquina seleccionada en el menú con la orientación actual |
+| <kbd>X</kbd> | **Configurar (Edit)** | Abre en el menú lateral los ajustes, velocidades y filtros de la máquina clickeada |
+| <kbd>C</kbd> | **Herramienta Rotar** | Selecciona la herramienta para rotar en sentido horario máquinas **ya colocadas** en el tablero |
+| <kbd>V</kbd> | **Demoler (Delete)** | Quita la máquina clickeada del tablero (junto con los items que contenga) |
 
-**S**: Rotar hacia abajo
 
-**A**: Rotar hacia la izquierda
+### - ORIENTACIÓN (Antes de colocar en tablero)
+| Tecla | Acción | Comportamiento |
+|:---:|---|---|
+| <kbd>W</kbd> | **Orientar Arriba** | Rota hacia arriba la máquina a colocar (afecta a la próxima máquina) |
+| <kbd>A</kbd> | **Orientar Izquierda** | Rota hacia la izquierda la máquina a colocar |
+| <kbd>S</kbd> | **Orientar Abajo** | Rota hacia abajo la máquina a colocar |
+| <kbd>D</kbd> | **Orientar Derecha** | Rota hacia la derecha la máquina a colocar |
 
-**D**: Rotar hacia la derecha
+### - PAGES DEL MENÚ
+| Tecla | Acción | Descripción |
+|:---:|---|---|
+| <kbd>Q</kbd> | **Página Anterior** | Retrocede una página en el catálogo de máquinas del menú |
+| <kbd>E</kbd> | **Página Siguiente** | Avanza una página en el catálogo de máquinas del menú |  
 
-> [!NOTE]
-> Estas teclas solo rotan los objetos en el overlay, no los objetos ya colocados
 
-### Simulación
-**1**: establece la velocidad en x1
-**2**: establece la velocidad en x2
-**3**: establece la velocidad en x3
-**5**: Inicia o termina la simulación
+### - Control de Simulación
+| Tecla | Acción | Descripción |
+|:---:|---|---|
+| <kbd>Espacio</kbd> | **Play / Pausa** | Inicia o detiene la simulación *(en pausa se construye libremente; al pausar se limpian los items sueltos)* |
+| <kbd>1</kbd> | **Velocidad x1** | Velocidad estándar (1 paso por tick de 100 ms) |
+| <kbd>2</kbd> | **Velocidad x2** | Velocidad rápida (2 pasos por tick) |
+| <kbd>3</kbd> | **Velocidad x3** | Velocidad ultra rápida (3 pasos por tick) |
+
+
 
 ## TAMAÑOS
 

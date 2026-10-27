@@ -18,13 +18,16 @@ class ArmRoute {
 // Si ninguna lo acepta, no lo toma: se queda donde está.
 // Por defecto sólo sale por la recta, y deja pasar todo (como el automático).
 class SmartRoboticArm inherits AutomaticArm {
-	// Los ingredientes que se pueden elegir en cada salida
-	const kinds = [potato, cutPotato, friedPotato, burntPotato, lettuce, cutLettuce, tomato, 
-				   cutTomato, bun, cutBun, meat, cookedMeat, cheese, cheeseCutted, cheeseFeta, 
-				   salami, salamiCutted, pizzaDough, pizzaDoughCooked, egg, eggFryed, sausage,
-				   sausageCooked, bacon, baconCooked]
+	// Los ingredientes que se pueden elegir en cada salida (hasta 13 para no salirse de la pantalla)
+	const kinds = [
+		potato, cutPotato, friedPotato, burntPotato,
+		egg, eggFryed,
+		meat, cookedMeat,
+		sausage, sausageCooked,
+		cheese
+	]
 
-	// En el orden de prioridad
+	// En el orden de prioridad: recta, izquierda, derecha
 	const routes = [
 		new ArmRoute(output = straightOut, filter = new ItemSetSetting(outputName = "Recto", columnIndex = 1, kinds = kinds, value = kinds)),
 		new ArmRoute(output = leftOut, filter = new ItemSetSetting(outputName = "Izq.", columnIndex = 0, kinds = kinds, value = [])),
@@ -32,6 +35,10 @@ class SmartRoboticArm inherits AutomaticArm {
 	]
 
 	override method name() = "SmartRoboticArm"
+
+	override method staticImage() = "machines/AutomaticArm-Smart/" + direction.name() + "_game.png"
+	
+	override method menuImage(aDirection) = "machines/AutomaticArm-Smart/down_menu.png"
 
 	override method settings() = routes.map({ route => route.filter() })
 

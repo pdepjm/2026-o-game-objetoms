@@ -153,9 +153,9 @@ describe "tests del panel de edit" {
   test "elegir el dispenser muestra los titulos, los nombres y una marca por setting" {
     toolsManager.onClick(game.at(8, 8))
     assert.equals(2, self.markers().size())
-    assert.equals("PRODUCCION", game.getObjectsIn(new CellPosition(x = 21, y = 14)).first().text())
-    assert.equals("Ingrediente", game.getObjectsIn(new CellPosition(x = 21, y = 13)).first().text())
-    assert.equals("Velocidad", game.getObjectsIn(new CellPosition(x = 21, y = 10)).first().text())
+    assert.equals("PRODUCCION", self.texts().find({ t => t.position().y() == 14 }).text())
+    assert.equals("Ingrediente", self.texts().find({ t => t.position().y() == 13 }).text())
+    assert.equals("Velocidad", self.texts().find({ t => t.position().y() == 9 }).text())
   }
 
   test "la categoria se muestra una sola vez aunque tenga dos settings" {
@@ -178,7 +178,7 @@ describe "tests del panel de edit" {
 
   test "clickear una velocidad se la aplica al dispenser" {
     toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(23, 9)
+    self.clickPanel(23, 8)
     assert.equals(2, dispenser.settings().last().value())
   }
 
@@ -198,7 +198,7 @@ describe "tests del panel de edit" {
 
   test "el brazo muestra su unico setting, de movimiento" {
     toolsManager.onClick(game.at(8, 4))
-    assert.equals("MOVIMIENTO", game.getObjectsIn(new CellPosition(x = 21, y = 14)).first().text())
+    assert.equals("MOVIMIENTO", self.texts().find({ t => t.position().y() == 14 }).text())
     assert.equals(1, self.markers().size())
   }
 

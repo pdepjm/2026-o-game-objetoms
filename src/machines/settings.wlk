@@ -72,25 +72,29 @@ class ProductSetting inherits Setting {
 
 // Qué tan rápido trabaja una máquina, como multiplicador de su ritmo normal.
 // Más rápido consume más energía.
+// Se utilizan etiquetas concisas ("x0.5", "x1", "x2") para que entren holgadas
+// en los 50 px de cada casilla del menú sin desbordar el texto.
 class SpeedSetting inherits Setting {
 	override method name() = "Velocidad"
 	override method category() = production
 	override method options() = [
-		new SettingOption(value = 0.5, label = "Lenta", energyCost = 1),
-		new SettingOption(value = 1, label = "Normal", energyCost = 2),
-		new SettingOption(value = 2, label = "Rapida", energyCost = 4)
+		new SettingOption(value = 0.5, label = "x0.5", energyCost = 1),
+		new SettingOption(value = 1, label = "x1", energyCost = 2),
+		new SettingOption(value = 2, label = "x2", energyCost = 4)
 	]
 }
 
 // Hacia dónde entrega una máquina, RELATIVO al lado por el que recibe.
 // Las opciones son straightOut, leftOut y rightOut.
+// Se usan abreviaturas ("Recto", "Izq.", "Der.") para evitar que palabras largas
+// como "Izquierda" y "Derecha" desborden los 50 px y se superpongan entre sí.
 class OutputSideSetting inherits Setting {
 	override method name() = "Salida"
 	override method category() = movement
 	override method options() = [
 		new SettingOption(value = straightOut, label = "Recto"),
-		new SettingOption(value = leftOut, label = "Izquierda"),
-		new SettingOption(value = rightOut, label = "Derecha")
+		new SettingOption(value = leftOut, label = "Izq."),
+		new SettingOption(value = rightOut, label = "Der.")
 	]
 }
 
@@ -121,7 +125,8 @@ class ItemSetSetting inherits Setting {
 	override method category() = movement
 	override method column() = columnIndex
 
-	override method options() = kinds.map({ kind => new SettingOption(value = kind, image = kind.image()) })
+	override method options() = kinds.map({ 
+		kind => new SettingOption(value = kind, image = kind.image()) })
 
 	// Prende o apaga ese kind. Arma una lista nueva: la inicial puede estar compartida con otra salida.
 	override method select(option) {

@@ -9,10 +9,10 @@
 | Tecla | Acción | Quién la hace |
 |---|---|---|
 | Click | Usar la herramienta elegida, o elegir en el menú | `toolsManager.onClick` |
-| P / X / Z / R | Elegir la herramienta place / delete / edit / rotate | `toolsManager.select` |
+| Z / X / C / V | Elegir la herramienta place / edit / rotate / delete | `toolsManager.select` |
 | W / A / S / D | Dirección para colocar: arriba / izquierda / abajo / derecha | `toolsManager.currentDirection` |
 | Q / E | Página anterior / siguiente del menú | `menuManager` |
 | 1 / 2 / 3 | Velocidad de la simulación x1 / x2 / x3 | `simulationEngine.speed` |
-| 5 | Prender / apagar la simulación | `simulationEngine.toggle` |
+| Espacio | Prender / apagar la simulación | `simulationEngine.toggle` |
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).
