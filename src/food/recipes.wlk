@@ -14,10 +14,8 @@ object burgerRecipe inherits Recipe(result = burger){
 object cheeseBurgerRecipe inherits Recipe(result = cheeseBurger){
     override method initialize() {
         requirements.add(new Requirement(kind = cutBun, amount = 1))
-        requirements.add(new Requirement(kind = cutLettuce, amount = 1))
-        requirements.add(new Requirement(kind = cutTomato, amount = 1))
         requirements.add(new Requirement(kind = cookedMeat, amount = 1))
-        requirements.add(new Requirement(kind = cheeseFeta, amount = 1))
+        requirements.add(new Requirement(kind = cheeseFeta, amount = 2))
     }
 }
 
@@ -35,7 +33,7 @@ object doubleBurgerRecipe inherits Recipe(result = doubleBurger) {
         requirements.add(new Requirement(kind = cutLettuce, amount = 1))
         requirements.add(new Requirement(kind = cutTomato, amount = 1))
         requirements.add(new Requirement(kind = cookedMeat, amount = 2))
-        requirements.add(new Requirement(kind = cheeseFeta, amount = 1))
+        requirements.add(new Requirement(kind = cheeseFeta, amount = 2))
     }
 }
 
@@ -50,5 +48,11 @@ object hotDogRecipe inherits Recipe(result = hotDog) {
     override method initialize() {
         requirements.add(new Requirement(kind = cutBun, amount = 1))
         requirements.add(new Requirement(kind = sausageCooked, amount = 1))
+    }
+}
+
+object tomatoSoupRecipe inherits Recipe(result = tomatoSoup) {
+    override method initialize() {
+        requirements.add(new Requirement(kind = cutTomato, amount = 2))
     }
 }

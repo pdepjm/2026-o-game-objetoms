@@ -197,3 +197,7 @@ object pizzaPepperoni inherits DishKind {
 object salad inherits DishKind {
     override method image() = "food/Dishes/salad/salad.png"
 }
+
+object tomatoSoup inherits DishKind {
+    override method image() = "food/Dishes/tomato-soup/tomato-soup.png"
+}
