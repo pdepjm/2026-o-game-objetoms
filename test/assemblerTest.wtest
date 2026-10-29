@@ -9,6 +9,9 @@ import src.simulation.animationEngine.*
 import src.food.foodClasses.*
 import src.food.foodTypes.*
 import src.food.recipes.*
+import src.machines.machineManager.*
+import src.menu.menuManager.*
+import src.tools.userTools.*
 
 // Una maquina de prueba para recibir lo que entrega el ensamblador: se le controla si acepta o no
 class Sink inherits Machine {
@@ -109,5 +112,51 @@ describe "tests de Assembler con items puestos a mano" {
     self.steps(cellSteps - 1)
     assert.that(sink.received().isEmpty())
     assert.equals(5, assembler.heldItems().size())
+  }
+}
+
+// Un nivel que no ofrece recetas (por ejemplo, uno sin Assembler): el Assembler arranca con noRecipe
+describe "tests de Assembler sin recetas disponibles" {
+
+  method initialize() {
+    recipeBook.changeAvailable([])
+  }
+
+  // La receta elegida en el setting del Assembler
+  method chosenRecipe(assembler) = assembler.settings().first().value()
+
+  test "con recetas disponibles, firstAvailable es la primera" {
+    recipeBook.changeAvailable([saladRecipe, burgerRecipe])
+    assert.equals(saladRecipe, recipeBook.firstAvailable())
+  }
+
+  test "sin recetas disponibles, firstAvailable es noRecipe" {
+    assert.equals(noRecipe, recipeBook.firstAvailable())
+  }
+
+  test "un Assembler se puede crear sin recetas disponibles, y arranca con noRecipe" {
+    const assembler = new Assembler(direction = right)
+    assert.equals(noRecipe, self.chosenRecipe(assembler))
+  }
+
+  test "sin recetas, el setting de receta no ofrece opciones" {
+    const assembler = new Assembler(direction = right)
+    assert.that(assembler.settings().first().options().isEmpty())
+  }
+
+  test "con noRecipe, al prender la simulacion no acepta ningun ingrediente" {
+    const assembler = new Assembler(direction = right)
+    board.push(game.at(10, 6), assembler)
+    simulationEngine.run()
+    assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
+    assert.notThat(assembler.canReceive(new Item(kind = cutTomato)))
+  }
+
+  // El menú de place crea una máquina de muestra de cada una del catálogo para dibujarla
+  test "un catalogo con Assembler y sin recetas se puede mostrar en el menu" {
+    machineManager.changeCatalog([{ => new Assembler() }])
+    menuManager.setUp()
+    toolsManager.select(place)
+    assert.equals("Assembler", machineManager.selectedName())
   }
 }

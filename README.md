@@ -82,7 +82,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 **0**: Reiniciar el nivel (borra también lo que se construyó)
 
-**L**: Modo libre (todas las máquinas, sin objetivo)
+**L**: Ir al modo libre (todas las máquinas, sin objetivo). Apretándola de nuevo se vuelve al nivel que toca jugar: el primero que todavía no se ganó. No funciona con la simulación prendida
 
 > [!NOTE]
 > El juego arranca en el nivel 1. La información del nivel (su objetivo y si se ganó) se ve a la izquierda.

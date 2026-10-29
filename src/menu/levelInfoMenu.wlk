@@ -6,6 +6,7 @@ import menu.menuText.*
 // Se dibuja de arriba hacia abajo, en la columna del centro de la zona:
 //
 //   NIVEL 1                 ← fila 13: el nombre del nivel
+//   L: volver               ← fila 12: una ayuda (sólo en el modo libre, ver showHint)
 //   OBJETIVO                ← fila 11 (sólo si el nivel tiene objetivos con texto)
 //   Papas Fritas: 2/3       ← filas 10 a 8: una por objetivo (como máximo 3)
 //   ¡Nivel completo!        ← fila 6, sólo al ganar
@@ -17,12 +18,13 @@ object levelInfoMenu {
     // la columna del centro de la zona, que tiene 5 de ancho
     const column = 2
     const nameRow = 13
+    const hintRow = 12
     const goalTitleRow = 11
     const firstProgressRow = 10
     const completedRow = 6
 
     // Lo dibujado, separado según cuándo se reemplaza
-    var levelTexts = []      // el nombre y el título: cambian sólo al cargar otro nivel
+    var levelTexts = []      // el nombre, la ayuda y el título: cambian sólo al cargar otro nivel
     var progressTexts = []   // una línea por objetivo: cambian con cada entrega
     var completedTexts = []  // el mensaje de nivel completo
 
@@ -34,6 +36,11 @@ object levelInfoMenu {
         if (!level.progressLines().isEmpty())
             levelTexts.add(self.addText("OBJETIVO", goalTitleRow))
         progressTexts = self.addProgress(level)
+    }
+
+    // Una ayuda debajo del nombre (por ejemplo, "L: volver" en el modo libre). Se borra al cargar otro nivel.
+    method showHint(text) {
+        levelTexts.add(self.addText(text, hintRow))
     }
 
     // Cambió el progreso (una entrega, o se apagó la simulación): reemplaza sólo esas líneas

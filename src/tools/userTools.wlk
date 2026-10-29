@@ -7,16 +7,18 @@ import menu.editMenu.*
 
 object place {
 	method name() = "place"
-    // Si no entra (celda ocupada o parte fuera del tablero), no coloca nada
+    // Si no entra (celda ocupada, parte fuera del tablero o fuera de las zonas donde el nivel deja construir),
+    // no coloca nada
     method onClick(pos) {
 		const machine = machineManager.createMachine()
-		if (board.canPlace(pos, machine)) board.push(pos, machine)
+		if (board.canBuild(pos, machine)) board.push(pos, machine)
     }
 }
 object delete {
 	method name() = "delete"
+	// Las máquinas bloqueadas (las fijas de un nivel) no se pueden borrar
     method onClick(pos) {
-        board.pop(pos)
+        if (board.isThereAMachineUnlocked(pos)) board.pop(pos)
     }
 }
 object edit {
@@ -27,8 +29,9 @@ object edit {
 }
 object rotate {
 	method name() = "rotate"
+
 	method onClick(pos) {
-		if (board.isThereAMachine(pos))
+		if (board.isThereAMachineUnlocked(pos))
 			board.machineAt(pos).rotate()
 	}
 }

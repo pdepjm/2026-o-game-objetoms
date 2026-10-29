@@ -8,7 +8,7 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 | `foodPaths.wlk` | Las familias de ingredientes (`potatoFamily`, `meatFamily`...), que arman la ruta de sus imágenes |
 | `foodTypes.wlk` | Los kinds concretos: ingredientes (`potato`, `meat`...) y platos (`burger`) |
 | `recipesClasses.wlk` | Las clases `Requirement` y `Recipe` |
-| `recipes.wlk` | Las recetas concretas (`burgerRecipe`) |
+| `recipes.wlk` | Las recetas concretas (`burgerRecipe`, ...), `recipeBook` y `noRecipe` |
 
 ## `foodClasses.wlk`
 
@@ -58,7 +58,11 @@ Platos (`DishKind`): `burger`.
   - `stillNeeds(item, items)`: si el item le sirve a algún requisito. El Assembler lo usa para aceptar sólo lo que le falta, así nunca junta de más.
   - `totalItems()`: cuántos items hacen falta en total.
   - `prepare()`: crea un plato nuevo (`new Item(kind = result)`).
+  - `result()`: el kind del plato que sale. El panel de edit lo usa para mostrar cada receta con la imagen de su plato.
 
 ## `recipes.wlk`
 
-- `burgerRecipe`: pan cortado, lechuga cortada, tomate cortado y dos carnes cocidas → `burger`. Las recetas son objetos bien conocidos, igual que los kinds.
+- Las recetas son objetos bien conocidos, igual que los kinds: `burgerRecipe`, `cheeseBurgerRecipe`, `doubleBurgerRecipe`, `pizzaPepperoniRecipe`, `saladRecipe`, `hotDogRecipe` y `tomatoSoupRecipe`.
+- **`recipeBook`**: conoce todas las recetas (`all()`) y cuáles se pueden elegir ahora (`available()`), como `machineManager` con las máquinas. `levelManager.load` le pasa las del nivel (`changeAvailable(recetas)`). **Al agregar una receta, sumarla a `all`**: si no, no aparece en el modo libre.
+  - `firstAvailable()`: la receta con la que arranca un Assembler: la primera disponible, o `noRecipe` si no hay ninguna.
+- **`noRecipe`**: la receta de un Assembler cuando el nivel no ofrece ninguna. No pide nada y nunca arma un plato. Es un objeto nulo (como `noGoal`): así un nivel sin recetas no rompe al crear un Assembler. **No va en `availableRecipes`**: un nivel sin recetas pone `[]`.

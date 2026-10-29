@@ -10,7 +10,7 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 
 | Archivo | Qué tiene |
 |---|---|
-| `menuManager.wlk` | `menuManager`: el que conoce a todos los menús y les reenvía los eventos. También `Zone` y `emptyMenu` |
+| `menuManager.wlk` | `menuManager`: el que conoce a todos los menús y les reenvía los eventos. También `emptyMenu`. Las zonas de la pantalla son `Zone`, que está en `src/board.wlk` |
 | `placeMenu.wlk` | El panel de la herramienta **place**: las máquinas para elegir, con páginas y un marco sobre la elegida |
 | `editMenu.wlk` | El panel de la herramienta **edit**: los settings de la máquina elegida, agrupados por categoría |
 | `toolBar.wlk` | La barra que muestra qué herramienta está elegida |
@@ -81,6 +81,7 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 | Fila (y) | Qué muestra |
 |---|---|
 | 13 | El nombre del nivel, en mayúsculas |
+| 12 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. Se borra al cargar otro nivel |
 | 11 | `OBJETIVO` (no aparece si el nivel no tiene objetivos con texto, como el modo libre) |
 | 10 a 8 | Una línea por objetivo (`level.progressLines()`): como máximo 3 |
 | 6 y 5 | Al ganar: `¡Nivel completo!` y `N: siguiente`, o `¡Fin del juego!` y `0: reiniciar` si no hay otro nivel |

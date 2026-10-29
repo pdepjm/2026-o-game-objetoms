@@ -23,9 +23,9 @@ Cada herramienta es un objeto que entiende `name()` y `onClick(posición)`:
 | Herramienta | Tecla | Al hacer click en el tablero |
 |---|---|---|
 | `place` | P | Coloca la máquina elegida en el menú, mirando hacia la dirección actual |
-| `delete` | X | Quita la máquina de esa celda (y los ingredientes que tenía) |
+| `delete` | X | Quita la máquina de esa celda (y los ingredientes que tenía). No hace nada si está bloqueada (`locked`: las fijas de un nivel) |
 | `edit` | Z | Elige esa máquina y muestra sus settings en el panel de edit |
-| `rotate` | R | Rota la máquina de esa celda (en el brazo automático mueve su entrada) |
+| `rotate` | R | Rota la máquina de esa celda (en el brazo automático mueve su entrada). No hace nada si está bloqueada |
 
 `name()` se usa para la imagen de la barra (`assets/tools/<name>_selected.png`).
 

@@ -16,7 +16,7 @@
 | 5 | Prender / apagar la simulación (con el nivel completo, no hace nada) | `levelManager.toggleSimulation` |
 | N | Pasar al siguiente nivel (sólo después de ganar) | `levelManager.loadNext` |
 | 0 | Reiniciar el nivel (borra también lo que se construyó) | `levelManager.restart` |
-| L | Pasar al modo libre: todas las máquinas y sin objetivo | `levelManager.loadFreePlay` |
+| L | Ir al modo libre (todas las máquinas, sin objetivo), o volver de él al nivel que toca jugar. Con la simulación prendida no hace nada | `levelManager.toggleFreePlay` |
 | Espacio | Prender / apagar la simulación | `simulationEngine.toggle` |
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).

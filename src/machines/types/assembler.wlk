@@ -3,17 +3,21 @@ import machines.machineClasses.*
 import simulation.simulationEngine.*
 import food.recipes.*
 import cellPosition.*
+import machines.settings.*
 
 // Ensamblador: junta los ingredientes que pide su receta y entrega el plato armado.
 // Sólo acepta lo que la receta todavía necesita, así que nunca tiene items de más:
 // cuando la receta se puede armar, lo que tiene es justo lo que hace falta y se consume todo.
 class Assembler inherits Machine {
-	// La receta que arma (por ahora fija: sólo existe burgerRecipe)
-	const recipe = cheeseBurgerRecipe
+	// La receta que eligió el jugador. Arranca con la primera del nivel (noRecipe si el nivel no tiene).
+	const recipeSetting = new RecipeSetting(value = recipeBook.firstAvailable())
 
-	// El plato armado, a la espera de ser entregado. No está en el inventario
-	// (ahí sólo van los ingredientes), por eso se guarda aparte.
+	var recipe = recipeSetting.value()
+
 	var dish = null
+	
+
+	override method settings() = [recipeSetting]
 	override method name() = "Assembler"
 
 	// Imagenes que va a utilizar para animar
@@ -23,8 +27,12 @@ class Assembler inherits Machine {
 	override method width() = 2
 	override method height() = 2
 
-	// Guarda tantos ingredientes como pide la receta
-	override method capacity() = recipe.totalItems()
+	// Al prender, toma la receta elegida y ajusta el inventario a lo que pide
+	override method start() {
+		recipe = recipeSetting.value()
+		inventory.changeCapacity(recipe.totalItems())
+		super()
+	}
 
 	// Acepta lo que la receta todavía necesita, y sólo si no tiene un plato esperando salir
 	override method canReceive(item) =

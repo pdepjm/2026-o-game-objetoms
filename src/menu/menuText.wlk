@@ -4,6 +4,5 @@
 class MenuText {
     const property text
     const property position
-
-    method textColor() = "FFFFFFFF"
+    const property textColor = "FFFFFFFF"
 }

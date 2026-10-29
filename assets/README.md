@@ -230,5 +230,6 @@ El script necesita Edge, Chrome o Chromium instalado: lo usa sin abrir ventanas 
 |---|---|
 | `background.gif` | fondo del juego (se carga con `game.boardGround`). `background.png` es la versión sin animar |
 | `overlay.png` | marco que marca la máquina elegida en el menú |
+| `blocked_cell.png` | 50x50, semitransparente con rayas: oscurece las celdas del tablero donde el nivel no deja construir |
 | `no_texture.png` | imagen de reemplazo cuando todavía no hay una definitiva |
 | `pepita.png` | imagen provisoria que usaban los ingredientes (ya no la usa el código) |

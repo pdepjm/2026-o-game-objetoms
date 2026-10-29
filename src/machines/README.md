@@ -76,14 +76,14 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
-| `capacity()` | `1` | guarda varios items (el Assembler) |
+| `capacity()` | `1` | guarda varios items. Se usa para crear el inventario; si después tiene que cambiar (el Assembler, al cambiar de receta), se usa `inventory.changeCapacity(n)` |
 | `width()` / `height()` | `1` | ocupa varias celdas del tablero (el Assembler: 2x2). `outputTarget()` ya tiene en cuenta el tamaño |
 
 **Configuración** (ver [Configuración](#configuración-settings))
 
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
-| `settings()` | `[]` | acepta configuraciones: devuelve sus settings (el Dispenser: ingrediente y velocidad; el brazo: hacia dónde entrega) |
+| `settings()` | `[]` | acepta configuraciones: devuelve sus settings (el Dispenser: ingrediente y velocidad; el brazo: hacia dónde entrega; el Assembler: su receta) |
 | `baseEnergy()` | `0` | consume energía aunque no tenga ningún setting. `energyConsumption()` suma ésta más la de cada setting |
 
 **Salida**
@@ -126,7 +126,8 @@ Son las herramientas que la base les da a las subclases. Si una subclase las rei
 | `addGrabber(brazo)` | Anota un brazo que mira a esta máquina como su entrada (lo hace el brazo al prender la simulación) |
 | `whenFree(bloque)` | Anota el bloque para cuando esta máquina libere lugar |
 | `heldItems()` | Los items que tiene encima (para el tablero y el engine) |
-| `inventory` | `items()`, `add(item)`, `release(item)`. **`release` despierta solo a las que esperaban**: no hay que acordarse de avisarles |
+| `inventory` | `items()`, `add(item)`, `release(item)`, `changeCapacity(n)`. **`release` despierta solo a las que esperaban**: no hay que acordarse de avisarles |
+| `locked` | Si la máquina está bloqueada (`false` por defecto). La bloquea un nivel al colocarla como máquina fija (`Placement`). Una máquina bloqueada no se puede borrar ni rotar con las herramientas, pero sí editar. **El juego sí la saca** (`board.pop` y `board.clear()` no miran el bloqueo) |
 | `play(animación, bloque)`, `actionAnimation(acción, frames)`, `stopAnimation()` | Animaciones frame a frame (ver `MachineAnimator`) |
 | `animateWork(pasos, bloque)` | Se ve trabajando durante `pasos` y después ejecuta el bloque. Sirve para cualquier máquina que tarde, no sólo las que procesan |
 | `playTimed(imágenes, pasos, bloque)`, `holdImage(ruta, pasos, bloque)` | Lo que usa `animateWork` por dentro: frames ajustados a una duración, o una imagen fija (un GIF) durante esos pasos |
@@ -146,7 +147,7 @@ Un `Setting` (en `settings.wlk`) guarda el valor elegido para **esa máquina** y
 | `value()` | El valor elegido. Es lo que lee la máquina |
 | `energyCost()` | La energía de la opción elegida (la suma `energyConsumption()` de la máquina) |
 
-Hay settings genéricos para reutilizar: `ProductSetting` (qué ingrediente), `SpeedSetting` (multiplicador de ritmo: `0.5`, `1` o `2`) y `OutputSideSetting` (hacia dónde entrega, relativo a la entrada: `straightOut`, `leftOut` o `rightOut`).
+Hay settings genéricos para reutilizar: `ProductSetting` (qué ingrediente), `SpeedSetting` (multiplicador de ritmo: `0.5`, `1` o `2`), `OutputSideSetting` (hacia dónde entrega, relativo a la entrada: `straightOut`, `leftOut` o `rightOut`) y `RecipeSetting` (qué receta arma: las opciones son las recetas del nivel, `recipeBook.available()`, con la imagen de su plato).
 
 Para que una máquina acepte una configuración:
 
@@ -246,11 +247,11 @@ class Oven inherits ProcessingMachine {
 | Máquina | Qué hace | Cómo se anima | Sobrescribe |
 |---|---|---|---|
 | `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `runningImage` |
-| `Dispenser` | Crea un ingrediente y se lo entrega a la de adelante. Se configura qué ingrediente (papa por defecto) y a qué velocidad (un item cada 5 segundos a velocidad normal) | Frame a frame (todavía sin animación) | `name`, `settings`, `canReceive`, `start`, `onPushed` |
+| `Dispenser` | Crea un ingrediente y se lo entrega a la de adelante. Se configura qué ingrediente (papa por defecto) y a qué velocidad (un item cada 5 segundos a velocidad normal). Los ingredientes que ofrece salen de `availableKinds`, que un nivel puede limitar al crearlo (`new Dispenser(availableKinds = [potato, tomato])`; si no incluye la papa, hay que pasar también el `value` del setting) | Frame a frame (todavía sin animación) | `name`, `settings`, `canReceive`, `start`, `onPushed` |
 | `AutomaticArm` | Agarra el item que le llega por su única entrada y lo entrega recto, a la izquierda o a la derecha de su recorrido, según su configuración: al girar vuelve a calcular `next`. La entrada es la dirección elegida al colocarlo y rotar la mueve; sólo recibe de la máquina que está ahí, y además agarra los items que pasan por una cinta ahí, aunque la cinta no le apunte. Ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `name`, `settings`, `onReceive`, `onPushed`, `acceptsSource`, `isArm`, `start`, `rotate`, `reset` y el dibujo |
 | `SmartRoboticArm` | Un brazo con tres salidas (izquierda, recta y derecha), cada una con los ingredientes que deja salir (una columna en el panel de edit; sin ingredientes, esa salida no se usa). Entrega cada item por la primera salida que lo acepta (recta, izquierda, derecha) y no toma los que ninguna acepta | Los de `AutomaticArm` (en el menú, su propia imagen) | `name`, `settings`, `canReceive`, `outputSideFor`, `menuImage` |
 | `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `foodProcess`, `workImages` |
-| `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato | Sin animación | `name`, `capacity`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` |
+| `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato. La receta se elige en el panel de edit (`RecipeSetting`) entre las del nivel; arranca con la primera, o con `noRecipe` si el nivel no tiene. **La toma al prender la simulación** (`start`), y ahí ajusta el inventario a lo que pide: si se cambia con la simulación prendida, se usa desde la próxima vez que se prende | Frame a frame (al armar) | `name`, `settings`, `start`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` y el tamaño (`width`, `height`, `outputTarget`) |
 | `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |
 | `Fryer` | Fríe lo que le entrega un brazo: es `armOnly`, no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | GIF, sólo mientras fríe | `name`, `foodProcess`, `animateWork`, `armOnly`, `grabbableItem`, `onProcessed` |
 | `DeliverySlot` | Un platito del fondo, donde se entrega la comida. El item viaja hasta él y, al llegar, sale del juego y se le avisa a `levelManager.delivered(item)`, que lo cuenta para el objetivo del nivel. No entrega a nadie. **No lo coloca el jugador ni está en el menú**: los crea `deliveryPoints` (en el mismo archivo), que tiene sus dos posiciones, (16, 14) y (17, 14), y en `setUp()` se los pasa al `board` (lo llama `main.wpgm`) | No se dibuja: el fondo ya muestra los platitos | `name`, `nextMachine`, `onArrived` |

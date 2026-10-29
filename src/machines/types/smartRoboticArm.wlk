@@ -34,11 +34,11 @@ class SmartRoboticArm inherits AutomaticArm {
 		new ArmRoute(output = rightOut, filter = new ItemSetSetting(outputName = "Der.", columnIndex = 2, kinds = kinds, value = []))
 	]
 
-	override method name() = "SmartRoboticArm"
+	override method name() = "AutomaticArm"
 
-	override method staticImage() = "machines/AutomaticArm-Smart/" + direction.name() + "_game.png"
+	override method staticImage() = "machines/AutomaticArm/" + direction.name() + "_game.png"
 	
-	override method menuImage(aDirection) = "machines/AutomaticArm-Smart/down_menu.png"
+	override method menuImage(aDirection) = "machines/AutomaticArm/down_menu.png"
 
 	override method settings() = routes.map({ route => route.filter() })
 

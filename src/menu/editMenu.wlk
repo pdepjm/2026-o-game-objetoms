@@ -220,13 +220,6 @@ class OptionImage {
     const property position
 }
 
-// Un texto: el título de una categoría, el nombre de un setting o una opción sin imagen
-class MenuText {
-    const property text
-    const property position
-    const property textColor = "FFFFFFFF"
-}
-
 // Qué opción de qué setting hay dibujada en una posición
 class OptionSlot {
     const property setting

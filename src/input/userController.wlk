@@ -26,7 +26,7 @@ object userController {
 		// NIVELES: siguiente (sólo después de ganar), reiniciar (borra lo construido) y modo libre
 		keyboard.n().onPressDo({ => levelManager.loadNext() })
 		keyboard.num0().onPressDo({ => levelManager.restart() })
-		keyboard.l().onPressDo({ => levelManager.loadFreePlay() })
+		keyboard.l().onPressDo({ => levelManager.toggleFreePlay() })
 		
 		// ESPACIO: prende/apaga la simulación. Al apagarla se borran los ingredientes.
 		keyboard.space().onPressDo({ => simulationEngine.toggle() })

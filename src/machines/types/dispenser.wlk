@@ -8,11 +8,13 @@ import food.foodTypes.*
 // Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
 // Se configura qué ingrediente larga y a qué velocidad (ver settings.wlk).
 class Dispenser inherits Machine {
+	// Todos los ingredientes que puede dispensar
+	const availableKinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon, pizzaDough, egg, salami, sausage]
+	
 	// Por defecto papa y velocidad normal. Los ingredientes son los que ofrece el menú.
 	const productSetting = new ProductSetting(
 		value = potato,
-		kinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon,
-				 pizzaDough, egg, salami, sausage]
+		kinds = availableKinds
 	)
 	const speedSetting = new SpeedSetting(value = 1)
 

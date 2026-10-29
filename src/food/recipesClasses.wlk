@@ -21,6 +21,8 @@ class Recipe {
     const requirements = []
     const result
 
+    method result() = result
+
     // Cuántos items hacen falta en total
     method totalItems() = requirements.sum({r => r.amount()})
 

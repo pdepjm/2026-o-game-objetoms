@@ -13,8 +13,8 @@ Plan para pasar del modo libre de hoy (todas las máquinas, sin objetivo) a **ni
 - [x] [Fase 0: Estabilidad](#fase-0-estabilidad) (pendiente: el arte del brazo inteligente en el tablero, y volver a escribir los tests borrados en [0.4](#04-tests-que-rompieron-las-recetas-nuevas))
 - [x] [Fase 1: Poder reiniciar todo](#fase-1-poder-reiniciar-todo)
 - [x] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
-- [x] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager) (pendiente: que `level1` se pueda ganar usando la freidora, ver [3.3](#33-los-niveles-concretos))
-- [ ] [Fase 4: Máquinas fijas y parametrizadas](#fase-4-máquinas-fijas-y-parametrizadas)
+- [x] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager)
+- [x] [Fase 4: Máquinas fijas y parametrizadas](#fase-4-máquinas-fijas-y-parametrizadas) (incluye las recetas por nivel, [4.5](#45-recetas-disponibles-por-nivel), y dónde se puede construir, [4.6](#46-dónde-se-puede-construir))
 - [ ] [Fase 5: Entrada para el tutorial](#fase-5-entrada-para-el-tutorial)
 - [ ] [Fase 6: Energía](#fase-6-energía) (opcional)
 
@@ -493,10 +493,10 @@ object level1 inherits Level(
 ) {}
 ```
 
-> [!WARNING]
-> **Hoy `level1` no se puede ganar usando la freidora.** La freidora sólo trabaja con brazos, y el brazo común le saca la papa **apenas entra**, todavía cortada (hay un test que lo comprueba en `smartArmTest`). Para sacarla frita hace falta el brazo inteligente, con su salida filtrando papas fritas, y `level1` no lo ofrece.
+> [!NOTE]
+> **Resuelto en la fase 4.** Con este catálogo, `level1` no se podía ganar usando la freidora: la freidora sólo trabaja con brazos, y el brazo común le saca la papa **apenas entra**, todavía cortada (hay un test que lo comprueba en `smartArmTest`). Para sacarla frita hace falta el brazo inteligente, con su salida filtrando papas fritas.
 >
-> Además, el Dispenser puede largar papas fritas directamente: hoy **la única forma de ganar es ésa**, sin procesar nada. Se arregla en la [fase 4](#43-máquinas-configurables), limitando sus ingredientes (`availableKinds`). Ver también [Decisiones](#decisiones).
+> Además, el Dispenser podía largar papas fritas directamente, y así se ganaba sin procesar nada. En la [fase 4](#44-usarlo-en-level1) el nivel trae el Dispenser fijo, limitado a papa, lechuga y tomate, y ofrece el brazo inteligente.
 
 ### 3.4 `levelManager`
 
@@ -633,18 +633,38 @@ En `test/levelManagerTest.wtest` (20 tests):
 
 En `test/smartArmTest.wtest`: el brazo común saca la papa de la freidora antes de que se fría, y el inteligente (filtrando papas fritas) espera a que se fría.
 
-**Listo cuando:** al abrir el juego arranca el nivel 1, se ve su objetivo a la izquierda, se puede ganar entregando 3 papas fritas, y las teclas N, 0 y L funcionan. Hoy se cumple todo, salvo que el nivel 1 sólo se gana con el atajo del Dispenser (ver la advertencia de [3.3](#33-los-niveles-concretos)).
+**Listo cuando:** al abrir el juego arranca el nivel 1, se ve su objetivo a la izquierda, se puede ganar entregando 3 papas fritas, y las teclas N, 0 y L funcionan. Se cumple (el atajo del Dispenser se cerró en la fase 4).
+
+### 3.12 Progreso y la tecla L
+
+**Para qué:** que la L sirva para ir al modo libre **y volver**, al nivel que toca jugar. Para eso, `levelManager` guarda qué niveles se ganaron. **Hecho.**
+
+- **`completedLevels`:** `won()` agrega el nivel actual, sin repetir y nunca `freePlay`. Se guarda mientras el juego está abierto.
+- **`levelToPlay()`:** el primer nivel de `levels` que no se ganó; si se ganaron todos, el último. `start()` carga éste.
+- **`toggleFreePlay()`** (la tecla L): desde un nivel, va al modo libre; desde el modo libre, carga `levelToPlay()`. **Con la simulación prendida no hace nada.**
+- **"Siguiente" sin índice guardado:** antes, `loadNext()` usaba `indexCurrentLevel`, que sólo cambiaba con `loadNext()`. Si se llegaba a un nivel por otro camino (la L, `start`, `load`), quedaba desfasado y "siguiente" podía volver a cargar el mismo nivel. Ahora el siguiente se calcula buscando el nivel actual en `levels` (`currentIndex()`).
+- **En pantalla:** en el modo libre, debajo del nombre, `L: volver` (`levelInfoMenu.showHint`, fila 12).
+- **`changeLevels(niveles)`:** sólo para los tests, para usar sus propios niveles sin depender del diseño de los reales.
+
+**Tests** (`test/levelManagerTest.wtest`, "tests del progreso y la tecla L", 11, con tres niveles de prueba): al arrancar se juega el primero; ganar uno lo guarda y el que toca pasa a ser el siguiente; ganarlo de nuevo no lo guarda dos veces; con todos ganados, el que toca es el último; la L va al modo libre y vuelve; ganar el primero, ir y volver lleva al segundo; el modo libre nunca queda completado; con la simulación prendida la L no hace nada; después de llegar con la L, "siguiente" lleva al que sigue; la ayuda `L: volver` aparece sólo en el modo libre.
 
 ---
 
 ## Fase 4: Máquinas fijas y parametrizadas
 
-**Para qué:** que un nivel pueda traer máquinas ya colocadas que el jugador no puede mover, y armar su catálogo con máquinas configuradas.
+**Para qué:** que un nivel pueda traer máquinas ya colocadas que el jugador no puede mover, armar su catálogo con máquinas configuradas, decir qué recetas se pueden armar y dónde se puede construir.
 **Depende de:** fase 3.
+
+> [!NOTE]
+> **Cómo quedó implementada** (lo que cambió respecto de lo que sigue):
+> - `Placement` está en `levels/levelClasses.wlk`, junto con `Level` (no en `placement.wlk`). Su `position` puede ser `game.at(x, y)` o `CellPosition`.
+> - **El bloqueo lo controlan las herramientas, no el tablero.** Al principio quedó en `board.pop`, y entonces `board.clear()` no sacaba las máquinas fijas: al reiniciar el nivel, el juego fallaba al volver a colocarlas ("No se puede colocar la máquina en 5@7"), y al pasar al modo libre quedaban en el tablero. Ahora `pop` saca siempre, y `delete` y `rotate` preguntan `board.isThereAMachineUnlocked(posición)`.
+> - `level1` quedó así: cinta, cortadora, freidora y brazo inteligente; un Dispenser fijo en (5, 7) que larga papa, lechuga o tomate; sin recetas (`availableRecipes = []`); y hay que entregar 10 papas fritas.
+> - Los tests de `levelManagerTest` usan un nivel de prueba (`testLevel`, definido en el archivo de test) y no `level1`: así no se rompen cada vez que cambia el diseño del nivel 1.
 
 ### 4.1 Máquinas que coloca el nivel
 
-Archivo nuevo: `src/levels/placement.wlk`.
+Archivo: `src/levels/levelClasses.wlk` (junto con `Level`).
 
 ```wollok
 // Una máquina que trae el nivel: dónde va y cómo se crea
@@ -673,7 +693,7 @@ class Placement {
 
 Para que cada nivel arme su catálogo y sus máquinas fijas con factories distintas:
 
-- **`Assembler`:** ya tiene `const recipe = burgerRecipe`. Wollok permite pasarlo al crearlo (`new Assembler(recipe = otraReceta)`): **sólo hay que confirmarlo con un test**.
+- **`Assembler`:** su receta deja de estar fija en el código y se elige entre las del nivel. Ver [4.5](#45-recetas-disponibles-por-nivel).
 - **`Dispenser`:** agregar `const availableKinds = [lettuce, bun, friedPotato, potato, tomato, meat]` (la lista de hoy) y usarlo en el `ProductSetting` (`kinds = availableKinds`). Ojo: el valor por defecto (`potato`) tiene que estar en la lista; si un nivel pasa una lista sin papa, también tiene que pasar `value`.
 
 ### 4.4 Usarlo en `level1`
@@ -694,15 +714,170 @@ object level1 inherits Level(
 
 El brazo inteligente está en el catálogo porque, sin el atajo, es la única forma de sacar papas fritas de la freidora (ver [Decisiones](#decisiones)).
 
-**Tests:**
+### 4.5 Recetas disponibles por nivel
+
+**Para qué:** que cada nivel diga qué platos se pueden armar, y que el jugador elija en cada Assembler cuál de esos arma (con la herramienta edit, como el ingrediente de un Dispenser). Hoy el Assembler tiene la receta fija en el código (`const recipe = cheeseBurgerRecipe`), y para cambiarla hay que editar `assembler.wlk`.
+
+**Cómo funciona:**
+
+```
+Level.availableRecipes ──(load)──▶ recipeBook.available ──▶ RecipeSetting.options ──▶ panel de edit
+                                                                    │
+                                                    el jugador elige una (value)
+                                                                    │
+                                              Assembler.start(): la toma como su receta
+```
+
+#### 4.5.1 `recipeBook`: las recetas del juego y las del nivel
+
+Archivo: `src/food/recipes.wlk`. Es a las recetas lo que `machineManager` es a las máquinas: conoce todas, y guarda cuáles se ofrecen ahora.
+
+```wollok
+object recipeBook {
+	// Todas las recetas del juego, en el orden en que se muestran en el panel de edit
+	const all = [burgerRecipe, cheeseBurgerRecipe, doubleBurgerRecipe, pizzaPepperoniRecipe, saladRecipe, hotDogRecipe, tomatoSoupRecipe]
+	// Las que se pueden elegir ahora (las del nivel). Al arrancar, todas.
+	var available = all
+
+	method all() = all
+	method available() = available
+
+	// La receta con la que arranca un Assembler: la primera disponible, o noRecipe si el nivel no ofrece ninguna
+	method firstAvailable() = if (available.isEmpty()) noRecipe else available.first()
+
+	// Lo llama levelManager.load con las recetas del nivel
+	method changeAvailable(recipes) {
+		available = recipes
+	}
+}
+
+// La receta de un Assembler cuando el nivel no ofrece ninguna: no pide nada y nunca arma un plato.
+// Es un objeto nulo (como noGoal): así un nivel sin recetas no rompe al crear un Assembler,
+// por ejemplo al dibujarlo en el menú. No es una de las opciones del panel de edit.
+object noRecipe {
+	method totalItems() = 0
+	method stillNeeds(item, items) = false
+	method canBeMadeWith(items) = false
+}
+```
+
+- Al agregar una receta nueva a `recipes.wlk`, hay que sumarla a `all`; si no, no aparece en el modo libre.
+- **No es obligatorio que un nivel tenga recetas.** Sólo las necesita si ofrece un Assembler (en el catálogo o fijo). Sin recetas, un Assembler arranca con `noRecipe`: al prender la simulación su inventario queda en 0, así que no acepta ningún ingrediente, y en el panel de edit muestra "Receta" sin opciones. **Sin `noRecipe`, el juego fallaría apenas se crea un Assembler** (`first()` de una lista vacía), y el menú de place crea una máquina de muestra de cada una del catálogo para dibujarla.
+- `noRecipe` sólo entiende lo que el Assembler le pide antes de armar un plato. `assembleTime()` y `prepare()` no hacen falta: nunca llega a armar uno.
+
+#### 4.5.2 `Recipe`: mostrar el plato
+
+Archivo: `src/food/recipesClasses.wlk`. El panel de edit muestra cada receta con la imagen de su plato, así que hace falta leer `result`: agregar `method result() = result`.
+
+#### 4.5.3 `RecipeSetting`
+
+Archivo: `src/machines/settings.wlk`. Un setting más, con la misma forma que `ProductSetting`:
+
+```wollok
+// Qué plato arma un Assembler. Las opciones son las recetas del nivel (recipeBook), con la imagen de su plato.
+class RecipeSetting inherits Setting {
+	override method name() = "Receta"
+	override method category() = production
+	override method options() = recipeBook.available().map({ recipe =>
+		new SettingOption(value = recipe, image = recipe.result().image())
+	})
+}
+```
+
+Las opciones **se calculan cuando se piden** (como todas las de `Setting`), así que siempre son las del nivel actual.
+
+#### 4.5.4 El Assembler usa la receta elegida
+
+Archivo: `src/machines/types/assembler.wlk`.
+
+```wollok
+// La receta que eligió el jugador. Arranca con la primera del nivel (noRecipe si el nivel no tiene).
+const recipeSetting = new RecipeSetting(value = recipeBook.firstAvailable())
+// La que usa mientras corre la simulación: se toma de recipeSetting al prender (ver start)
+var recipe = recipeSetting.value()
+
+override method settings() = [recipeSetting]
+
+// Al prender, toma la receta elegida y ajusta el inventario a lo que pide
+override method start() {
+	recipe = recipeSetting.value()
+	inventory.changeCapacity(recipe.totalItems())
+	super()
+}
+```
+
+- El resto del Assembler (`canReceive`, `onArrived`, `assemble`, `capacity`) sigue usando `recipe`, sin cambios.
+- **Por qué se toma al prender y no en cada uso:** el panel de edit se puede usar con la simulación prendida. Si la receta cambiara en el medio, el Assembler podría quedarse con ingredientes de la receta anterior que la nueva no pide, y trabarse para siempre. Así, **la receta elegida se usa desde la próxima vez que se prende la simulación** (al apagar, el inventario ya queda vacío).
+- **El inventario tiene que poder cambiar de tamaño.** Se crea una sola vez con la capacidad del momento (`const inventory = new Inventory(capacity = self.capacity())` en `Machine`), y cada receta pide una cantidad distinta de ingredientes. En `src/machines/inventory.wlk`, `capacity` pasa a ser `var`, con `changeCapacity(nueva)`.
+- Un Assembler fijo con una receta ya elegida: `{ => new Assembler(recipeSetting = new RecipeSetting(value = saladRecipe)) }`.
+
+#### 4.5.5 Cada nivel dice sus recetas
+
+- **`Level`** (`src/levels/levelClasses.wlk`): `const property availableRecipes`, **obligatorio** (sin valor por defecto): todo nivel dice sus recetas. `freePlay` pone `recipeBook.all()`, y un nivel sin Assembler puede poner `[]` (ver `noRecipe` en [4.5.1](#451-recipebook-las-recetas-del-juego-y-las-del-nivel)).
+- **`levelManager.load`**: después de limpiar y **antes** de cambiar el catálogo y colocar las máquinas fijas (los Assembler nuevos toman la primera receta disponible al crearse):
+
+  ```wollok
+  recipeBook.changeAvailable(level.availableRecipes())
+  ```
+
+- **Un nivel que usa recetas** (`src/levels/levelsTypes.wlk`):
+
+  ```wollok
+  object level2 inherits Level(
+  	name = "Nivel 2",
+  	availableMachines = [{ => new Belt() }, { => new CuttingMachine() }, { => new Assembler() }],
+  	availableRecipes = [saladRecipe],
+  	fixedMachines = [new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction = right, availableKinds = [lettuce, tomato]) })],
+  	goals = [new DeliveryGoal(kind = salad, amount = 2, label = "Ensaladas")]
+  ) {}
+  ```
+
+  Ojo: las recetas del nivel tienen que poder armarse con los ingredientes que ofrece, y tienen que incluir los platos que piden sus objetivos.
+
+#### 4.5.6 Documentación
+
+- [`src/food/README.md`](../src/food/README.md): `recipeBook` (con `firstAvailable()`), `noRecipe` y `result()`.
+- [`src/machines/README.md`](../src/machines/README.md): `RecipeSetting` en la sección de configuración; el Assembler (sus settings y que toma la receta al prender); `Inventory` con capacidad variable.
+- [`src/levels/README.md`](../src/levels/README.md): `availableRecipes` en `Level` y en "Agregar un nivel".
+
+### 4.6 Dónde se puede construir
+
+**Para qué:** que cada nivel limite las celdas donde el jugador puede colocar máquinas. **Hecho.**
+
+- **`Zone`** pasó de `menu/menuManager.wlk` a `src/board.wlk`: un rectángulo de celdas con `contains(posición)`. Está en el tablero porque es el tablero el que define dónde se puede construir; los menús también la usan, para sus zonas de la pantalla.
+- **`Level`**: `const property buildZones = [wholeBoard]`. Opcional; por defecto, todo el tablero. Ejemplo: `buildZones = [new Zone(minX = 5, maxX = 12, minY = 1, maxY = 13)]`.
+- **`board`** (`src/board.wlk`):
+  - `buildZones(zonas)`: las cambia, y marca las celdas donde no se puede construir con un visual `BlockedCell` (`assets/blocked_cell.png`, oscurecido con rayas). Las marcas se crean sólo acá, no en cada frame.
+  - `isBuildable(posición)`: en el tablero y en alguna zona.
+  - `canBuild(posición, máquina)`: `canPlace` y, además, todas sus celdas en alguna zona (una de 2x2 puede quedar repartida entre dos zonas pegadas).
+  - `push` **no** mira las zonas: las máquinas fijas del nivel se pueden poner en cualquier lugar.
+  - `wholeBoard`: la zona "todo el tablero".
+- **`place`** (`src/tools/userTools.wlk`) usa `board.canBuild` en lugar de `canPlace`.
+- **`levelManager.load`** llama a `board.buildZones(level.buildZones())` antes de colocar las máquinas fijas, así las marcas quedan debajo de ellas.
+
+**Tests** (`test/buildZonesTest.wtest`, 15): por defecto se construye en todo el tablero y no hay marcas; fuera del tablero nunca; con una zona, adentro sí y afuera no; una marca por celda bloqueada, y cambiar las zonas reemplaza las marcas; place no coloca afuera y sí adentro; una de 2x2 en parte afuera no se coloca, y repartida entre dos zonas pegadas sí; `push` no mira las zonas; cargar un nivel aplica sus zonas; las máquinas fijas se colocan fuera de las zonas; reiniciar no duplica las marcas; el modo libre vuelve a todo el tablero.
+
+> [!NOTE]
+> **Rendimiento:** con zonas chicas puede haber hasta 195 marcas (15 x 13 celdas). Son visuals quietos, con la imagen y la posición ya guardadas, como pide la regla de rendimiento. Si con muchas marcas el juego se pone lento, se puede usar una sola imagen grande por zona bloqueada en lugar de una por celda.
+
+**Tests** (en `test/levelMachinesTest.wtest`, 21 tests, salvo los de `noRecipe`, que están en `assemblerTest`). **Hechos**, salvo volver a escribir los del Assembler borrados en 0.4:
 
 - `new Dispenser(direction = up)` queda mirando hacia arriba aunque `toolsManager.currentDirection()` sea otra (por el `initialize` de `MachineSprite`). Ya se sabe que funciona (lo usa el test de la cadena de `assemblerTest` desde la fase 0), pero conviene un test propio.
-- Una máquina bloqueada no se borra ni se rota con las herramientas, pero sí se puede editar.
+- Una máquina bloqueada no se borra ni se rota con las herramientas, pero sí se puede editar. Y `board.clear()` **sí** la saca.
+- Reiniciar `level1` no falla y deja un solo Dispenser fijo; pasar al modo libre lo saca.
 - `load(level1)` coloca el Dispenser fijo en (5, 7), bloqueado.
-- `new Assembler(recipe = ...)` usa esa receta.
 - Un Dispenser con `availableKinds = [potato]` ofrece sólo la papa en su setting.
+- **Recetas** (`test/assemblerTest.wtest` y `test/levelManagerTest.wtest`):
+  - `recipeBook.changeAvailable([saladRecipe])` hace que `available()` sea sólo la ensalada; `all()` no cambia.
+  - Un `RecipeSetting` ofrece las recetas disponibles, cada una con la imagen de su plato.
+  - Un Assembler nuevo arranca con la primera receta disponible.
+  - **Sin recetas disponibles** (`test/assemblerTest.wtest`, "tests de Assembler sin recetas disponibles"): `firstAvailable()` es `noRecipe`; un Assembler se puede crear y arranca con `noRecipe`; su setting no ofrece opciones; al prender no acepta ningún ingrediente; un catálogo con Assembler se puede mostrar en el menú. **Hechos.**
+  - Elegir otra receta en su setting y prender la simulación: acepta los ingredientes de esa receta y no los de la anterior, y su capacidad es la de la receta nueva.
+  - Cambiar la receta con la simulación prendida no la cambia hasta volver a prenderla.
+  - `load(nivel)` con `availableRecipes = [saladRecipe]`: un Assembler del catálogo ofrece sólo la ensalada. `loadFreePlay()` vuelve a ofrecer todas.
+  - Con la receta explícita, se pueden volver a escribir los tests del Assembler que se borraron en [0.4](#04-tests-que-rompieron-las-recetas-nuevas) (entregar el plato, consumir los ingredientes, esperar si la de adelante está llena).
 
-**Listo cuando:** el nivel 1 arranca con el Dispenser colocado, que no se puede borrar ni rotar.
+**Listo cuando:** el nivel 1 arranca con el Dispenser colocado, que no se puede borrar ni rotar; y en un nivel con Assembler, el panel de edit ofrece sólo las recetas de ese nivel y el Assembler arma la que se eligió; y en un nivel con `buildZones`, el jugador sólo puede construir dentro de sus zonas, que se distinguen en el tablero.
 
 ---
 
@@ -812,8 +987,13 @@ Lo que el equipo todavía puede cambiar. **El plan implementa la opción "por de
 | Después del último nivel | `¡Fin del juego!`; se puede reiniciar (0) o pasar al modo libre (L) | Volver al primer nivel | 3 |
 | ¿Reiniciar borra lo construido? | Sí: vuelve a cargar el nivel. Para sólo volver a correr está la tecla 5 | Reiniciar sin tocar las máquinas | 3 |
 | ¿El progreso se pierde al apagar? | Sí: el objetivo se cumple en una sola corrida | Acumular entre corridas | 3 |
-| Modo libre | Existe (`freePlay`, tecla L) | Sacarlo | 3 |
+| Modo libre | Existe (`freePlay`, tecla L), y la L también vuelve al nivel que toca jugar | Sacarlo | 3 |
+| ¿Se conserva lo construido al ir al modo libre y volver? | No: el nivel se vuelve a cargar desde cero | Guardar las máquinas del nivel y restaurarlas (mucho más trabajo) | 3 |
+| ¿Se guarda el progreso al cerrar el juego? | No: sólo mientras está abierto | — | 3 |
+| ¿La L funciona con la simulación prendida? | **Decidido:** no, no hace nada | Apagar la simulación y cambiar | 3 |
 | Teclas | N (siguiente), 0 (reiniciar), L (libre) | Otras | 3 |
-| ¿Cómo se sacan papas fritas de la freidora en `level1`? | Con el brazo inteligente filtrando papas fritas: `level1` lo ofrece desde la fase 4 (hoy no lo tiene) | Que el brazo común espere a que el item esté procesado antes de sacarlo de la freidora (cambia su comportamiento en todos los niveles) | 3 y 4 |
+| ¿Cómo se sacan papas fritas de la freidora en `level1`? | Con el brazo inteligente filtrando papas fritas: `level1` lo ofrece desde la fase 4 | Que el brazo común espere a que el item esté procesado antes de sacarlo de la freidora (cambia su comportamiento en todos los niveles) | 3 y 4 |
 | ¿Las máquinas fijas se pueden editar? | Sí, pero no borrar ni rotar | No se pueden tocar | 4 |
+| ¿Dónde dice un nivel qué recetas se pueden armar? | En el nivel (`availableRecipes`), y `levelManager` se las pasa a `recipeBook`, como el catálogo de máquinas | En cada Assembler del catálogo (`new Assembler(availableRecipes = [...])`), como `availableKinds` del Dispenser: no necesita `recipeBook`, pero hay que repetirlas en cada Assembler | 4 |
+| ¿Qué pasa si se cambia la receta con la simulación prendida? | Se usa desde la próxima vez que se prende | Bloquear el panel de edit mientras corre la simulación (afecta a todos los settings) | 4 |
 | ¿Hay límite de energía? | No se implementa hasta decidirlo (fase 6 opcional) | Implementar la fase 6 | 6 |

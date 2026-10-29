@@ -5,21 +5,7 @@ import menu.toolBar.*
 import tools.toolsManager.*
 import tools.userTools.*
 import wollok.game.*
-
-class Zone {
-    const minX
-    const maxX
-    const minY
-    const maxY
-
-    method contains(pos) = pos.x().between(minX, maxX) && pos.y().between(minY, maxY)
-
-    // Posicion relativa desde la esquina inferior izquierda
-    method at(dx, dy) = new CellPosition(x= minX + dx, y= minY + dy)
-
-    // Getter de posicion inicial
-    method origin() = self.at(0, 0)
-}
+import board.*
 
 // Único que conoce los menús: el resto del juego le avisa lo que pasó (eventos)
 // y él se lo reenvía al menú que corresponda.

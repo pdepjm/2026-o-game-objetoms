@@ -1,6 +1,32 @@
 import food.recipesClasses.*
 import food.foodTypes.*
 
+object recipeBook {
+	// Todas las recetas del juego, en el orden en que se muestran en el panel de edit
+	const all = [burgerRecipe, cheeseBurgerRecipe, doubleBurgerRecipe, pizzaPepperoniRecipe, saladRecipe, hotDogRecipe, tomatoSoupRecipe]
+	// Las que se pueden elegir ahora (las del nivel). Al arrancar, todas.
+	var available = all
+
+	method all() = all
+	method available() = available
+
+	// La receta con la que arranca un Assembler: la primera disponible, o noRecipe si el nivel no ofrece ninguna
+	method firstAvailable() = if (available.isEmpty()) noRecipe else available.first()
+
+	// Lo llama levelManager.load con las recetas del nivel
+	method changeAvailable(recipes) {
+		available = recipes
+	}
+}
+
+// La receta de un Assembler cuando el nivel no ofrece ninguna: no pide nada y nunca arma un plato.
+// Es un objeto nulo (como noGoal): así un nivel sin recetas no rompe al crear un Assembler,
+// por ejemplo al dibujarlo en el menú. No es una de las opciones del panel de edit.
+object noRecipe {
+	method totalItems() = 0
+	method stillNeeds(item, items) = false
+	method canBeMadeWith(items) = false
+}
 
 object burgerRecipe inherits Recipe(result = burger){
     override method initialize() {
