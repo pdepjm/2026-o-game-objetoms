@@ -18,6 +18,8 @@ class Dispenser inherits Machine {
 
 	override method name() = "Dispenser"
 
+	override method runningImage() = self.gifImage()
+	
 	// El ingrediente que larga
 	method product() = productSetting.value()
 

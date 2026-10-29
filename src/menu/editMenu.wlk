@@ -61,7 +61,10 @@ object editMenu{
     method columns() = 4
     method topRow() = 14
 
-    // La opción dibujada en esa posición (null si el click cayó afuera de todas)
+    // La opción dibujada en esa posición (null si el click cayó afuera de todas).
+    // Como las opciones se alinean con las celdas enteras de la cuadrícula de Wollok (x: 21 a 24),
+    // la comparación exacta x == pos.x() e y == pos.y() garantiza que cualquier click dentro del
+    // casillero de 50x50 px active la opción correcta sin importar si se clickea a la izquierda o derecha.
     method slotAt(pos) = slots.findOrDefault({ slot => slot.position().x() == pos.x() && slot.position().y() == pos.y() }, null)
 
     // Los settings de la máquina elegida (ninguno si no hay máquina elegida)
@@ -83,13 +86,13 @@ object editMenu{
         var row = self.topRow()
 
         self.categories().forEach({ category =>
-            self.addText(category.name().toUpperCase(), row)
+            self.addCategoryTitle(category.name().toUpperCase(), row)
             row -= 1
 
             const inCategory = self.settings().filter({ setting => setting.category() == category })
 
             inCategory.filter({ setting => setting.column() == null }).forEach({ setting =>
-                self.addText(setting.name(), row)
+                self.addSettingTitle(setting.name(), row)
                 row -= 1
                 row = self.renderOptions(setting, row)
             })
@@ -145,10 +148,43 @@ object editMenu{
         return lastRow
     }
 
-    method addText(text, row) {
-        self.addText(text, row, 0)
+    // Título principal de la categoría (ej: "PRODUCCION", "MOVIMIENTO").
+    // Se ubica en column = 1.5 para quedar centrado en el panel (que mide 4 columnas: 0 a 3)
+    // y se destaca con color dorado (FFD700FF).
+    method addCategoryTitle(text, row) {
+        const label = new MenuText(
+            text = text,
+            position = menuManager.interactiveZone().at(1.5, row),
+            textColor = "FFD700FF"
+        )
+        game.addVisual(label)
+        renderedItems.add(label)
     }
 
+    // Título de un setting específico (ej: "Ingrediente", "Velocidad", "Salida").
+    // También centrado en column = 1.5, en color blanco para distinguirlo de la categoría.
+    method addSettingTitle(text, row) {
+        const label = new MenuText(
+            text = text,
+            position = menuManager.interactiveZone().at(1.5, row),
+            textColor = "FFFFFF"
+        )
+        game.addVisual(label)
+        renderedItems.add(label)
+    }
+
+    // SOBRECARGA DE MÉTODOS POR ARIDAD (distinta cantidad de parámetros):
+    // Wollok distingue métodos por su nombre y cantidad de argumentos. No es un error tener dos 'addText';
+    // es un patrón clásico de delegación con valor por defecto:
+    
+    // 1) Versión de 2 parámetros: atajo conveniente para dibujar un texto centrado (columna 1.5 por defecto).
+    // En lugar de duplicar código, delega en la versión de 3 parámetros.
+    method addText(text, row) {
+        self.addText(text, row, 1.5)
+    }
+
+    // 2) Versión de 3 parámetros: método general que recibe explícitamente la columna (ej: en renderColumns
+    // para ubicar "Izq.", "Recto" y "Der." exactamente sobre sus columnas 0, 1 y 2).
     method addText(text, row, column) {
         const label = new MenuText(text = text, position = menuManager.interactiveZone().at(column, row))
 
@@ -182,6 +218,13 @@ object editMenu{
 class OptionImage {
     const property image
     const property position
+}
+
+// Un texto: el título de una categoría, el nombre de un setting o una opción sin imagen
+class MenuText {
+    const property text
+    const property position
+    const property textColor = "FFFFFFFF"
 }
 
 // Qué opción de qué setting hay dibujada en una posición

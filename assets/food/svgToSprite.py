@@ -15,6 +15,7 @@ Uso:
     python3 food/svgToSprite.py food/Ingredients/tomatoes/*.svg
     python3 food/svgToSprite.py food/Dishes/burgers/burger.svg --escala 0.8
     python3 food/svgToSprite.py archivo.svg --navegador "C:/ruta/a/chrome.exe"
+    python3 food/svgToSprite.py food/Ingredients/*/*.svg food/Dishes/*/*.svg              PARA EXPORTAR TODOS LOS SVG A PNG
 """
 
 import argparse

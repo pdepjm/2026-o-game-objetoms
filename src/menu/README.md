@@ -55,7 +55,7 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
   [lechuga][pan][papa frita][papa]
   [tomate]
   Velocidad               ← otro setting de la misma categoría
-  Lenta  Normal  Rapida
+  x0.5   x1     x2
   ```
 
 - Un setting con `column()` (no `null`) se dibuja distinto: después de los demás settings de su categoría, en **esa columna**, con su nombre arriba y sus opciones una debajo de la otra. Los settings en columna de una misma categoría quedan uno al lado del otro. Así se ven las tres salidas del brazo inteligente (`ItemSetSetting`):

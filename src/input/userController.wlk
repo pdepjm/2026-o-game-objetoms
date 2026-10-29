@@ -15,6 +15,7 @@ object userController {
 		game.onClickDo({ pos => toolsManager.onClick(pos)})
 
 
+		// VELOCIDAD 
 		keyboard.num1().onPressDo({ => simulationEngine.speed(1)})
 		keyboard.num2().onPressDo({ => simulationEngine.speed(2) })
 		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
@@ -26,16 +27,19 @@ object userController {
 		keyboard.n().onPressDo({ => levelManager.loadNext() })
 		keyboard.num0().onPressDo({ => levelManager.restart() })
 		keyboard.l().onPressDo({ => levelManager.loadFreePlay() })
+		
+		// ESPACIO: prende/apaga la simulación. Al apagarla se borran los ingredientes.
+		keyboard.space().onPressDo({ => simulationEngine.toggle() })
 
+		// PAGES
 		keyboard.q().onPressDo({ => menuManager.prevPage() })
 		keyboard.e().onPressDo({ => menuManager.nextPage() })
-		keyboard.p().onPressDo({ => toolsManager.select(place)})
-		keyboard.x().onPressDo({ => toolsManager.select(delete)})
-		keyboard.z().onPressDo({ => toolsManager.select(edit)})
 
-		// ROTACIONES
-
-		keyboard.r().onPressDo({ => toolsManager.select(rotate)})	// Rotacion una vez ya colocada
+		// TOOLS
+		keyboard.z().onPressDo({ => toolsManager.select(place)})
+		keyboard.x().onPressDo({ => toolsManager.select(edit)})
+		keyboard.c().onPressDo({ => toolsManager.select(rotate)})	// Rotacion una vez ya colocada
+		keyboard.v().onPressDo({ => toolsManager.select(delete)})
 
 		// Rotaciones antes de colocar
 		keyboard.w().onPressDo({ => toolsManager.currentDirection(up)})
