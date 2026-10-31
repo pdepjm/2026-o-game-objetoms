@@ -71,3 +71,64 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
 - Hay una marca (`OptionMarker`) sobre cada opción elegida (`isSelected`) de **cada** setting. Un setting que permite elegir varias (`ItemSetSetting`) muestra varias marcas.
 - Se redibuja sólo cuando cambia la máquina elegida; un click sólo mueve las marcas.
 - Una máquina sin settings no muestra nada.
+
+
+CÓMO JUGAR
+
+LA HISTORIA
+La IA dominó el mundo y echaron a todos los trabajadores del buffet.
+Los ingenieros tenemos hambre y tenemos que seguir comiendo.
+Es tu tarea automatizar todos los procesos del buffet.
+
+EL OBJETIVO
+El juego tiene distintas tareas. En cada una tenés que preparar una
+comida usando las máquinas, sin que nadie las toque: armás la línea
+de producción, prendés la simulación y mirás cómo trabaja sola.
+
+CÓMO SE ARMA UNA COMIDA
+Los ingredientes salen de un dispenser, viajan por cintas, se procesan
+(cortar, cocinar, freír) y se juntan en el ensamblador, que entrega el
+plato terminado.
+Ejemplo: una hamburguesa necesita pan cortado, lechuga cortada, tomate
+cortado y dos carnes cocidas.
+
+LAS MÁQUINAS
+- Dispenser: crea ingredientes.
+- Cinta: lleva los ingredientes hacia donde apunta.
+- Cortadora: corta los ingredientes.
+- Horno: cocina los ingredientes.
+- Freidora: fríe los ingredientes (próximamente).
+- Ensamblador: junta los ingredientes y entrega el plato.
+
+LOS BRAZOS
+Hay dos tipos de brazo, y elegir bien cuál usar es parte del desafío.
+- Brazo básico: agarra el ingrediente que le llega de un lado y lo
+  entrega del lado contrario.
+- Brazo inteligente: además sabe cuándo está listo un ingrediente. Lo
+  saca del horno justo antes de que se queme. Un brazo básico podría
+  sacarlo crudo.
+
+CONTROLES
+- Mouse: hacé click en el tablero para usar la herramienta elegida,
+  y en el menú de la derecha para elegir una máquina.
+- Z: elegir máquinas y colocarlas.
+- X: modificar una máquina ya colocada.
+- C: rotar una máquina ya colocada.
+- V: eliminar una máquina.
+- W, A, S, D: elegir hacia dónde mira la máquina antes de colocarla.
+- Q y E: cambiar de página en el menú de máquinas.
+- ESPACIO: prender y apagar la simulación.
+- 1, 2 y 3: velocidad de la simulación.
+Si apretás de nuevo la herramienta elegida, la deseleccionás.
+Con la simulación prendida no se puede colocar, borrar ni rotar:
+apagala para seguir construyendo.
+
+LA ENERGÍA
+Cada nivel tiene su propia cantidad de energía, y esa energía se
+consume usando robots. Cuantos más robots uses, más energía gastás:
+pensá bien cuáles hacen falta y cuáles no.
+
+CONSEJOS
+- Construí con la simulación apagada y probala cuando esté lista.
+- Si un ingrediente se queda trabado, revisá hacia dónde apunta cada máquina.
+- Empezá por una línea simple y sumá máquinas de a una.

@@ -1,27 +1,18 @@
 import wollok.game.*
-import menu.menuManager.*
-import input.userController.*
-import food.foodClasses.*
-import food.foodTypes.*
-import directions.*
+import menu.startMenu.*
 import simulation.simulationEngine.*
 
 program BuffetAlbertEinstein {
-	game.title("Pepita")
+	game.title("Buffet Albert Einstein")
 	game.height(16)
 	game.width(25)
 	game.cellSize(50)
-
 	game.boardGround("background.gif")
 
-
-	userController.setUp()
-	menuManager.setUp()
+	startMenu.show()
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()
-
-
 
 	game.start()
 }
