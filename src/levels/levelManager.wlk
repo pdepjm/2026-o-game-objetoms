@@ -6,10 +6,11 @@ import board.*
 import tools.toolsManager.*
 import machines.machineManager.*
 import menu.levelInfoMenu.*
+import menu.tutorialMarks.*
 
 object levelManager {
     // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
-    var levels = [level1, level2]
+    var levels = [tutorialLevel, hotDogTutorialLevel, level1]
     // Los que ya se ganaron, para saber a cuál volver desde el modo libre (levelToPlay).
     // Se guardan mientras el juego está abierto: al cerrarlo se pierden.
     const completedLevels = []
@@ -55,6 +56,7 @@ object levelManager {
         level.resetGoals()
         levelInfoMenu.show(level)
         if (level == freePlay) levelInfoMenu.showHint("L: volver")
+        self._notifyTutorial({ tutorial => tutorial.onLevelLoaded(level) })
     }
     method restart() {self.load(currentLevel)}
 
@@ -81,13 +83,14 @@ object levelManager {
     }
 
     method toggleSimulation() {
-        if (!completed) {
+        if (!completed && self.tutorial().allowsSimulationToggle()) {
 	    	simulationEngine.toggle()
 	    	// Al apagar se borran los items: el progreso vuelve a cero
 	    	if (!simulationEngine.running()) {
 	    		currentLevel.resetGoals()
 	    		levelInfoMenu.updateProgress(currentLevel)
 	    	}
+	    	self._notifyTutorial({ tutorial => tutorial.onSimulationToggled(simulationEngine.running()) })
 	    }
     }
 
@@ -95,6 +98,7 @@ object levelManager {
 	    if (!completed) {
 		    currentLevel.delivered(item)
 		    levelInfoMenu.updateProgress(currentLevel)
+		    self._notifyTutorial({ tutorial => tutorial.onDelivered(item) })
 		    if (currentLevel.goalsMet()) self.won()
 	    }
     }
@@ -102,11 +106,37 @@ object levelManager {
     method won() {
     	completed = true                                       // las próximas entregas ya no cuentan
     	if (levels.contains(currentLevel) && !completedLevels.contains(currentLevel)) completedLevels.add(currentLevel)
+    	self._notifyTutorial({ tutorial => tutorial.onLevelWon(currentLevel) })
     	simulationEngine.after(1, { self.finishLevel() })
     }
 
     method finishLevel() {
     	simulationEngine.stop()                                // directo al engine: el progreso NO se borra
     	levelInfoMenu.showCompleted(self.hasNext())
+    }
+
+    // ----------- TUTORIAL -----------
+    // Lo que pasa en el juego le llega al tutorial del nivel actual (ver tutorial.wlk). Estos métodos
+    // sólo reenvían: los llaman las herramientas, toolsManager y editMenu. board y simulationEngine
+    // no avisan nada, así los tests que los usan directo no dependen de los niveles.
+
+    method tutorial() = currentLevel.tutorial()
+
+    method toolSelected(tool) { self._notifyTutorial({ tutorial => tutorial.onToolSelected(tool) }) }
+    method machinePlaced(machine) { self._notifyTutorial({ tutorial => tutorial.onMachinePlaced(machine) }) }
+    method machineRemoved(machine) { self._notifyTutorial({ tutorial => tutorial.onMachineRemoved(machine) }) }
+    method machineRotated(machine) { self._notifyTutorial({ tutorial => tutorial.onMachineRotated(machine) }) }
+    method settingChanged(machine, setting) { self._notifyTutorial({ tutorial => tutorial.onSettingChanged(machine, setting) }) }
+    // Enter: seguir después de una explicación. Sin tutorial no hace nada.
+    method continueTutorial() { self._notifyTutorial({ tutorial => tutorial.onContinue() }) }
+
+    // ¿Deja usar esa herramienta en esa celda? Lo pregunta toolsManager antes de cada click en el tablero
+    method allowsTool(tool, pos) = self.tutorial().allowsTool(tool, pos)
+
+    // Le avisa al tutorial y muestra su mensaje y sus indicadores, que pueden haber cambiado
+    method _notifyTutorial(event) {
+        event.apply(self.tutorial())
+        levelInfoMenu.showTutorialMessage(self.tutorial().messageLines())
+        tutorialMarks.show(self.tutorial().targetCells(), self.tutorial().pointedCells())
     }
 }

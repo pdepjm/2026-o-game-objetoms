@@ -223,7 +223,7 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
 }
 
 // Sacar las papas de la freidora: el brazo común se las lleva apenas entran, sin freír; el inteligente,
-// con su salida filtrando papas fritas, espera a que se frían. Por eso level1 ofrece los dos brazos.
+// con su salida filtrando papas fritas, espera a que se frían. Por eso el tutorial 1 pide el brazo inteligente.
 describe "tests de sacar papas fritas de la freidora" {
 
   const fryer = new Fryer(direction = right)

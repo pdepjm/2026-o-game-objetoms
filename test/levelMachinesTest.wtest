@@ -29,6 +29,15 @@ object saladLevel inherits Level(
   goals = [new DeliveryGoal(kind = salad, amount = 2, label = "Ensaladas")]
 ) {}
 
+// Un nivel sólo para los tests de máquinas fijas: un Dispenser bloqueado en (5, 7) que ofrece tres ingredientes
+object fixedDispenserLevel inherits Level(
+  name = "Dispenser fijo",
+  availableMachines = [{ => new Belt() }],
+  availableRecipes = [],
+  goals = [new DeliveryGoal(kind = friedPotato, amount = 2, label = "Papas Fritas")],
+  fixedMachines = [new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction = right, availableKinds = [potato, lettuce, tomato]) })]
+) {}
+
 describe "tests de maquinas bloqueadas" {
 
   // Un Dispenser bloqueado en (8, 8), como lo coloca un nivel
@@ -90,17 +99,17 @@ describe "tests de maquinas bloqueadas" {
   }
 }
 
-describe "tests del nivel 1 con su dispenser fijo" {
+describe "tests de un nivel con un dispenser fijo" {
 
   method initialize() {
     menuManager.setUp()
     deliveryPoints.setUp()
-    levelManager.load(level1)
+    levelManager.load(fixedDispenserLevel)
   }
 
   method fixedDispenser() = board.machineAt(game.at(5, 7))
 
-  test "cargar el nivel 1 coloca su dispenser fijo, bloqueado" {
+  test "cargar el nivel coloca su dispenser fijo, bloqueado" {
     assert.equals("Dispenser", self.fixedDispenser().name())
     assert.that(self.fixedDispenser().locked())
   }

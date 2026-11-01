@@ -11,22 +11,31 @@ import menu.menuText.*
 //   Papas Fritas: 2/3       ← filas 10 a 8: una por objetivo (como máximo 3)
 //   ¡Nivel completo!        ← fila 6, sólo al ganar
 //   N: siguiente            ← fila 5
+//   Las papas salen         ← desde la fila 4 hacia abajo: el mensaje del tutorial (ver showTutorialMessage)
 //
-// Las filas 4 a 1 quedan libres (para el mensaje del tutorial, más adelante).
+// Los textos se centran en la parte azul (x 0 a 4): Wollok dibuja el texto centrado en su celda,
+// así que con column = 1.5 el centro queda en x = 2.
 // RENDIMIENTO: sólo se redibuja cuando levelManager avisa algo, nunca en cada frame.
 object levelInfoMenu {
-    // la columna del centro de la zona, que tiene 5 de ancho
-    const column = 2
+    // Centra los textos en la parte azul (ver arriba)
+    const column = 1.5
     const nameRow = 13
     const hintRow = 12
     const goalTitleRow = 11
     const firstProgressRow = 10
     const completedRow = 6
+    const firstTutorialRow = 4
+    // Las líneas del tutorial van más juntas que una fila, para que se lean como un párrafo
+    const tutorialLineHeight = 0.55
+    const property tutorialMaxLines = 6
+    // Lo más largo que entra una línea en el panel (no se controla al dibujar: lo revisan los tests)
+    const property tutorialMaxLength = 16
 
     // Lo dibujado, separado según cuándo se reemplaza
     var levelTexts = []      // el nombre, la ayuda y el título: cambian sólo al cargar otro nivel
     var progressTexts = []   // una línea por objetivo: cambian con cada entrega
     var completedTexts = []  // el mensaje de nivel completo
+    var tutorialTexts = []   // el mensaje del tutorial: cambia con lo que hace el jugador
 
     // Al cargar un nivel: borra todo lo anterior y dibuja el nombre y los objetivos
     method show(level) {
@@ -57,6 +66,21 @@ object levelInfoMenu {
         else
             [self.addText("¡Fin del juego!", completedRow), self.addText("0: reiniciar", completedRow - 1)]
     }
+
+    // El mensaje del tutorial: borra el anterior y escribe una línea debajo de la otra desde la fila 4
+    // (como máximo 6). Con [] (lo que devuelve noTutorial) no queda nada.
+    method showTutorialMessage(lines) {
+        self.remove(tutorialTexts)
+        tutorialTexts = []
+        var row = firstTutorialRow
+        lines.take(tutorialMaxLines).forEach({ line =>
+            tutorialTexts.add(self.addText(line, row))
+            row -= tutorialLineHeight
+        })
+    }
+
+    // Las líneas del mensaje del tutorial que se ven, en orden (para los tests)
+    method tutorialMessage() = tutorialTexts.map({ label => label.text() })
 
     // ----------- DIBUJO -----------
 

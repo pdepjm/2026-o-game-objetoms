@@ -1,4 +1,5 @@
 import board.*
+import levels.tutorial.*
 
 class DeliveryGoal {
 	const kind
@@ -27,6 +28,7 @@ class Level {
 	const property fixedMachines = []         // Maquinas colocadas desde el comienzo (No se pueden mover)
 	const property goals                      // Lo que hay que cumplir para ganar: TODOS los objetivos
 	const property buildZones = [wholeBoard]  // Dónde puede construir el jugador: Zones (ver board.wlk). Por defecto, todo el tablero
+	const property tutorial = noTutorial      // El que acompaña al nivel (ver tutorial.wlk). Por defecto, ninguno
 
 	// Coloca las máquinas que trae el nivel. Con fixedMachines vacío no hace nada.
 	method placeFixedMachines() {

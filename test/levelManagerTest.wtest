@@ -54,7 +54,7 @@ describe "tests de levelManager" {
 
   test "al arrancar se carga el primer nivel, sin completar" {
     levelManager.start()
-    assert.equals(level1, levelManager.currentLevel())
+    assert.equals(tutorialLevel, levelManager.currentLevel())
     assert.notThat(levelManager.completed())
   }
 
@@ -259,6 +259,16 @@ describe "tests de todos los niveles" {
 
   test "las maquinas fijas de cada nivel quedan en su lugar" {
     assert.equals([], self.namesOf(self.allLevels().filter({ level => !self.fixedMachinesInPlace(level) })))
+  }
+
+  // Wollok no corta las líneas: una muy larga se sale del panel, y las que pasan del máximo no se ven
+  test "los mensajes de los tutoriales entran en el panel" {
+    const wrong = self.allLevels().filter({ level =>
+      level.tutorial().allMessages().any({ lines =>
+        lines.size() > levelInfoMenu.tutorialMaxLines() || lines.any({ line => line.size() > levelInfoMenu.tutorialMaxLength() })
+      })
+    })
+    assert.equals([], self.namesOf(wrong))
   }
 
   // availableRecipes lleva recetas (cheeseBurgerRecipe), no platos (cheeseBurger) ni noRecipe

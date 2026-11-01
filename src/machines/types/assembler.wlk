@@ -18,6 +18,9 @@ class Assembler inherits Machine {
 	
 
 	override method settings() = [recipeSetting]
+
+	// La receta elegida en el panel de edit (la que va a usar al prender la simulación)
+	method selectedRecipe() = recipeSetting.value()
 	override method name() = "Assembler"
 
 	// Imagenes que va a utilizar para animar

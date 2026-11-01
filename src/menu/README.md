@@ -85,15 +85,21 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 | 11 | `OBJETIVO` (no aparece si el nivel no tiene objetivos con texto, como el modo libre) |
 | 10 a 8 | Una línea por objetivo (`level.progressLines()`): como máximo 3 |
 | 6 y 5 | Al ganar: `¡Nivel completo!` y `N: siguiente`, o `¡Fin del juego!` y `0: reiniciar` si no hay otro nivel |
-| 4 a 1 | Libres (reservadas para el mensaje del tutorial) |
+| 4 hacia abajo | El mensaje del tutorial (`showTutorialMessage(lineas)`): como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. Vacío en los niveles sin tutorial |
 
 | Método | Lo llama | Qué hace |
 |---|---|---|
 | `show(nivel)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
 | `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo las líneas de los objetivos |
 | `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega las filas 6 y 5 |
+| `showTutorialMessage(lineas)` | `levelManager`, al cargar un nivel y con cada aviso al tutorial | Reemplaza el mensaje del tutorial (`tutorialMessage()` devuelve las líneas que se ven) |
 
 - **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
-- Guarda lo dibujado en tres listas (el nombre y el título, el progreso, y el mensaje de nivel completo) para reemplazar sólo lo que cambia.
-- Wollok no corta el texto en varias líneas: con 5 celdas de ancho, los textos tienen que ser cortos (unos 15 o 20 caracteres).
+- Guarda lo dibujado en cuatro listas (el nombre y el título, el progreso, el mensaje de nivel completo y el del tutorial) para reemplazar sólo lo que cambia.
+- Wollok no corta el texto en varias líneas: con 4 celdas de ancho, los textos tienen que ser cortos. Para el tutorial, el límite está en `tutorialMaxLength()` (16) y `tutorialMaxLines()` (6), y lo revisa un test.
+- **Centrado:** Wollok dibuja cada texto centrado en su celda, y la parte azul va de x 0 a 4. Por eso los textos van en la columna 1.5: su centro cae en x = 2.
+
+### `tutorialMarks.wlk`
+
+Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial. Las imágenes se generan con `assets/tutorial/makeMarks.py`.
 - `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).

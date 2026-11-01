@@ -15,7 +15,7 @@ Plan para pasar del modo libre de hoy (todas las máquinas, sin objetivo) a **ni
 - [x] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
 - [x] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager)
 - [x] [Fase 4: Máquinas fijas y parametrizadas](#fase-4-máquinas-fijas-y-parametrizadas) (incluye las recetas por nivel, [4.5](#45-recetas-disponibles-por-nivel), y dónde se puede construir, [4.6](#46-dónde-se-puede-construir))
-- [ ] [Fase 5: Entrada para el tutorial](#fase-5-entrada-para-el-tutorial)
+- [x] [Fase 5: Entrada para el tutorial](#fase-5-entrada-para-el-tutorial) (con dos tutoriales: `tutorialLevel`, papas fritas, y `hotDogTutorialLevel`, panchos. El viejo nivel 1 se sacó y el nivel 2 pasó a ser el nivel 1)
 - [ ] [Fase 6: Energía](#fase-6-energía) (opcional)
 
 ## La idea
@@ -918,6 +918,8 @@ object noTutorial {
 
 `Level` recibe `const property tutorial = noTutorial`.
 
+**Cómo quedó:** `Tutorial` es una clase con estos métodos, y `noTutorial` un objeto que hereda de ella (así los tutoriales nuevos heredan de `Tutorial`). Además del mensaje, tiene **indicadores**: `targetCells()` (dónde hay que hacer algo, con un recuadro) y `pointedCells()` (qué máquina se explica, con una flecha arriba), que dibuja `tutorialMarks`. El mensaje puede tener hasta 6 líneas.
+
 ### 5.2 Quién avisa qué
 
 Todos los eventos pasan por `levelManager`, que los reenvía a `currentLevel.tutorial()` y después actualiza el mensaje (`levelInfoMenu.showTutorialMessage(tutorial.messageLines())`).
@@ -927,19 +929,20 @@ Todos los eventos pasan por `levelManager`, que los reenvía a `currentLevel.tut
 | Se cargó el nivel | `levelManager.load`, al final | (interno) | `onLevelLoaded(level)` |
 | Se eligió una herramienta | `toolsManager.select` | `toolSelected(tool)` | `onToolSelected(tool)` |
 | Se colocó una máquina | `place.onClick`, después del `board.push` | `machinePlaced(machine)` | `onMachinePlaced(machine)` |
-| Se borró una máquina | `delete.onClick`, antes del `board.pop` (después ya no está) | `machineRemoved(machine)` | `onMachineRemoved(machine)` |
+| Se borró una máquina | `delete.onClick`, después del `board.pop` (la máquina se guarda antes: así el tutorial ve el tablero sin ella) | `machineRemoved(machine)` | `onMachineRemoved(machine)` |
 | Se rotó una máquina | `rotate.onClick`, después de rotar | `machineRotated(machine)` | `onMachineRotated(machine)` |
 | Se cambió un setting | `editMenu.onClick`, después de `setting.select(option)` | `settingChanged(machine, setting)` | `onSettingChanged(machine, setting)` |
 | Se prendió o apagó | `levelManager.toggleSimulation` | (interno) | `onSimulationToggled(running)` |
 | Se entregó un item | `levelManager.delivered` | (interno) | `onDelivered(item)` |
 | Se ganó | `levelManager.won` | (interno) | `onLevelWon(level)` |
+| Enter (seguir después de una explicación) | `userController` | `continueTutorial()` | `onContinue()` |
 
 Los métodos de `levelManager` no hacen otra cosa que reenviar. **No se emite nada desde `board` ni desde `simulationEngine`**, para que los tests que los usan directo no dependan de los niveles.
 
 ### 5.3 Permisos
 
 - `toolsManager.onClick`: antes de `selectedTool.onClick(pos)`, preguntar `levelManager.allowsTool(selectedTool, pos)`. Si es `false`, no hace nada.
-- `levelManager.toggleSimulation()`: si `tutorial.allowsSimulationToggle()` es `false`, no hace nada.
+- `levelManager.toggleSimulation()`: si `tutorial.allowsSimulationToggle()` es `false`, no hace nada. La barra espaciadora también pasa por acá (antes iba directo a `simulationEngine.toggle()` y se salteaba el nivel completo).
 
 ### 5.4 Mensaje
 

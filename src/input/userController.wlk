@@ -27,9 +27,12 @@ object userController {
 		keyboard.n().onPressDo({ => levelManager.loadNext() })
 		keyboard.num0().onPressDo({ => levelManager.restart() })
 		keyboard.l().onPressDo({ => levelManager.toggleFreePlay() })
+
+		// TUTORIAL: seguir después de una explicación
+		keyboard.enter().onPressDo({ => levelManager.continueTutorial() })
 		
 		// ESPACIO: prende/apaga la simulación. Al apagarla se borran los ingredientes.
-		keyboard.space().onPressDo({ => simulationEngine.toggle() })
+		keyboard.space().onPressDo({ => levelManager.toggleSimulation() })
 
 		// PAGES
 		keyboard.q().onPressDo({ => menuManager.prevPage() })

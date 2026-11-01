@@ -1,6 +1,7 @@
 import machines.types.automaticArm.*
 import machines.settings.*
 import food.foodTypes.*
+import food.foodClasses.*
 import directions.*
 
 // Una de las tres salidas del brazo inteligente: hacia dónde va (relativo a la entrada) y qué deja salir
@@ -46,6 +47,13 @@ class SmartRoboticArm inherits AutomaticArm {
 	method routeFor(item) = routes.findOrDefault({ route => route.accepts(item) }, null)
 
 	override method outputSideFor(item) = self.routeFor(item).output().sideFor(inputSide)
+
+	// El lado por el que saldría un item de ese kind (null si no lo toma). Sirve para preguntarle
+	// cómo está configurado sin saber cómo guarda sus salidas (lo usa el tutorial).
+	method exitSideFor(kind) {
+		const route = self.routeFor(new Item(kind = kind))
+		return if (route == null) null else route.output().sideFor(inputSide)
+	}
 
 	// No toma lo que no tiene por dónde salir
 	override method canReceive(item) = super(item) && self.routeFor(item) != null

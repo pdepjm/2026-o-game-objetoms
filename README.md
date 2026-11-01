@@ -70,7 +70,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 ### - Control de Simulación
 | Tecla | Acción | Descripción |
 |:---:|---|---|
-| <kbd>Espacio</kbd> | **Play / Pausa** | Inicia o detiene la simulación *(en pausa se construye libremente; al pausar se limpian los items sueltos)* |
+| <kbd>Espacio</kbd> / <kbd>5</kbd> | **Play / Pausa** | Inicia o detiene la simulación *(en pausa se construye libremente; al pausar se limpian los items sueltos)* |
 | <kbd>1</kbd> | **Velocidad x1** | Velocidad estándar (1 paso por tick de 100 ms) |
 | <kbd>2</kbd> | **Velocidad x2** | Velocidad rápida (2 pasos por tick) |
 | <kbd>3</kbd> | **Velocidad x3** | Velocidad ultra rápida (3 pasos por tick) |
@@ -84,8 +84,10 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 **L**: Ir al modo libre (todas las máquinas, sin objetivo). Apretándola de nuevo se vuelve al nivel que toca jugar: el primero que todavía no se ganó. No funciona con la simulación prendida
 
+**Enter**: En el tutorial, seguir después de una explicación
+
 > [!NOTE]
-> El juego arranca en el nivel 1. La información del nivel (su objetivo y si se ganó) se ve a la izquierda.
+> El juego arranca con **dos tutoriales**: el primero enseña a hacer papas fritas paso a paso, y el segundo, panchos (configurar un Dispenser, el horno, el ensamblador y qué hace un brazo). Después sigue el nivel 1. La información del nivel (su objetivo, si se ganó y el mensaje del tutorial) se ve a la izquierda.
 
 ## TAMAÑOS
 

@@ -11,9 +11,10 @@ class Dispenser inherits Machine {
 	// Todos los ingredientes que puede dispensar
 	const availableKinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon, pizzaDough, egg, salami, sausage]
 	
-	// Por defecto papa y velocidad normal. Los ingredientes son los que ofrece el menú.
+	// Por defecto papa (o, si no la ofrece, el primero de los suyos) y velocidad normal.
+	// Los ingredientes son los que ofrece el menú.
 	const productSetting = new ProductSetting(
-		value = potato,
+		value = if (availableKinds.contains(potato)) potato else availableKinds.first(),
 		kinds = availableKinds
 	)
 	const speedSetting = new SpeedSetting(value = 1)

@@ -5,8 +5,9 @@ Los niveles del juego: qué máquinas se pueden usar, cuáles vienen colocadas y
 | Archivo | Qué tiene |
 |---|---|
 | `levelClasses.wlk` | La clase `Level` y los objetivos (`DeliveryGoal` y `noGoal`) |
-| `levelsTypes.wlk` | Los niveles concretos: `freePlay` (el modo libre) y `level1` |
+| `levelsTypes.wlk` | Los niveles concretos: `freePlay` (el modo libre), los tutoriales `tutorialLevel` (papas fritas) y `hotDogTutorialLevel` (panchos), y `level1` (cheeseburgers y papas fritas) |
 | `levelManager.wlk` | `levelManager`: el nivel actual; cargarlo, reiniciarlo, pasar al siguiente y ganar |
+| `tutorial.wlk` | Lo que el juego le avisa al tutorial de un nivel (`Tutorial`, `noTutorial`) y los tutoriales por pasos (`StepTutorial`) |
 
 > **Quién conoce los niveles:** sólo `levelManager`. El resto del juego le avisa lo que pasa (se entregó algo, el jugador apretó una tecla) y él decide qué hacer. `simulationEngine` y `board` no saben nada de niveles.
 
@@ -22,6 +23,7 @@ Un nivel no hace nada por sí mismo: dice cómo es, y `levelManager` lo usa.
 | `fixedMachines` | Las que el nivel trae colocadas: una lista de `Placement` (ver abajo) |
 | `buildZones` | Dónde puede colocar máquinas el jugador: una lista de `Zone` (ver abajo). Opcional: por defecto, todo el tablero (`[wholeBoard]`) |
 | `goals` | Los objetivos. **Se gana cuando se cumplen todos** |
+| `tutorial` | El tutorial que lo acompaña (ver [Tutorial](#tutorial)). Opcional: por defecto, `noTutorial` |
 
 Y para hablar con sus objetivos sin que `levelManager` los recorra: `delivered(item)`, `goalsMet()`, `resetGoals()` y `progressLines()` (una línea de texto por objetivo; `noGoal` no suma línea).
 
@@ -137,5 +139,100 @@ new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction =
    - **sus máquinas fijas no quedan en su lugar**;
    - **`availableRecipes` tiene algo que no es una receta del juego**: por ejemplo un plato (`cheeseBurger` en vez de `cheeseBurgerRecipe`) o `noRecipe`.
 
+## Tutorial
+
+Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pasa, le pregunta qué deja hacer, muestra su mensaje debajo de la info del nivel y dibuja sus indicadores sobre el tablero (`tutorialMarks`, en `src/menu/`). **Todo pasa por `levelManager`**: las herramientas, `toolsManager` y `editMenu` le avisan a `levelManager`, y él le reenvía al tutorial del nivel actual y vuelve a dibujar el mensaje. `board` y `simulationEngine` no avisan nada.
+
+| Mensaje | Cuándo |
+|---|---|
+| `onLevelLoaded(nivel)` | Al final de `levelManager.load` (también al reiniciar) |
+| `onToolSelected(herramienta)` | `toolsManager.select` (llega `null` si se deselecciona) |
+| `onMachinePlaced(maquina)` | `place`, después de colocarla |
+| `onMachineRemoved(maquina)` | `delete`, **después** de sacarla (se guarda la máquina antes, así el tutorial ve el tablero sin ella) |
+| `onMachineRotated(maquina)` | `rotate`, después de rotarla |
+| `onSettingChanged(maquina, setting)` | `editMenu.onClick`, después de elegir la opción |
+| `onSimulationToggled(prendida)` | `levelManager.toggleSimulation` (la tecla 5 y la barra espaciadora) |
+| `onDelivered(item)` | `levelManager.delivered` |
+| `onLevelWon(nivel)` | `levelManager.won` |
+| `onContinue()` | La tecla Enter (`levelManager.continueTutorial`): seguir después de una explicación |
+| `allowsTool(herramienta, pos)` | `toolsManager.onClick`, antes de usar la herramienta en el tablero. Si es `false`, el click no hace nada |
+| `allowsSimulationToggle()` | `levelManager.toggleSimulation`. Si es `false`, no prende ni apaga |
+| `messageLines()` | Después de cada aviso: las líneas del mensaje (como máximo `levelInfoMenu.tutorialMaxLines()`, 6, de hasta `tutorialMaxLength()`, 16 caracteres) |
+| `allMessages()` | Todos los mensajes que puede mostrar. Sólo para los tests (ver abajo) |
+| `targetCells()` | Después de cada aviso: las celdas donde el jugador tiene que hacer algo. Se marcan con un recuadro amarillo que late |
+| `pointedCells()` | Después de cada aviso: las celdas de las máquinas que explica el mensaje. Se señala la máquina con una flecha naranja arriba (centrada, si es de 2x2) |
+
+- **`TutorialEvents`** tiene los diez eventos sin hacer nada. La entienden los tutoriales y también los pasos.
+- **`Tutorial`** hereda de ella y agrega los permisos, el mensaje y los indicadores, dejando hacer todo; **`noTutorial`** es el objeto que usan los niveles sin tutorial. Un tutorial nuevo hereda de `Tutorial` y sobrescribe sólo lo que necesita.
+- **`StepTutorial(steps, finishedLines)`**: una lista de pasos en orden. El paso actual es **el primero que todavía no se cumplió**. La mayoría de los pasos miran el tablero: no importa el orden en que el jugador haga las cosas, y si deshace algo vuelve a ese paso. Cada evento se le reenvía al paso actual, para los pasos que dependen de algo que no se ve en el tablero. Al cargar o reiniciar el nivel, todos los pasos vuelven a empezar (`reset()`). Al ganar muestra `finishedLines` y deja hacer todo.
+  - Lo normal es que el último paso no se cumpla solo (un `TutorialStep`, "esperá a que lleguen las papas"). Si igual se cumplen todos sin ganar, se queda mostrando el último.
+
+### Los pasos
+
+Todos tienen `lines`, y opcionalmente:
+
+| Atributo | Qué es |
+|---|---|
+| `cells` | Las celdas donde deja **colocar, borrar y rotar** (en ningún otro lado). Se marcan con el recuadro. Para una máquina de 2x2, sus cuatro celdas |
+| `pointsAt` | Las celdas de las máquinas de las que habla el mensaje. Se señalan con la flecha: así el texto puede decir "de la flecha" en vez de "a la derecha de las papas" |
+| `allowsSimulation` | Si deja prender y apagar la simulación (por defecto, no) |
+
+**Un paso o pide hacer algo (`cells`, el recuadro) o explica (`pointsAt`, la flecha), no las dos cosas:** si tiene `cells`, la flecha no se muestra. Para explicar una máquina y después pedir otra, dos pasos: un `ExplainStep` y el que pide.
+
+Fuera de sus `cells`, un paso deja **editar cualquier máquina, también las fijas**: el jugador tiene que poder configurarlas (por ejemplo, qué larga un Dispenser).
+
+| Paso | Se cumple… |
+|---|---|
+| `TutorialStep` | Nunca. Para el último |
+| `MachineStep(cells, condition)` | Cuando en todas sus celdas hay una máquina que cumple `condition` (`{ machine => machine.name() == "Belt" }`). Si son las cuatro celdas de una de 2x2, es la misma máquina en todas |
+| `RunStep` | Mientras la simulación está prendida (y deja prenderla) |
+| `ExplainStep` | Al apretar Enter. Para explicar una máquina (con `pointsAt`) antes del paso que pide algo. **Queda cumplido**: si el jugador vuelve a un paso anterior, no se repite |
+| `ToolStep(tool)` | Al elegir esa herramienta. **Queda cumplido** aunque después se elija otra |
+
+Para un paso que se cumpla con otro evento ("cambiá un setting", "entregá algo"), una subclase de `EventStep` que sobrescriba ese evento y llame a `happened()`, como `ToolStep`:
+
+```wollok
+class SettingStep inherits EventStep {
+	override method onSettingChanged(machine, setting) { self.happened() }
+}
+```
+
+**Las condiciones le preguntan a la máquina, no a cómo guarda las cosas.** Por ejemplo, el paso de editar el brazo inteligente usa `exitSideFor(kind)` (por dónde saldría ese ingrediente, o `null`) y no el orden de sus salidas.
+
+### Agregar un tutorial
+
+1. Un `Level` con `tutorial = new StepTutorial(steps = [...], finishedLines = [...])`, en `levelsTypes.wlk`, y agregarlo a `levels` en `levelManager`.
+2. **Las celdas, en un solo lugar:** un objeto con las celdas del armado, como `friesTutorialCells`, que usen tanto las máquinas fijas y la zona de construcción como los pasos. Así, para mover el armado se cambia una sola cosa.
+3. Textos de hasta 16 caracteres por línea y 6 líneas. **"tests de todos los niveles" lo revisa** ("los mensajes de los tutoriales entran en el panel").
+4. Un test que lo juegue entero, como "armado como dice el tutorial, entrega las papas fritas y se gana".
+
+### `tutorialLevel` ("Tutorial 1"): papas fritas
+
+El primer nivel. Trae armada la línea de la fila 7 salvo cuatro máquinas (las celdas están en `friesTutorialCells`), y se juega así. Antes de cada máquina, una explicación señala con la flecha la máquina de la que viene (se sigue con Enter); después, el recuadro marca dónde va:
+
+1. Explica el Dispenser; colocar una cinta en (6, 7).
+2. Explica la cinta; la cortadora en (7, 7).
+3. Explica el brazo común fijo de (9, 7); la freidora en (10, 7), donde él deja las papas.
+4. Explica la freidora; el brazo inteligente en (11, 7).
+5. Rotarlo (C) hasta que agarre de la freidora.
+6. Editarlo (X): sacar la papa cortada de la salida "Recto", así espera a que se frían.
+7. Prender la simulación (5) y esperar 2 papas fritas en el platito.
+
+Para cambiarlo, los tests de `test/tutorialTest.wtest` lo juegan entero ("armado como dice el tutorial, entrega las papas fritas y se gana").
+
+### `hotDogTutorialLevel` ("Tutorial 2"): panchos
+
+El segundo. Enseña a configurar un Dispenser, el horno, el ensamblador y con qué trabaja un brazo. Las celdas están en `hotDogTutorialCells`: dos líneas que llegan al ensamblador, las salchichas por la fila 10 y los panes por la fila 8. **No se parece al nivel 1** (cheeseburgers y papas fritas, con el ensamblador fijo): otro plato, el ensamblador lo pone el jugador y el brazo es el común.
+
+1. Explica que hacen falta pan y salchicha, y que el Dispenser de abajo larga salchichas. **Editarlo (X) para que largue pan.**
+2. Explica el Dispenser de las salchichas, que hay que cocinarlas; **colocar el horno**.
+3. Explica la cinta que sube los panes cortados al ensamblador; **colocar el ensamblador apuntando arriba (W)**, en sus cuatro celdas.
+4. **Editar el ensamblador** y elegir la receta del pancho (arranca con la sopa de tomate).
+5. Explica el brazo, en dos pasos: toma de las cintas, de la freidora y de lo que le entregan (señala el horno), y lo deja en cualquier máquina (señala el ensamblador).
+6. **Colocar el brazo mirando a la izquierda (A)**, entre el horno y el ensamblador.
+7. Prender la simulación y esperar 2 panchos.
+
+Lo juega entero "armado como dice el tutorial, entrega los panchos y se gana".
+
 > [!NOTE]
-> El plan completo de los niveles (incluidas las fases que faltan: máquinas fijas, tutorial y energía) está en [`docs/Plan-Implementacion-Niveles.md`](../../docs/Plan-Implementacion-Niveles.md).
+> El plan completo de los niveles (incluida la fase que falta: energía) está en [`docs/Plan-Implementacion-Niveles.md`](../../docs/Plan-Implementacion-Niveles.md).
