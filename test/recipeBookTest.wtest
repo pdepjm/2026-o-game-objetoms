@@ -27,8 +27,6 @@ describe "tests del libro de recetas" {
   method initialize() {
     menuManager.setUp()
     deliveryPoints.setUp()
-    recipeBookMenu.setUp()
-    recipeBookMenu.pageIndex(0)
     levelManager.load(bookTestLevel)
   }
 
@@ -41,27 +39,24 @@ describe "tests del libro de recetas" {
 
   // ABRIR Y CERRAR
 
-  test "el icono abre el libro" {
-    userController.onClick(recipeBookMenu.iconCell())
-    assert.that(recipeBookMenu.isOpen())
-  }
-
-  test "arranca en la primera receta" {
+  test "abrir el libro muestra la tapa" {
     recipeBookMenu.open()
-    assert.equals(0, recipeBookMenu.pageIndex())
-    assert.equals("recipes_book/recipe_papasFritas.png", recipeBookMenu.image())
+    assert.that(recipeBookMenu.showingCover())
+    assert.equals("recipes_book/cover.png", recipeBookMenu.image())
   }
 
   test "cualquiera de las 4 celdas de la cruz cierra el libro" {
     assert.that([game.at(19, 10), game.at(20, 10), game.at(19, 11), game.at(20, 11)].all({ pos =>
       recipeBookMenu.open()
+      recipeBookMenu.nextPage()
       userController.onClick(pos)
       return !recipeBookMenu.isOpen()
     }))
   }
 
-  test "un click fuera de la cruz no cierra el libro ni cambia de receta" {
+  test "un click fuera de la cruz no cierra el libro ni cambia de pagina" {
     recipeBookMenu.open()
+    recipeBookMenu.nextPage()
     userController.onClick(game.at(10, 6))
     assert.that(recipeBookMenu.isOpen())
     assert.equals(0, recipeBookMenu.pageIndex())
@@ -74,28 +69,42 @@ describe "tests del libro de recetas" {
     assert.notThat(recipeBookMenu.isOpen())
   }
 
-  test "al volver a abrir, sigue en la receta en la que estaba" {
+  test "al volver a abrir, arranca otra vez en la tapa" {
     recipeBookMenu.open()
     recipeBookMenu.showPage(3)
     recipeBookMenu.close()
     recipeBookMenu.open()
-    assert.equals(3, recipeBookMenu.pageIndex())
+    assert.that(recipeBookMenu.showingCover())
   }
 
   // LAS FLECHAS
 
+  test "desde la tapa, la flecha derecha va a la primera receta" {
+    recipeBookMenu.open()
+    recipeBookMenu.nextPage()
+    assert.equals("recipes_book/recipe_papasFritas.png", recipeBookMenu.image())
+  }
+
   test "la flecha derecha pasa a la receta siguiente, y la izquierda vuelve" {
     recipeBookMenu.open()
+    recipeBookMenu.showPage(0)
     recipeBookMenu.nextPage()
     assert.equals("recipes_book/recipe_burger.png", recipeBookMenu.image())
     recipeBookMenu.prevPage()
     assert.equals(0, recipeBookMenu.pageIndex())
   }
 
-  test "la flecha izquierda en la primera receta no hace nada" {
+  test "desde la primera receta, la flecha izquierda vuelve a la tapa" {
+    recipeBookMenu.open()
+    recipeBookMenu.showPage(0)
+    recipeBookMenu.prevPage()
+    assert.that(recipeBookMenu.showingCover())
+  }
+
+  test "en la tapa, la flecha izquierda no hace nada" {
     recipeBookMenu.open()
     recipeBookMenu.prevPage()
-    assert.equals(0, recipeBookMenu.pageIndex())
+    assert.that(recipeBookMenu.showingCover())
   }
 
   test "la flecha derecha en la ultima receta no hace nada" {
@@ -107,7 +116,8 @@ describe "tests del libro de recetas" {
 
   test "con el libro cerrado, las flechas no hacen nada" {
     recipeBookMenu.nextPage()
-    assert.equals(0, recipeBookMenu.pageIndex())
+    assert.notThat(recipeBookMenu.isOpen())
+    assert.that(recipeBookMenu.showingCover())
   }
 
   // PAUSA

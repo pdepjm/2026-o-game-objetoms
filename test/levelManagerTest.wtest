@@ -190,13 +190,13 @@ describe "tests de levelInfoMenu" {
 
   test "al cargar un nivel muestra su nombre, el titulo y el progreso de su objetivo" {
     assert.equals(["PRUEBA"], self.textsAt(13))
-    assert.equals(["OBJETIVO"], self.textsAt(11))
-    assert.equals(["Papas Fritas: 0/3"], self.textsAt(10))
+    assert.that(levelInfoMenu.levelMessage().contains("OBJETIVO"))
+    assert.equals(["Papas Fritas: 0/3"], levelInfoMenu.progressMessage())
   }
 
   test "una entrega reemplaza el texto del progreso, sin dejar el anterior" {
     self.deliver(friedPotato, 1)
-    assert.equals(["Papas Fritas: 1/3"], self.textsAt(10))
+    assert.equals(["Papas Fritas: 1/3"], levelInfoMenu.progressMessage())
   }
 
   test "al ganar el ultimo nivel muestra el fin del juego y la tecla para reiniciar" {
@@ -212,14 +212,20 @@ describe "tests de levelInfoMenu" {
     simulationEngine.step()
     levelManager.restart()
     assert.that(levelInfoMenu.completedMessage().isEmpty())
-    assert.equals(["Papas Fritas: 0/3"], self.textsAt(10))
+    assert.equals(["Papas Fritas: 0/3"], levelInfoMenu.progressMessage())
+  }
+
+  test "la barra de cada objetivo se llena con las entregas" {
+    assert.equals(["menu/info/bar_0.png"], levelInfoMenu.progressBars())
+    self.deliver(friedPotato, 2)
+    assert.equals(["menu/info/bar_6.png"], levelInfoMenu.progressBars())
   }
 
   test "el modo libre muestra solo su nombre" {
     levelManager.loadFreePlay()
     assert.equals(["LIBRE"], self.textsAt(13))
-    assert.that(self.textsAt(11).isEmpty())
-    assert.that(self.textsAt(10).isEmpty())
+    assert.notThat(levelInfoMenu.levelMessage().contains("OBJETIVO"))
+    assert.that(levelInfoMenu.progressMessage().isEmpty())
   }
 }
 
@@ -260,11 +266,12 @@ describe "tests de todos los niveles" {
     assert.equals([], self.namesOf(self.allLevels().filter({ level => !self.fixedMachinesInPlace(level) })))
   }
 
-  // Wollok no corta las líneas: una muy larga se sale del panel, y las que pasan del máximo no se ven
+  // Wollok no corta las líneas: una muy larga se sale del panel. Las líneas y las teclas comparten el
+  // lugar: entre las dos no pueden pasar del máximo, o se pisan
   test "los mensajes de los tutoriales entran en el panel" {
     const wrong = self.allLevels().filter({ level =>
-      level.tutorial().allMessages().any({ lines =>
-        lines.size() > levelInfoMenu.tutorialMaxLines() || lines.any({ line => line.size() > levelInfoMenu.tutorialMaxLength() })
+      level.tutorial().allMessages().any({ message =>
+        message.lines().size() + message.keys().size() > levelInfoMenu.tutorialMaxLines() || message.lines().any({ line => line.size() > levelInfoMenu.tutorialMaxLength() })
       })
     })
     assert.equals([], self.namesOf(wrong))

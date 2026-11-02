@@ -80,23 +80,28 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 
 | Fila (y) | Qué muestra |
 |---|---|
-| 13 | El nombre del nivel, en mayúsculas |
-| 12 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. Se borra al cargar otro nivel |
-| 11 | `OBJETIVO` (no aparece si el nivel no tiene objetivos con texto, como el modo libre) |
-| 10 a 8 | Una línea por objetivo (`level.progressLines()`): como máximo 3 |
-| 7 hacia abajo | El mensaje del tutorial (`showTutorialMessage(lineas)`): como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. Vacío en los niveles sin tutorial |
+| 13 | El nombre del nivel, en mayúsculas y en amarillo, sobre una cinta roja como el título del juego |
+| 12 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. En los tutoriales, el botón **T SALTEAR TUTORIAL** (`assets/menu/key_skip.png`), que también se clickea: `isSkipButton(pos)` dice si un click cayó en él. Se borra al cargar otro nivel |
+| 11 | `OBJETIVO`, en gris, arriba de una tarjeta de papel (como las hojas del recetario) que llega hasta el último objetivo. No aparece si el nivel no tiene objetivos con texto, como el modo libre |
+| 10 a 8 | Uno por objetivo (`level.shownGoals()`), como máximo 3: la imagen del plato a la izquierda, su texto en marrón y una barra de progreso que se llena por décimos (`goal.progressTenths()`) |
+| 7.5 | El paso del tutorial (`tutorial.stepLabel()`, por ejemplo `PASO 2 DE 8`), en gris, arriba de un globo de diálogo |
+| 7 hacia abajo | El mensaje del tutorial, en marrón dentro del globo: como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. El globo tiene el alto justo para las líneas. Vacío en los niveles sin tutorial |
+| 3.65 hacia arriba | Las teclas del mensaje del tutorial, afuera del globo (en amarillo no se leen sobre el papel), la primera arriba: imágenes `assets/menu/key_<nombre>.png` con el estilo de las teclas del fondo (por ejemplo `place`: Z COLOCAR). Se van cuando cambia el mensaje |
 | 4.6 y 3.7 | Al ganar: `¡Nivel completo!` y la tecla N (SIGUIENTE), o `¡Fin del juego!` y la tecla 0 (REINICIAR) si no hay otro nivel. Las teclas son imágenes (`assets/menu/key_next.png` y `key_restart.png`, las genera `makeKeyHints.py`) con el estilo de las teclas del fondo |
 | 3.5 hacia abajo | Nada: el fondo (`background.gif`) tiene dibujadas las teclas F, M, Espacio y 1 2 3 |
 
 | Método | Lo llama | Qué hace |
 |---|---|---|
 | `show(nivel)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
-| `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo las líneas de los objetivos |
+| `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo los objetivos (`progressMessage()` y `progressBars()` devuelven lo que se ve) |
 | `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega el mensaje y la tecla para seguir (`completedMessage()` devuelve lo que dicen) |
-| `showTutorialMessage(lineas)` | `levelManager`, al cargar un nivel y con cada aviso al tutorial | Reemplaza el mensaje del tutorial (`tutorialMessage()` devuelve las líneas que se ven) |
+| `showTutorialMessage(paso, lineas, teclas)` | `levelManager`, al cargar un nivel y con cada aviso al tutorial | Reemplaza el globo, el paso, el mensaje y sus teclas (`tutorialStepLabel()`, `tutorialMessage()` y `tutorialMessageKeys()` devuelven lo que se ve) |
 
 - **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
-- Guarda lo dibujado en cuatro listas (el nombre y el título, el progreso, el mensaje de nivel completo y el del tutorial) para reemplazar sólo lo que cambia.
+- Guarda lo dibujado en listas (el nombre, la tarjeta y el título; los objetivos; el mensaje de nivel completo; el globo, el mensaje y las teclas del tutorial) para reemplazar sólo lo que cambia.
+- **El estilo lo dan las imágenes de atrás** (`assets/menu/info/`: la cinta, las tarjetas para 1 a 3 objetivos, las barras de 0 a 10 décimos y los globos para 1 a 6 líneas, que genera `makeLevelInfo.py`) **y las letras**. Las imágenes se agregan antes que los textos, porque se dibujan en ese orden.
+- **Sobre el papel (la tarjeta y el globo) los textos se escriben con sprites** (`spriteText.wlk`), porque Wollok dibuja todos sus textos con un contorno oscuro que no se puede sacar, y ahí se ve raro. El nombre del nivel y los textos sobre el azul siguen siendo textos de Wollok (`MenuText`).
+- **Las posiciones con decimales son `CellPosition`**, no `game.at`: Wollok redondea a la celda la posición de `game.at` al dibujar, y la imagen quedaría corrida.
 - Wollok no corta el texto en varias líneas: con 4 celdas de ancho, los textos tienen que ser cortos. Para el tutorial, el límite está en `tutorialMaxLength()` (16) y `tutorialMaxLines()` (6), y lo revisa un test.
 - **Centrado:** Wollok dibuja cada texto centrado en su celda, y la parte azul va de x 0 a 4. Por eso los textos van en la columna 1.5: su centro cae en x = 2.
 
@@ -107,29 +112,28 @@ Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeña
 
 ## `recipeBookMenu.wlk`
 
-El libro de recetas: una página por plato. Se abre con el icono (`bookIcon`, en la celda (20, 0): abajo de todo, en la columna de la izquierda del + de la barra) o con **F**, y se cierra con la cruz o con **F**. **Las flechas (izquierda y derecha) pasan las recetas.** También se puede abrir desde la portada. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
+El libro de recetas: una tapa y una página por plato. Se abre con **F** (también desde la portada), **siempre en la tapa**, y se cierra con la cruz o con **F**. **Las flechas (izquierda y derecha) pasan las páginas**: la tapa está antes de la primera receta. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
 
 - **Cada página es una imagen entera** de 800x500 (`assets/recipes_book/`), dibujada desde la celda (5, 2): ocupa x 5 a 20 e y 2 a 11. El código no dibuja textos: sólo cambia la imagen.
 - **La cruz se clickea**: ocupa las 4 celdas de arriba a la derecha de la imagen (x 19 y 20, y 10 y 11), porque Wollok avisa los clicks por celda. Tiene que estar en el mismo lugar en todas las páginas.
-- Al cerrar y volver a abrir, sigue en la receta en la que estaba.
+- Las flechas para pasar de página están dibujadas en las imágenes: "para avanzar →" en la tapa (`cover.png`), y "← anterior" y "siguiente →" en cada receta (la última no tiene "siguiente"). Si se vuelven a exportar las páginas, hay que dibujarlas.
 - Con el libro abierto, **los clicks van al libro y las demás teclas no hacen nada** (ver `userController.whenPlaying`).
 
 | Método | Qué hace |
 |---|---|
-| `setUp()` | Agrega el icono. Lo llama `startMenu` al empezar a jugar |
-| `open()` / `close()` / `toggle()` | Abre y cierra |
+| `open()` / `close()` / `toggle()` | Abre (en la tapa) y cierra |
 | `onClick(pos)` | Un click con el libro abierto: la cruz lo cierra |
-| `prevPage()` / `nextPage()` | Las flechas. En la primera y en la última receta, o con el libro cerrado, no hacen nada |
+| `prevPage()` / `nextPage()` | Las flechas. Desde la primera receta, la izquierda vuelve a la tapa; en la tapa la izquierda, y en la última receta la derecha, no hacen nada. Con el libro cerrado, tampoco |
 
 **Agregar un plato:**
 
-1. Su página en `assets/recipes_book/recipe_<plato>.png`, de 800x500, con la cruz en el mismo lugar que las demás.
+1. Su página en `assets/recipes_book/recipe_<plato>.png`, de 800x500, con la cruz y las flechas en el mismo lugar que las demás.
 2. Una línea en `pages`, en el lugar que le toca (el número que tiene dibujado).
 3. Un test avisa si una receta del juego no tiene página.
 
 ## `startMenu.wlk`
 
-La portada (`startScreen`), las instrucciones (`menuControlsOverlay`, con I) y el fondo del menú. **Enter** empieza a jugar: la primera vez arma el juego (las teclas, los menús, el libro, los platitos y el primer nivel). **M** vuelve a la portada y pausa la simulación; **S** en la portada cierra el juego.
+La portada (`startScreen`), los controles (`menuControlsOverlay`, con I: `assets/menu/menu_controls.png`, que genera `makeKeyHints.py` sobre `menu_controls_base.png`) y el fondo del menú. **Enter** empieza a jugar: la primera vez arma el juego (las teclas, los menús, los platitos y el primer nivel). **M** vuelve a la portada y pausa la simulación; **S** en la portada cierra el juego.
 
 - `isPlaying()`: si se está jugando. En la portada y en las instrucciones, las teclas y los clicks del juego no hacen nada (`userController.whenPlaying`); el libro de recetas sí se puede abrir.
 - Antes de que `main.wpgm` llame a `show()`, se considera que se está jugando: así los tests, que no pasan por la portada, pueden usar las teclas y los clicks.
@@ -194,3 +198,13 @@ CONSEJOS
 - Construí con la simulación apagada y probala cuando esté lista.
 - Si un ingrediente se queda trabado, revisá hacia dónde apunta cada máquina.
 - Empezá por una línea simple y sumá máquinas de a una.
+
+## `spriteText.wlk`
+
+Escribe textos con una imagen por letra, **sin el contorno** que Wollok les pone a todos sus textos. Lo usa `levelInfoMenu` para lo que va sobre el papel.
+
+- `spriteText.draw(texto, estilo, centroX, centroY)`: escribe el texto centrado en ese punto (en celdas) y devuelve una `SpriteLine`, que sabe sacarse (`hide()`) y decir qué escribió (`description()`, para los tests).
+- Los estilos (`textFont`: marrón, 14 px; `labelFont`: gris, 11 px) y las letras están en `spriteFonts.wlk`, **que se genera** con `assets/menu/font/makeFont.py` junto con las imágenes de cada letra. Para cambiar un color o un tamaño, o agregar una letra, se cambia el script y se lo vuelve a correr.
+- Una letra que no está se escribe como `?`.
+- Cada letra es un visual: usarlo para textos cortos que se redibujan poco, no en cada frame.
+

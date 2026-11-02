@@ -24,8 +24,8 @@ object tutorialMarks {
 		const machine = board.machineAt(cell)
 		if (machine == null) return new CellPosition(x = cell.x(), y = cell.y() + 1)
 		const origin = machine.cell()
-		// Con decimales (una de 2x2) no puede ser CellPosition: ver cellPosition.wlk
-		return game.at(origin.x() + (machine.width() - 1) / 2, origin.y() + machine.height())
+		// Con decimales (una de 2x2) tiene que ser CellPosition: game.at se redondea a la celda al dibujar
+		return new CellPosition(x = origin.x() + (machine.width() - 1) / 2, y = origin.y() + machine.height())
 	}
 }
 

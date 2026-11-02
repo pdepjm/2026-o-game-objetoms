@@ -5,7 +5,7 @@ Los niveles del juego: qué máquinas se pueden usar, cuáles vienen colocadas y
 | Archivo | Qué tiene |
 |---|---|
 | `levelClasses.wlk` | La clase `Level` y los objetivos (`DeliveryGoal` y `noGoal`) |
-| `levelsTypes.wlk` | Los niveles concretos: `freePlay` (el modo libre), los tutoriales `tutorialLevel` (papas fritas) y `hotDogTutorialLevel` (panchos), y `level1` (cheeseburgers y papas fritas) |
+| `levelsTypes.wlk` | Los niveles concretos: `freePlay` (el modo libre), los tutoriales `tutorialLevel` (papas fritas) y `hotDogTutorialLevel` (panchos), y los niveles `level1` (ensaladas), `level2` (hamburguesas) y `level3` (desayunos y pizzas) |
 | `levelManager.wlk` | `levelManager`: el nivel actual; cargarlo, reiniciarlo, pasar al siguiente y ganar |
 | `tutorial.wlk` | Lo que el juego le avisa al tutorial de un nivel (`Tutorial`, `noTutorial`) y los tutoriales por pasos (`StepTutorial`) |
 
@@ -157,7 +157,9 @@ Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pa
 | `onContinue()` | La tecla Enter (`levelManager.continueTutorial`): seguir después de una explicación |
 | `allowsTool(herramienta, pos)` | `toolsManager.onClick`, antes de usar la herramienta en el tablero. Si es `false`, el click no hace nada |
 | `allowsSimulationToggle()` | `levelManager.toggleSimulation`. Si es `false`, no prende ni apaga |
-| `messageLines()` | Después de cada aviso: las líneas del mensaje (como máximo `levelInfoMenu.tutorialMaxLines()`, 6, de hasta `tutorialMaxLength()`, 16 caracteres) |
+| `messageLines()` | Después de cada aviso: las líneas del mensaje (de hasta `levelInfoMenu.tutorialMaxLength()`, 16 caracteres) |
+| `stepLabel()` | Después de cada aviso: dónde va el jugador, arriba del mensaje (`StepTutorial`: `PASO 2 DE 8`). Vacío: no se muestra |
+| `messageKeys()` | Después de cada aviso: las teclas que acompañan al mensaje (`"place"`, `"continue"`…), que se dibujan con el estilo de las teclas del fondo. **Entre líneas y teclas, como máximo `tutorialMaxLines()` (6)**: lo revisa un test |
 | `allMessages()` | Todos los mensajes que puede mostrar. Sólo para los tests (ver abajo) |
 | `targetCells()` | Después de cada aviso: las celdas donde el jugador tiene que hacer algo. Se marcan con un recuadro amarillo que late |
 | `pointedCells()` | Después de cada aviso: las celdas de las máquinas que explica el mensaje. Se señala la máquina con una flecha naranja arriba (centrada, si es de 2x2) |
@@ -176,6 +178,7 @@ Todos tienen `lines`, y opcionalmente:
 | `cells` | Las celdas donde deja **colocar, borrar y rotar** (en ningún otro lado). Se marcan con el recuadro. Para una máquina de 2x2, sus cuatro celdas |
 | `pointsAt` | Las celdas de las máquinas de las que habla el mensaje. Se señalan con la flecha: así el texto puede decir "de la flecha" en vez de "a la derecha de las papas" |
 | `allowsSimulation` | Si deja prender y apagar la simulación (por defecto, no) |
+| `keys` | Las teclas que explica el paso, por nombre: `place` (Z), `edit` (X), `rotate` (C), `up` (W), `left` (A), `continue` (Enter), `start` y `stop` (Espacio). Se muestran como las teclas del fondo, así el texto no dice "Z:". Para una tecla nueva, agregarla en `HINTS` de `assets/menu/makeKeyHints.py` y correrlo |
 
 **Un paso o pide hacer algo (`cells`, el recuadro) o explica (`pointsAt`, la flecha), no las dos cosas:** si tiene `cells`, la flecha no se muestra. Para explicar una máquina y después pedir otra, dos pasos: un `ExplainStep` y el que pide.
 
@@ -206,6 +209,10 @@ class SettingStep inherits EventStep {
 3. Textos de hasta 16 caracteres por línea y 6 líneas. **"tests de todos los niveles" lo revisa** ("los mensajes de los tutoriales entran en el panel").
 4. Un test que lo juegue entero, como "armado como dice el tutorial, entrega las papas fritas y se gana".
 
+### Saltear los tutoriales
+
+En los tutoriales (los niveles con `tutorial`: `level.hasTutorial()`), la info del nivel muestra el botón **T SALTEAR TUTORIAL**, que se clickea o se aprieta con T. `levelManager.skipTutorial()` da por hechos **todos** los tutoriales y carga el primer nivel que toca jugar. Fuera de un tutorial no hace nada.
+
 ### `tutorialLevel` ("Tutorial 1"): papas fritas
 
 El primer nivel. Trae armada la línea de la fila 7 salvo cuatro máquinas (las celdas están en `friesTutorialCells`), y se juega así. Antes de cada máquina, una explicación señala con la flecha la máquina de la que viene (se sigue con Enter); después, el recuadro marca dónde va:
@@ -221,7 +228,7 @@ Para cambiarlo, los tests de `test/tutorialTest.wtest` lo juegan entero ("armado
 
 ### `hotDogTutorialLevel` ("Tutorial 2"): panchos
 
-El segundo. Enseña a configurar un Dispenser, el horno, el ensamblador y con qué trabaja un brazo. Las celdas están en `hotDogTutorialCells`: dos líneas que llegan al ensamblador, las salchichas por la fila 10 y los panes por la fila 8. **No se parece al nivel 1** (cheeseburgers y papas fritas, con el ensamblador fijo): otro plato, el ensamblador lo pone el jugador y el brazo es el común.
+El segundo. Enseña a configurar un Dispenser, el horno, el ensamblador y con qué trabaja un brazo. Las celdas están en `hotDogTutorialCells`: dos líneas que llegan al ensamblador, las salchichas por la fila 10 y los panes por la fila 8. Ningún nivel se arma igual: otro plato, y es el único con el brazo común trayendo del horno.
 
 1. Explica que hacen falta pan y salchicha, y que el Dispenser de abajo larga salchichas. **Editarlo (X) para que largue pan.**
 2. Explica el Dispenser de las salchichas, que hay que cocinarlas; **colocar el horno**.
@@ -235,3 +242,14 @@ Lo juega entero "armado como dice el tutorial, entrega los panchos y se gana".
 
 > [!NOTE]
 > El plan completo de los niveles (incluida la fase que falta: energía) está en [`docs/Plan-Implementacion-Niveles.md`](../../docs/Plan-Implementacion-Niveles.md).
+
+## Los niveles
+
+Van de menos a más difícil. Todos tienen los Dispensers fijos a la izquierda, y el resto lo arma el jugador. `test/levelSolutionsTest.wtest` arma una forma de ganar cada uno: si un cambio hace que un nivel no se pueda ganar, falla ahí.
+
+| Nivel | Plato | Qué tiene de nuevo |
+|---|---|---|
+| `level1` | 3 ensaladas | Dos ingredientes que sólo hay que cortar. Los Dispensers ya largan lechuga y tomate. Hay que elegir la receta (también ofrece la sopa de tomate) |
+| `level2` | 3 hamburguesas | Cuatro ingredientes y dos procesos (cortar y cocinar). Los cuatro Dispensers ofrecen todo: hay que elegir qué larga cada uno, y que cada ingrediente llegue al ensamblador por su lado (el que sobra traba a los demás) |
+| `level3` | 2 desayunos y 2 pizzas | Dos platos a la vez, con dos ensambladores y los dos platitos. El huevo se fríe: la freidora necesita un brazo común que se lo lleve y uno inteligente que lo saque frito. El queso de la pizza se corta una sola vez. **El tablero está limitado**: la pizza se arma arriba (filas 7 a 10) y el desayuno abajo (filas 2 a 5), separados por la fila 6, cada uno con un pasillo angosto hasta su platito |
+

@@ -10,6 +10,7 @@ import tools.userTools.*
 import directions.*
 import simulation.simulationEngine.*
 import levels.levelManager.*
+import menu.levelInfoMenu.*
 
 object userController {
 	method setUp() {
@@ -37,6 +38,7 @@ object userController {
 
 		// TUTORIAL: seguir después de una explicación
 		keyboard.enter().onPressDo({ => self.whenPlaying({ levelManager.continueTutorial() }) })
+		keyboard.t().onPressDo({ => self.whenPlaying({ levelManager.skipTutorial() }) })
 
 		// ESPACIO: prende/apaga la simulación. Al apagarla se borran los ingredientes.
 		keyboard.space().onPressDo({ => self.whenPlaying({ levelManager.toggleSimulation() }) })
@@ -61,12 +63,12 @@ object userController {
 		keyboard.m().onPressDo({ => self.whenPlaying({ startMenu.backToCover() }) })
 	}
 
-	// Con el libro abierto, los clicks son del libro. Si no, y se está jugando, el icono lo abre y el
-	// resto va a toolsManager. En la portada no hacen nada.
+	// Con el libro abierto, los clicks son del libro. Si no, y se está jugando, el botón para saltear el
+	// tutorial lo saltea, y el resto va a toolsManager. En la portada no hacen nada.
 	method onClick(pos) {
 		if (recipeBookMenu.isOpen()) recipeBookMenu.onClick(pos)
 		else if (startMenu.isPlaying()) {
-			if (recipeBookMenu.isIcon(pos)) recipeBookMenu.open() else toolsManager.onClick(pos)
+			if (levelInfoMenu.isSkipButton(pos)) levelManager.skipTutorial() else toolsManager.onClick(pos)
 		}
 	}
 

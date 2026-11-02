@@ -1,0 +1,159 @@
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.cellPosition.*
+import src.machines.types.belt.*
+import src.machines.types.cuttingMachine.*
+import src.machines.types.oven.*
+import src.machines.types.fryer.*
+import src.machines.types.automaticArm.*
+import src.machines.types.smartRoboticArm.*
+import src.machines.types.assembler.*
+import src.machines.types.deliverySlot.*
+import src.menu.menuManager.*
+import src.simulation.simulationEngine.*
+import src.food.foodTypes.*
+import src.food.recipes.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+
+// Una forma de ganar cada nivel, armada máquina por máquina: si un cambio (en los niveles, las máquinas o
+// las recetas) hace que un nivel no se pueda ganar, falla acá. No es la única forma de ganarlos.
+
+describe "tests de que los niveles se pueden ganar" {
+
+  method initialize() {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+  }
+
+  // Coloca la máquina como lo haría el jugador: tiene que poder construir ahí (las zonas del nivel)
+  method put(x, y, machine) {
+    const pos = new CellPosition(x = x, y = y)
+    if (!board.canBuild(pos, machine)) self.error("No se puede construir en (" + x + ", " + y + ")")
+    board.push(pos, machine)
+    return machine
+  }
+
+  // Cintas en esa fila, de x0 a x1, mirando hacia ese lado
+  method beltsRow(y, x0, x1, direction) {
+    (x0 .. x1).forEach({ x => self.put(x, y, new Belt(direction = direction)) })
+  }
+
+  // Cintas en esa columna, de y0 a y1, mirando hacia ese lado
+  method beltsColumn(x, y0, y1, direction) {
+    (y0 .. y1).forEach({ y => self.put(x, y, new Belt(direction = direction)) })
+  }
+
+  method dispenserAt(x, y) = board.machineAt(new CellPosition(x = x, y = y))
+
+  method assembler(x, y, recipe) {
+    const assembler = self.put(x, y, new Assembler(direction = up))
+    assembler.settings().first().value(recipe)
+    return assembler
+  }
+
+  // La salida de un ensamblador en (13, 8) hasta el primer platito (16, 14)
+  method exitToFirstPlate() {
+    self.beltsColumn(13, 10, 12, up)
+    self.beltsRow(13, 13, 15, right)
+    self.put(16, 13, new Belt(direction = up))
+  }
+
+  // Prende la simulación y la deja correr hasta ganar (o hasta cansarse)
+  method runUntilWon() {
+    levelManager.toggleSimulation()
+    (1 .. 9000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    return levelManager.completed()
+  }
+
+  test "nivel 1: dos lineas de corte que llegan al ensamblador por abajo y por la izquierda" {
+    levelManager.load(level1)
+    // lechuga: fila 10, entra por la izquierda del ensamblador (11, 9)
+    self.put(6, 10, new Belt(direction = right))
+    self.put(7, 10, new CuttingMachine(direction = right))
+    self.beltsRow(10, 8, 10, right)
+    // tomate: fila 4, sube por la columna 11 y entra por abajo
+    self.put(6, 4, new Belt(direction = right))
+    self.put(7, 4, new CuttingMachine(direction = right))
+    self.beltsRow(4, 8, 10, right)
+    self.beltsColumn(11, 4, 8, up)
+    self.assembler(11, 9, saladRecipe)
+    // salida: sube por la columna 11 y va por arriba hasta el platito
+    self.beltsColumn(11, 11, 12, up)
+    self.beltsRow(13, 11, 15, right)
+    self.put(16, 13, new Belt(direction = up))
+    assert.that(self.runUntilWon())
+  }
+
+  test "nivel 2: cuatro lineas, una por ingrediente, cada una por su lado del ensamblador" {
+    levelManager.load(level2)
+    self.dispenserAt(5, 9).product(bun)
+    self.dispenserAt(5, 8).product(lettuce)
+    self.dispenserAt(5, 4).product(tomato)
+    self.dispenserAt(5, 2).product(meat)
+    // pan (fila 9) y lechuga (fila 8): entran por la izquierda del ensamblador (13, 8)
+    [9, 8].forEach({ y =>
+      self.put(6, y, new Belt(direction = right))
+      self.put(7, y, new CuttingMachine(direction = right))
+      self.beltsRow(y, 8, 12, right)
+    })
+    // tomate: fila 4, sube por la columna 13 y entra por abajo
+    self.put(6, 4, new Belt(direction = right))
+    self.put(7, 4, new CuttingMachine(direction = right))
+    self.beltsRow(4, 8, 12, right)
+    self.beltsColumn(13, 4, 7, up)
+    // carne: fila 2, al horno, sube por la columna 14 y entra por abajo
+    self.put(6, 2, new Belt(direction = right))
+    self.put(7, 2, new Oven(direction = right))
+    self.beltsRow(2, 8, 13, right)
+    self.beltsColumn(14, 2, 7, up)
+    self.assembler(13, 8, burgerRecipe)
+    self.exitToFirstPlate()
+    assert.that(self.runUntilWon())
+  }
+
+  test "nivel 3: el tablero esta limitado" {
+    levelManager.load(level3)
+    assert.notThat(board.isBuildable(game.at(19, 11)))
+    assert.notThat(board.isBuildable(game.at(8, 12)))
+  }
+
+  test "nivel 3: la pizza y el desayuno, cada uno con su ensamblador y su platito" {
+    levelManager.load(level3)
+    self.dispenserAt(5, 9).product(pizzaDough)
+    self.dispenserAt(5, 8).product(cheese)
+    self.dispenserAt(5, 7).product(salami)
+    self.dispenserAt(5, 5).product(egg)
+    self.dispenserAt(5, 3).product(bacon)
+    // PIZZA, ensamblador en (13, 8): masa al horno (fila 9) y queso cortado (fila 8) por la izquierda,
+    // salame cortado (fila 7) por abajo
+    self.put(6, 9, new Belt(direction = right))
+    self.put(7, 9, new Oven(direction = right))
+    self.beltsRow(9, 8, 12, right)
+    [8, 7].forEach({ y =>
+      self.put(6, y, new Belt(direction = right))
+      self.put(7, y, new CuttingMachine(direction = right))
+      self.beltsRow(y, 8, 12, right)
+    })
+    self.put(13, 7, new Belt(direction = up))
+    self.assembler(13, 8, pizzaPepperoniRecipe)
+    self.exitToFirstPlate()
+    // DESAYUNO, ensamblador en (17, 4): el huevo (fila 5) va a la freidora con un brazo común, y lo saca
+    // uno inteligente (que sólo toma lo ya procesado, así que espera a que se fría); entra por la izquierda
+    self.put(6, 5, new Belt(direction = right))
+    self.put(7, 5, new AutomaticArm(direction = left))
+    self.put(8, 5, new Fryer(direction = right))
+    self.put(9, 5, new SmartRoboticArm(direction = left))
+    self.beltsRow(5, 10, 16, right)
+    // la panceta (fila 3) al horno, y entra por abajo
+    self.put(6, 3, new Belt(direction = right))
+    self.put(7, 3, new Oven(direction = right))
+    self.beltsRow(3, 8, 16, right)
+    self.put(17, 3, new Belt(direction = up))
+    self.assembler(17, 4, breakfastRecipe)
+    // la salida: sube por la columna 17 hasta el segundo platito (17, 14)
+    self.beltsColumn(17, 6, 13, up)
+    assert.that(self.runUntilWon())
+  }
+}

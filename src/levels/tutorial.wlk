@@ -32,7 +32,15 @@ class Tutorial inherits TutorialEvents {
 	// (como máximo levelInfoMenu.tutorialMaxLines(), de levelInfoMenu.tutorialMaxLength() caracteres)
 	method messageLines() = []
 
-	// Todos los mensajes que puede llegar a mostrar: los tests revisan que entren en el panel
+	// Las teclas que acompañan al mensaje (por ejemplo "place": Z COLOCAR). Se dibujan debajo de él, con el
+	// estilo de las teclas del fondo (assets/menu/key_<nombre>.png), y se van cuando cambia el mensaje.
+	method messageKeys() = []
+
+	// Dónde va el jugador, arriba del mensaje (por ejemplo "PASO 2 DE 8"). Vacío: no se muestra.
+	method stepLabel() = ""
+
+	// Todos los mensajes que puede llegar a mostrar, cada uno con sus líneas (lines()) y sus teclas (keys()):
+	// los tests revisan que entren en el panel
 	method allMessages() = []
 
 	// ----------- INDICADORES -----------
@@ -83,8 +91,13 @@ class StepTutorial inherits Tutorial {
 	override method allowsSimulationToggle() = won || self.currentStep().allowsSimulationToggle()
 
 	override method messageLines() = if (won) finishedLines else self.currentStep().lines()
+	override method messageKeys() = if (won) [] else self.currentStep().keys()
+	override method stepLabel() = if (won) "" else "PASO " + self.stepNumber() + " DE " + steps.size()
 
-	override method allMessages() = steps.map({ step => step.lines() }) + [finishedLines]
+	// El número del paso actual, empezando en 1
+	method stepNumber() = (1 .. steps.size()).find({ n => steps.get(n - 1) == self.currentStep() })
+
+	override method allMessages() = steps + [new TutorialStep(lines = finishedLines)]
 
 	// Después de ganar no marca nada
 	override method targetCells() = if (won) [] else self.currentStep().targetCells()
@@ -98,6 +111,8 @@ class StepTutorial inherits Tutorial {
 // después pedir, dos pasos: un ExplainStep y el que pide.
 class TutorialStep inherits TutorialEvents {
 	const property lines
+	// Las teclas que se explican en este paso (ver Tutorial.messageKeys): así el texto no tiene que decir "Z:"
+	const property keys = []
 	// Las celdas donde deja colocar, borrar y rotar. Se marcan con un recuadro.
 	// Para una máquina de 2x2, sus cuatro celdas.
 	const cells = []

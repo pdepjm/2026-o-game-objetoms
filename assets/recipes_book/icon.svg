@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
-  <!-- El icono del libro de recetas (50x50). Exportarlo como icon.png en esta carpeta. -->
-  <g id="libro">
-    <rect id="tapa" x="6" y="5" width="38" height="38" rx="4" fill="#422918" stroke="#1a0d04" stroke-width="2"/>
-    <rect id="borde-dorado" x="9.5" y="8.5" width="31" height="28" rx="2" fill="none" stroke="#8b6b27" stroke-width="1"/>
-    <rect id="hojas" x="8" y="39" width="34" height="3" fill="#fcf4e5"/>
-  </g>
-  <text id="letra" x="25" y="31" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#d4af37" text-anchor="middle">F</text>
-</svg>

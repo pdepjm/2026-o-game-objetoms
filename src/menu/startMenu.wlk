@@ -58,13 +58,12 @@ object startMenu {
 			if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
 			if (game.hasVisual(menuBackground)) game.removeVisual(menuBackground)
 			simulationEngine.resume()
-			// La primera vez se arma el juego: las teclas, los menús, el libro, los platitos y el primer
+			// La primera vez se arma el juego: las teclas, los menús, los platitos y el primer
 			// nivel (después de los menús: los usa para mostrar el catálogo y la info)
 			if (!initialized) {
 				initialized = true
 				userController.setUp()
 				menuManager.setUp()
-				recipeBookMenu.setUp()
 				deliveryPoints.setUp()
 				levelManager.start()
 			}

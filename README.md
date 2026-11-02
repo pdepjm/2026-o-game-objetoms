@@ -86,13 +86,15 @@ Es tu tarea automatizar todos los procesos del buffet.
 
 **Enter**: En el tutorial, seguir después de una explicación
 
+**T** (o el botón SALTEAR TUTORIAL): saltear los tutoriales e ir directo al nivel 1
+
 ### Libro de recetas
-**F** (o el icono del libro, abajo a la derecha del tablero): abre y cierra el libro de recetas, con cómo se arma cada plato. Mientras está abierto la simulación queda en pausa, y las **flechas** (izquierda y derecha) pasan las recetas. También se abre desde la portada.
+**F**: abre y cierra el libro de recetas, con cómo se arma cada plato. Se abre en la tapa; las **flechas** (izquierda y derecha) pasan las páginas. Mientras está abierto la simulación queda en pausa. También se abre desde la portada.
 
 **M**: volver a la portada
 
 > [!NOTE]
-> El juego arranca con **dos tutoriales**: el primero enseña a hacer papas fritas paso a paso, y el segundo, panchos (configurar un Dispenser, el horno, el ensamblador y qué hace un brazo). Después sigue el nivel 1. La información del nivel (su objetivo, si se ganó y el mensaje del tutorial) se ve a la izquierda.
+> El juego arranca con **dos tutoriales**: el primero enseña a hacer papas fritas paso a paso, y el segundo, panchos (configurar un Dispenser, el horno, el ensamblador y qué hace un brazo). Después siguen los niveles 1 (ensaladas), 2 (hamburguesas) y 3 (desayunos y pizzas), cada uno más difícil. Los tutoriales se pueden saltear. La información del nivel (su objetivo, si se ganó y el mensaje del tutorial) se ve a la izquierda.
 
 ## TAMAÑOS
 

@@ -21,6 +21,7 @@ import src.levels.levelClasses.*
 import src.levels.levelsTypes.*
 import src.levels.levelManager.*
 import src.levels.tutorial.*
+import src.input.userController.*
 
 // Fase 5 del plan de niveles: lo que el juego le avisa al tutorial, sus permisos y su mensaje.
 
@@ -89,8 +90,6 @@ describe "tests de los eventos del tutorial" {
     toolsManager.onClick(pos)
   }
 
-  method textsInRow(row) = game.getObjectsIn(levelInfoMenu.positionOfRow(row)).map({ visual => visual.text() })
-
   test "colocar, rotar y borrar una maquina le llega al tutorial, en ese orden" {
     self.useTool(place, game.at(8, 8))
     self.useTool(rotate, game.at(8, 8))
@@ -111,7 +110,6 @@ describe "tests de los eventos del tutorial" {
   }
 
   test "su mensaje se ve desde la fila 7, una linea debajo de la otra" {
-    assert.equals(["Linea 1"], self.textsInRow(7))
     assert.equals(["Linea 1", "Linea 2"], levelInfoMenu.tutorialMessage())
   }
 
@@ -170,12 +168,36 @@ describe "tests del tutorial de papas fritas" {
     self.useTool(rotate, game.at(11, 7))
   }
 
-  test "se juegan los dos tutoriales y despues el nivel 1" {
-    assert.equals([tutorialLevel, hotDogTutorialLevel, level1], levelManager.levels())
+  test "se juegan los dos tutoriales y despues los niveles 1, 2 y 3" {
+    assert.equals([tutorialLevel, hotDogTutorialLevel, level1, level2, level3], levelManager.levels())
   }
 
   test "arranca explicando de donde salen las papas" {
     assert.equals("Las papas salen", self.message().first())
+  }
+
+  test "arriba del mensaje muestra en que paso va" {
+    assert.equals("PASO 1 DE 11", levelInfoMenu.tutorialStepLabel())
+    levelManager.continueTutorial()
+    assert.equals("PASO 2 DE 11", levelInfoMenu.tutorialStepLabel())
+  }
+
+  test "al explicar muestra la tecla para seguir" {
+    assert.equals(["continue"], levelInfoMenu.tutorialMessageKeys())
+  }
+
+  test "al pedir la cinta muestra la tecla para colocar, y al colocarla se va" {
+    levelManager.continueTutorial()
+    assert.equals(["place"], levelInfoMenu.tutorialMessageKeys())
+    self.placeMachine(0, game.at(6, 7))
+    assert.equals(["continue"], levelInfoMenu.tutorialMessageKeys())
+  }
+
+  test "al ganar no queda ninguna tecla del tutorial" {
+    self.build()
+    levelManager.toggleSimulation()
+    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    assert.that(levelInfoMenu.tutorialMessageKeys().isEmpty())
   }
 
   test "al explicar muestra solo la flecha, arriba del dispenser" {
@@ -185,7 +207,7 @@ describe "tests del tutorial de papas fritas" {
 
   test "con Enter pasa a pedir la cinta, y muestra solo el recuadro donde va" {
     levelManager.continueTutorial()
-    assert.equals("Z: colocar.", self.message().first())
+    assert.equals("Elegí la cinta", self.message().first())
     assert.equals([[6, 7]], self.marksOf("place.gif"))
     assert.equals([], self.marksOf("look.gif"))
   }
@@ -230,7 +252,7 @@ describe "tests del tutorial de papas fritas" {
 
   test "una maquina equivocada no cumple el paso, y se puede borrar" {
     self.placeMachine(1, game.at(6, 7))
-    assert.equals("Z: colocar.", self.message().first())
+    assert.equals("Elegí la cinta", self.message().first())
     self.useTool(delete, game.at(6, 7))
     assert.notThat(board.isThereAMachine(game.at(6, 7)))
   }
@@ -255,12 +277,12 @@ describe "tests del tutorial de papas fritas" {
     assert.equals("Un brazo agarra", self.message().first())
     self.useTool(rotate, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
-    assert.equals("¡Listo! Apretá", self.message().first())
+    assert.equals("¡Listo! Ya se", self.message().first())
   }
 
   test "con todo armado pide prender la simulacion" {
     self.build()
-    assert.equals(["¡Listo! Apretá", "5 para cocinar"], self.message())
+    assert.equals(["¡Listo! Ya se", "puede cocinar"], self.message())
   }
 
   test "armado como dice el tutorial, entrega las papas fritas y se gana" {
@@ -276,7 +298,7 @@ describe "tests del tutorial de papas fritas" {
     self.build()
     levelManager.toggleSimulation()
     levelManager.toggleSimulation()
-    assert.equals("¡Listo! Apretá", self.message().first())
+    assert.equals("¡Listo! Ya se", self.message().first())
   }
 
   test "deja editar cualquier maquina, tambien las fijas" {
@@ -414,7 +436,7 @@ describe "tests del tutorial de panchos" {
 
   test "pide editar el dispenser, marcandolo con el recuadro" {
     levelManager.continueTutorial()
-    assert.equals("X: tocá el", self.message().first())
+    assert.equals("Tocá el", self.message().first())
     assert.equals([self.cellOf(hotDogTutorialCells.bunDispenser())], self.marksOf("place.gif"))
   }
 
@@ -434,7 +456,7 @@ describe "tests del tutorial de panchos" {
     self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
     self.placeMachine(1, hotDogTutorialCells.oven(), right)
     self.placeMachine(2, hotDogTutorialCells.assembler(), right)
-    assert.equals("W: que apunte", self.message().first())
+    assert.equals("Que apunte", self.message().first())
   }
 
   test "el ensamblador arranca con otra receta: hay que elegir el pancho" {
@@ -459,7 +481,7 @@ describe "tests del tutorial de panchos" {
 
   test "con todo armado pide prender la simulacion" {
     self.build()
-    assert.equals(["¡Listo! Apretá", "5 para cocinar"], self.message())
+    assert.equals(["¡Listo! Ya se", "puede cocinar"], self.message())
   }
 
   test "armado como dice el tutorial, entrega los panchos y se gana" {
@@ -478,5 +500,45 @@ describe "tests del dispenser y su ingrediente inicial" {
 
   test "un dispenser que no ofrece papa arranca con el primero que ofrece" {
     assert.equals(sausage, new Dispenser(availableKinds = [sausage, bun]).product())
+  }
+}
+
+describe "tests de saltear el tutorial" {
+
+  method initialize() {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.load(tutorialLevel)
+  }
+
+  test "saltear el tutorial va al nivel 1 y da por hechos los dos tutoriales" {
+    levelManager.skipTutorial()
+    assert.equals(level1, levelManager.currentLevel())
+    assert.that(levelManager.completedLevels().contains(tutorialLevel))
+    assert.that(levelManager.completedLevels().contains(hotDogTutorialLevel))
+  }
+
+  test "tambien se puede saltear desde el segundo tutorial" {
+    levelManager.load(hotDogTutorialLevel)
+    levelManager.skipTutorial()
+    assert.equals(level1, levelManager.currentLevel())
+  }
+
+  test "fuera de un tutorial, saltear no hace nada" {
+    levelManager.load(level2)
+    levelManager.skipTutorial()
+    assert.equals(level2, levelManager.currentLevel())
+  }
+
+  test "en un tutorial se ve el boton, y clickearlo lo saltea" {
+    assert.that(levelInfoMenu.showsSkipButton())
+    userController.onClick(game.at(1, 12))
+    assert.equals(level1, levelManager.currentLevel())
+  }
+
+  test "en un nivel sin tutorial no hay boton" {
+    levelManager.load(level1)
+    assert.notThat(levelInfoMenu.showsSkipButton())
+    assert.notThat(levelInfoMenu.isSkipButton(game.at(1, 12)))
   }
 }

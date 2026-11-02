@@ -11,6 +11,10 @@ class DeliveryGoal {
 	method isMet() = delivered >= amount
 	method progressText() = label + ": " + delivered.min(amount) + "/" + amount
 	method reset() { delivered = 0 }
+
+	// Para la info del nivel: la imagen del plato y cuánto falta, en décimos (0 a 10) para la barra
+	method image() = kind.image()
+	method progressTenths() = (delivered.min(amount) * 10).div(amount)
 }
 
 // Es modo libre, es preferible que entienda los mismos mensajes y nos ahorramos tener que definir sus atributos
@@ -29,6 +33,9 @@ class Level {
 	const property goals                      // Lo que hay que cumplir para ganar: TODOS los objetivos
 	const property buildZones = [wholeBoard]  // Dónde puede construir el jugador: Zones (ver board.wlk). Por defecto, todo el tablero
 	const property tutorial = noTutorial      // El que acompaña al nivel (ver tutorial.wlk). Por defecto, ninguno
+
+	// ¿Es un tutorial? (los que se pueden saltear)
+	method hasTutorial() = tutorial != noTutorial
 
 	// Coloca las máquinas que trae el nivel. Con fixedMachines vacío no hace nada.
 	method placeFixedMachines() {
@@ -49,8 +56,11 @@ class Level {
 		goals.forEach({ goal => goal.reset() })
 	}
 
-	// Una línea por objetivo, para la info del nivel. noGoal no tiene texto: no suma línea.
-	method progressLines() = goals.map({ goal => goal.progressText() }).filter({ text => text != "" })
+	// Los objetivos que se muestran en la info del nivel: noGoal no tiene texto, así que no se muestra
+	method shownGoals() = goals.filter({ goal => goal.progressText() != "" })
+
+	// Una línea por objetivo que se muestra
+	method progressLines() = self.shownGoals().map({ goal => goal.progressText() })
 }
 
 class Placement {

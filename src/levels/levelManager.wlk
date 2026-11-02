@@ -11,7 +11,7 @@ import menu.recipeBookMenu.*
 
 object levelManager {
     // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
-    var levels = [tutorialLevel, hotDogTutorialLevel, level1]
+    var levels = [tutorialLevel, hotDogTutorialLevel, level1, level2, level3]
     // Los que ya se ganaron, para saber a cuál volver desde el modo libre (levelToPlay).
     // Se guardan mientras el juego está abierto: al cerrarlo se pierden.
     const completedLevels = []
@@ -133,13 +133,22 @@ object levelManager {
     // Enter: seguir después de una explicación. Sin tutorial no hace nada.
     method continueTutorial() { self._notifyTutorial({ tutorial => tutorial.onContinue() }) }
 
+    // La tecla T o el botón SALTEAR TUTORIAL: da por hechos todos los tutoriales y carga el primer nivel
+    // que toca jugar. Fuera de un tutorial no hace nada.
+    method skipTutorial() {
+        if (currentLevel.hasTutorial()) {
+            levels.filter({ level => level.hasTutorial() && !completedLevels.contains(level) }).forEach({ level => completedLevels.add(level) })
+            self.load(self.levelToPlay())
+        }
+    }
+
     // ¿Deja usar esa herramienta en esa celda? Lo pregunta toolsManager antes de cada click en el tablero
     method allowsTool(tool, pos) = self.tutorial().allowsTool(tool, pos)
 
     // Le avisa al tutorial y muestra su mensaje y sus indicadores, que pueden haber cambiado
     method _notifyTutorial(event) {
         event.apply(self.tutorial())
-        levelInfoMenu.showTutorialMessage(self.tutorial().messageLines())
+        levelInfoMenu.showTutorialMessage(self.tutorial().stepLabel(), self.tutorial().messageLines(), self.tutorial().messageKeys())
         tutorialMarks.show(self.tutorial().targetCells(), self.tutorial().pointedCells())
     }
 }

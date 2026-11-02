@@ -8,7 +8,7 @@
 
 | Tecla | Acción | Quién la hace |
 |---|---|---|
-| Click | Con el libro de recetas abierto, lo que se clickeó en el libro. Si no, el icono del libro lo abre, y el resto usa la herramienta elegida o elige en el menú | `userController.onClick` |
+| Click | Con el libro de recetas abierto, lo que se clickeó en el libro (la cruz lo cierra). Si no, el botón SALTEAR TUTORIAL saltea el tutorial, y el resto usa la herramienta elegida o elige en el menú | `userController.onClick` |
 | Z / X / C / V | Elegir la herramienta place / edit / rotate / delete | `toolsManager.select` |
 | W / A / S / D | Dirección para colocar: arriba / izquierda / abajo / derecha | `toolsManager.currentDirection` |
 | Q / E | Página anterior / siguiente del menú de máquinas | `menuManager` |
@@ -20,6 +20,7 @@
 | 0 | Reiniciar el nivel (borra también lo que se construyó) | `levelManager.restart` |
 | L | Ir al modo libre (todas las máquinas, sin objetivo), o volver de él al nivel que toca jugar. Con la simulación prendida no hace nada | `levelManager.toggleFreePlay` |
 | Enter | En el tutorial, seguir después de una explicación. En los demás niveles no hace nada | `levelManager.continueTutorial` |
+| T | Saltear los tutoriales (también con el botón SALTEAR TUTORIAL de la info del nivel). Fuera de un tutorial no hace nada | `levelManager.skipTutorial` |
 | F | Abrir o cerrar el libro de recetas | `recipeBookMenu.toggle` |
 | Espacio | Lo mismo que la 5 | `levelManager.toggleSimulation` |
 

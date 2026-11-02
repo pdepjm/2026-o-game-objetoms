@@ -33,8 +33,15 @@ assets/
 │       ├── <dir>.gif               (sólo las máquinas con GIF)
 │       └── <dir>_<accion>/         (sólo las máquinas frame a frame)
 │           └── 0.png, 1.png, ...
+├── menu/
+│   ├── font/                       (una imagen por letra, para escribir sin contorno; las genera makeFont.py)
+│   ├── info/                       (los fondos de la info del nivel: cinta, tarjetas, barras y globos; los genera makeLevelInfo.py)
+│   ├── key_<nombre>.png            (200x25: una tecla con su texto, como las del fondo)
+│   ├── menu_controls_base.png      (la pantalla de controles sin los controles)
+│   ├── menu_controls.png           (la pantalla de controles)
+│   └── makeKeyHints.py             (genera las key_*.png y menu_controls.png)
 ├── recipes_book/
-│   ├── icon.png                    (50x50: el icono de la barra)
+│   ├── cover.png                   (800x500: la tapa)
 │   └── recipe_<plato>.png          (800x500: una página por plato)
 └── tools/
     ├── default.png
