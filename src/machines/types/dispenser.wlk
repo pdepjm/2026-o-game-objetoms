@@ -12,7 +12,7 @@ class Dispenser inherits Machine {
 	const productSetting = new ProductSetting(
 		value = potato,
 		kinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon,
-				 pizzaDough, egg, salami, sausage]
+				 pizzaDough, egg, salami, sausage, ham]
 	)
 	const speedSetting = new SpeedSetting(value = 1)
 

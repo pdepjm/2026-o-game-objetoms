@@ -67,6 +67,13 @@ object bun inherits IngredientKind {
 }
 object cutBun inherits IngredientKind {
     override method image() = bunFamily.image("cut")
+    override method initialize() {
+        self.turnsInto(cooking, toastedBun)
+    }
+}
+
+object toastedBun inherits IngredientKind {
+    override method image() = bunFamily.image("cooked")
 }
 // ---------------------------------------------------------------------------------------
 
@@ -159,7 +166,18 @@ object bacon inherits IngredientKind {
 object baconCooked inherits IngredientKind {
     override method image() = baconFamily.image("cooked")
 }
+// ---------------------------------------------------------------------------------------
 
+// -------------------------------- HAM --------------------------------------------
+object ham inherits IngredientKind {
+  override method image() = hamFamily.image("raw")
+  override method initialize(){
+    self.turnsInto(cutting, hamCutted)
+  }
+}
+object hamCutted inherits IngredientKind {
+    override method image() = hamFamily.image("cutted")
+}
 
 // ---------------------------------------------------------------------------------------
 
@@ -197,7 +215,22 @@ object pizzaPepperoni inherits DishKind {
 object salad inherits DishKind {
     override method image() = "food/Dishes/salad/salad.png"
 }
+// ---------------------------------------------------------------------------------------
 
+// -------------------------------- TOMATO SOUP --------------------------------------------
 object tomatoSoup inherits DishKind {
     override method image() = "food/Dishes/tomato-soup/tomato-soup.png"
+}
+
+// ---------------------------------------------------------------------------------------
+
+// -------------------------------- HAM AND CHEESE TOAST --------------------------------------------
+object toast inherits DishKind {
+    override method image() = "food/Dishes/toast/hamAndCheeseToast.png"
+}
+// ---------------------------------------------------------------------------------------
+
+// -------------------------------- CLASSIC BREAKFAST --------------------------------------------
+object breakfast inherits DishKind {
+    override method image() = "food/Dishes/breakfasts/classicBreakfast.png"
 }

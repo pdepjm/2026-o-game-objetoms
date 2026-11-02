@@ -56,3 +56,19 @@ object tomatoSoupRecipe inherits Recipe(result = tomatoSoup) {
         requirements.add(new Requirement(kind = cutTomato, amount = 2))
     }
 }
+
+object toastRecipe inherits Recipe(result = toast) {
+    override method initialize() {
+        requirements.add(new Requirement(kind = toastedBun, amount = 1))
+        requirements.add(new Requirement(kind = hamCutted, amount = 1))
+        requirements.add(new Requirement(kind = cheeseFeta, amount = 1))
+    }
+}
+
+object breakfastRecipe  inherits Recipe (result = breakfast) {
+    override method initialize() {
+        requirements.add(new Requirement(kind = baconCooked, amount = 1))
+        requirements.add(new Requirement(kind = eggFryed, amount = 1))
+
+    }
+}
