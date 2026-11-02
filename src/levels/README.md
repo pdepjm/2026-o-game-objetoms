@@ -215,8 +215,7 @@ El primer nivel. Trae armada la línea de la fila 7 salvo cuatro máquinas (las 
 3. Explica el brazo común fijo de (9, 7); la freidora en (10, 7), donde él deja las papas.
 4. Explica la freidora; el brazo inteligente en (11, 7).
 5. Rotarlo (C) hasta que agarre de la freidora.
-6. Editarlo (X): sacar la papa cortada de la salida "Recto", así espera a que se frían.
-7. Prender la simulación (5) y esperar 2 papas fritas en el platito.
+6. Prender la simulación (5) y esperar 2 papas fritas en el platito. El brazo inteligente sólo agarra ingredientes ya procesados, así que espera a que la papa se fría: no hace falta editarlo.
 
 Para cambiarlo, los tests de `test/tutorialTest.wtest` lo juegan entero ("armado como dice el tutorial, entrega las papas fritas y se gana").
 

@@ -110,8 +110,8 @@ describe "tests de los eventos del tutorial" {
     assert.equals(["simulation true"], recordingTutorial.events())
   }
 
-  test "su mensaje se ve desde la fila 4, una linea debajo de la otra" {
-    assert.equals(["Linea 1"], self.textsInRow(4))
+  test "su mensaje se ve desde la fila 7, una linea debajo de la otra" {
+    assert.equals(["Linea 1"], self.textsInRow(7))
     assert.equals(["Linea 1", "Linea 2"], levelInfoMenu.tutorialMessage())
   }
 
@@ -160,15 +160,6 @@ describe "tests del tutorial de papas fritas" {
   // Dónde están los indicadores de esa imagen (place.gif o look.gif), como [x, y]
   method marksOf(image) = tutorialMarks.marks().filter({ mark => mark.image() == "tutorial/" + image }).map({ mark => [mark.position().x(), mark.position().y()] })
 
-  // Clickea en el panel de edit la opción de ese ingrediente en esa salida del brazo
-  method clickOption(settingName, kind) {
-    const pos = (20 .. 24).flatMap({ x => (0 .. 15).map({ y => game.at(x, y) }) }).find({ pos =>
-      const slot = editMenu.slotAt(pos)
-      return slot != null && slot.setting().name() == settingName && slot.option().value() == kind
-    })
-    toolsManager.onClick(pos)
-  }
-
   // Arma todo lo que pide el tutorial, hasta antes de prender la simulación
   method build() {
     self.placeMachine(0, game.at(6, 7))
@@ -177,8 +168,6 @@ describe "tests del tutorial de papas fritas" {
     self.placeMachine(3, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
-    self.useTool(edit, game.at(11, 7))
-    self.clickOption("Recto", cutPotato)
   }
 
   test "se juegan los dos tutoriales y despues el nivel 1" {
@@ -258,7 +247,7 @@ describe "tests del tutorial de papas fritas" {
     assert.notThat(simulationEngine.running())
   }
 
-  test "el brazo inteligente hay que rotarlo y editarlo" {
+  test "el brazo inteligente hay que rotarlo" {
     self.placeMachine(0, game.at(6, 7))
     self.placeMachine(1, game.at(7, 7))
     self.placeMachine(2, game.at(10, 7))
@@ -266,7 +255,7 @@ describe "tests del tutorial de papas fritas" {
     assert.equals("Un brazo agarra", self.message().first())
     self.useTool(rotate, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
-    assert.equals("Así saca las", self.message().first())
+    assert.equals("¡Listo! Apretá", self.message().first())
   }
 
   test "con todo armado pide prender la simulacion" {
@@ -360,9 +349,9 @@ describe "tests de los tipos de paso" {
 
   test "el brazo inteligente dice por donde sacaria cada ingrediente" {
     const arm = new SmartRoboticArm(direction = left)
-    assert.equals(right, arm.exitSideFor(cutPotato))
+    assert.equals(right, arm.exitSideFor(eggFryed))
     arm.settings().first().value([friedPotato])
-    assert.equals(null, arm.exitSideFor(cutPotato))
+    assert.equals(null, arm.exitSideFor(eggFryed))
     assert.equals(right, arm.exitSideFor(friedPotato))
   }
 }

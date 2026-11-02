@@ -2,6 +2,9 @@
 
 Un libro que el jugador abre para ver cómo se arma cada plato. Se abre con un icono abajo a la derecha del tablero o con la tecla **F**. Mientras está abierto, la simulación queda en pausa. Primero muestra un **índice**; al elegir una receta, la imagen se reemplaza por la **página de esa receta**, del mismo tamaño y forma. Se cierra con la cruz roja de arriba a la derecha o con **F**.
 
+> [!IMPORTANT]
+> **Cómo quedó después de traer `master`:** el código es el de este plan, pero **sin índice**, como el libro que tenía `master`: se abre en la última receta vista y se pasa de una a otra con las **flechas** (izquierda y derecha), no con Q y E. También se abre desde la portada. Son 10 recetas: las 8 dibujadas para este plan, más la tostada y el desayuno, que se pasaron de las páginas de `master` (1250x800) a 800x500. Lo que sigue sobre el índice y Q/E quedó como historia.
+
 > [!TIP]
 > **Cómo usar este archivo**
 > - Al terminar una fase, tacharla en el [estado general](#estado-general) en el mismo commit que la termina.

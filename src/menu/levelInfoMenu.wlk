@@ -9,9 +9,10 @@ import menu.menuText.*
 //   L: volver               ← fila 12: una ayuda (sólo en el modo libre, ver showHint)
 //   OBJETIVO                ← fila 11 (sólo si el nivel tiene objetivos con texto)
 //   Papas Fritas: 2/3       ← filas 10 a 8: una por objetivo (como máximo 3)
-//   ¡Nivel completo!        ← fila 6, sólo al ganar
-//   N: siguiente            ← fila 5
-//   Las papas salen         ← desde la fila 4 hacia abajo: el mensaje del tutorial (ver showTutorialMessage)
+//   Las papas salen         ← desde la fila 7 hacia abajo: el mensaje del tutorial (ver showTutorialMessage)
+//   ¡Nivel completo!        ← fila 4.6, sólo al ganar
+//   [N] SIGUIENTE           ← la tecla para seguir, con el estilo de las teclas del fondo (ver keyHintPosition)
+//   [F] RECETARIO ...       ← debajo, el fondo (background.gif) ya tiene dibujadas otras teclas: no escribir ahí
 //
 // Los textos se centran en la parte azul (x 0 a 4): Wollok dibuja el texto centrado en su celda,
 // así que con column = 1.5 el centro queda en x = 2.
@@ -23,8 +24,11 @@ object levelInfoMenu {
     const hintRow = 12
     const goalTitleRow = 11
     const firstProgressRow = 10
-    const completedRow = 6
-    const firstTutorialRow = 4
+    const completedRow = 4.6
+    const firstTutorialRow = 7
+    // La tecla para seguir (assets/menu/key_*.png, 200x25): justo arriba de la línea punteada que el fondo
+    // tiene sobre la tecla F, y alineada con las teclas del fondo (empieza en el borde izquierdo)
+    const keyHintPosition = game.at(0, 3.7)
     // Las líneas del tutorial van más juntas que una fila, para que se lean como un párrafo
     const tutorialLineHeight = 0.55
     const property tutorialMaxLines = 6
@@ -62,12 +66,15 @@ object levelInfoMenu {
     method showCompleted(hasNext) {
         self.remove(completedTexts)
         completedTexts = if (hasNext)
-            [self.addText("¡Nivel completo!", completedRow), self.addText("N: siguiente", completedRow - 1)]
+            [self.addText("¡Nivel completo!", completedRow), self.addKeyHint("menu/key_next.png", "N: siguiente")]
         else
-            [self.addText("¡Fin del juego!", completedRow), self.addText("0: reiniciar", completedRow - 1)]
+            [self.addText("¡Fin del juego!", completedRow), self.addKeyHint("menu/key_restart.png", "0: reiniciar")]
     }
 
-    // El mensaje del tutorial: borra el anterior y escribe una línea debajo de la otra desde la fila 4
+    // Lo que dice el mensaje de nivel completo, en orden (para los tests)
+    method completedMessage() = completedTexts.map({ visual => visual.text() })
+
+    // El mensaje del tutorial: borra el anterior y escribe una línea debajo de la otra desde la fila 7
     // (como máximo 6). Con [] (lo que devuelve noTutorial) no queda nada.
     method showTutorialMessage(lines) {
         self.remove(tutorialTexts)
@@ -94,6 +101,12 @@ object levelInfoMenu {
         return texts
     }
 
+    method addKeyHint(image, text) {
+        const hint = new KeyHint(image = image, text = text, position = keyHintPosition)
+        game.addVisual(hint)
+        return hint
+    }
+
     method addText(text, row) {
         const label = new MenuText(text = text, position = self.positionOfRow(row))
         game.addVisual(label)
@@ -106,4 +119,12 @@ object levelInfoMenu {
 
     // La posición en pantalla de una fila (las filas son las de la pantalla; la zona empieza en la 1)
     method positionOfRow(row) = menuManager.levelInfoZone().at(column, row - menuManager.levelInfoZone().origin().y())
+}
+
+// Una tecla con lo que hace, dibujada en una imagen con el estilo de las teclas del fondo.
+// text es lo que dice (para los tests): la imagen ya lo tiene escrito.
+class KeyHint {
+    const property image
+    const property text
+    const property position
 }

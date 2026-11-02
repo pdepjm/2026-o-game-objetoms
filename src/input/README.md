@@ -11,7 +11,9 @@
 | Click | Con el libro de recetas abierto, lo que se clickeó en el libro. Si no, el icono del libro lo abre, y el resto usa la herramienta elegida o elige en el menú | `userController.onClick` |
 | Z / X / C / V | Elegir la herramienta place / edit / rotate / delete | `toolsManager.select` |
 | W / A / S / D | Dirección para colocar: arriba / izquierda / abajo / derecha | `toolsManager.currentDirection` |
-| Q / E | Página anterior / siguiente: la del libro de recetas si está abierto, si no la del menú de máquinas | `userController.prevPage` / `nextPage` |
+| Q / E | Página anterior / siguiente del menú de máquinas | `menuManager` |
+| ← / → | Receta anterior / siguiente del libro de recetas (con el libro abierto) | `recipeBookMenu.prevPage` / `nextPage` |
+| M | Volver a la portada | `startMenu.backToCover` |
 | 1 / 2 / 3 | Velocidad de la simulación x1 / x2 / x3 | `simulationEngine.speed` |
 | 5 | Prender / apagar la simulación (con el nivel completo, no hace nada) | `levelManager.toggleSimulation` |
 | N | Pasar al siguiente nivel (sólo después de ganar) | `levelManager.loadNext` |
@@ -23,4 +25,4 @@
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).
 
-**Con el libro de recetas abierto sólo funcionan F, Q y E.** Las demás teclas pasan por `unlessBookOpen`, que no hace nada mientras el libro está abierto: así el juego de atrás no cambia sin que el jugador lo vea.
+**Con el libro de recetas abierto, o en la portada, sólo funcionan F y las flechas** (y en la portada, las teclas de `startMenu`: Enter, I y S). Las demás pasan por `whenPlaying`, que no hace nada en esos casos: así el juego de atrás no cambia sin que el jugador lo vea. Los clicks, igual (`onClick`).

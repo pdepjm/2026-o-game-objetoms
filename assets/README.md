@@ -35,16 +35,14 @@ assets/
 │           └── 0.png, 1.png, ...
 ├── recipes_book/
 │   ├── icon.png                    (50x50: el icono de la barra)
-│   ├── index.png                   (800x500: el índice)
-│   ├── recipe_<plato>.png          (800x500: una página por plato)
-│   └── makeIndex.py                (genera index.png e icon.png)
+│   └── recipe_<plato>.png          (800x500: una página por plato)
 └── tools/
     ├── default.png
     └── <tool>_selected.png
 ```
 
 > [!NOTE]
-> Las páginas del libro de recetas miden **800x500** y lo que se clickea (la cruz, cada plato del índice) tiene que ocupar celdas enteras de 50x50: ver [el plan del libro](../docs/Plan-Libro-Recetas.md#fase-0-las-imágenes).
+> Las páginas del libro de recetas miden **800x500** y la cruz, que se clickea, tiene que ocupar celdas enteras de 50x50: ver [el plan del libro](../docs/Plan-Libro-Recetas.md#fase-0-las-imágenes).
 
 ## Tamaños
 

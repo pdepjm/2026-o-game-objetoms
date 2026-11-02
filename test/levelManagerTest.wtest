@@ -203,8 +203,7 @@ describe "tests de levelInfoMenu" {
     simulationEngine.run()
     self.deliver(friedPotato, 3)
     simulationEngine.step()
-    assert.equals(["¡Fin del juego!"], self.textsAt(6))
-    assert.equals(["0: reiniciar"], self.textsAt(5))
+    assert.equals(["¡Fin del juego!", "0: reiniciar"], levelInfoMenu.completedMessage())
   }
 
   test "al volver a cargar el nivel se borra el mensaje de nivel completo" {
@@ -212,7 +211,7 @@ describe "tests de levelInfoMenu" {
     self.deliver(friedPotato, 3)
     simulationEngine.step()
     levelManager.restart()
-    assert.that(self.textsAt(6).isEmpty())
+    assert.that(levelInfoMenu.completedMessage().isEmpty())
     assert.equals(["Papas Fritas: 0/3"], self.textsAt(10))
   }
 

@@ -76,7 +76,7 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
 
 ## `levelInfoMenu.wlk`
 
-Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14), en la columna del centro (x 2). **No decide nada**: le avisa `levelManager` (ver [`levels/README.md`](../levels/README.md)).
+Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14), centrada en la parte azul (columna 1.5). **No decide nada**: le avisa `levelManager` (ver [`levels/README.md`](../levels/README.md)).
 
 | Fila (y) | Qué muestra |
 |---|---|
@@ -84,14 +84,15 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 | 12 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. Se borra al cargar otro nivel |
 | 11 | `OBJETIVO` (no aparece si el nivel no tiene objetivos con texto, como el modo libre) |
 | 10 a 8 | Una línea por objetivo (`level.progressLines()`): como máximo 3 |
-| 6 y 5 | Al ganar: `¡Nivel completo!` y `N: siguiente`, o `¡Fin del juego!` y `0: reiniciar` si no hay otro nivel |
-| 4 hacia abajo | El mensaje del tutorial (`showTutorialMessage(lineas)`): como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. Vacío en los niveles sin tutorial |
+| 7 hacia abajo | El mensaje del tutorial (`showTutorialMessage(lineas)`): como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. Vacío en los niveles sin tutorial |
+| 4.6 y 3.7 | Al ganar: `¡Nivel completo!` y la tecla N (SIGUIENTE), o `¡Fin del juego!` y la tecla 0 (REINICIAR) si no hay otro nivel. Las teclas son imágenes (`assets/menu/key_next.png` y `key_restart.png`, las genera `makeKeyHints.py`) con el estilo de las teclas del fondo |
+| 3.5 hacia abajo | Nada: el fondo (`background.gif`) tiene dibujadas las teclas F, M, Espacio y 1 2 3 |
 
 | Método | Lo llama | Qué hace |
 |---|---|---|
 | `show(nivel)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
 | `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo las líneas de los objetivos |
-| `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega las filas 6 y 5 |
+| `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega el mensaje y la tecla para seguir (`completedMessage()` devuelve lo que dicen) |
 | `showTutorialMessage(lineas)` | `levelManager`, al cargar un nivel y con cada aviso al tutorial | Reemplaza el mensaje del tutorial (`tutorialMessage()` devuelve las líneas que se ven) |
 
 - **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
@@ -106,27 +107,90 @@ Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeña
 
 ## `recipeBookMenu.wlk`
 
-El libro de recetas: un índice y una página por plato. Se abre con el icono (`bookIcon`, en la celda (20, 0): abajo de todo, en la columna de la izquierda del + de la barra) o con **F**, y se cierra con la cruz o con **F**. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
+El libro de recetas: una página por plato. Se abre con el icono (`bookIcon`, en la celda (20, 0): abajo de todo, en la columna de la izquierda del + de la barra) o con **F**, y se cierra con la cruz o con **F**. **Las flechas (izquierda y derecha) pasan las recetas.** También se puede abrir desde la portada. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
 
-- **Cada página es una imagen entera** de 800x500 (`assets/recipes_book/`), dibujada desde la celda (5, 2): ocupa x 5 a 20 e y 2 a 11. El código no dibuja textos: sólo cambia la imagen y sabe qué celdas se clickean.
-- **Lo clickeable ocupa celdas enteras de la imagen**, porque Wollok avisa los clicks por celda:
-  - la cruz: las 4 celdas de arriba a la derecha (x 19 y 20, y 10 y 11), en todas las páginas;
-  - el índice: un plato por fila (y 8 a 4). Hoja izquierda x 7 a 12 (páginas 1 a 5), derecha x 14 a 18 (6 a 10).
-- **Q y E** pasan las páginas mientras está abierto (si no, las del menú de máquinas). El índice está antes de la primera página: Q en la primera vuelve al índice.
-- Con el libro abierto, **los clicks van al libro y las demás teclas no hacen nada** (ver `userController.unlessBookOpen`).
+- **Cada página es una imagen entera** de 800x500 (`assets/recipes_book/`), dibujada desde la celda (5, 2): ocupa x 5 a 20 e y 2 a 11. El código no dibuja textos: sólo cambia la imagen.
+- **La cruz se clickea**: ocupa las 4 celdas de arriba a la derecha de la imagen (x 19 y 20, y 10 y 11), porque Wollok avisa los clicks por celda. Tiene que estar en el mismo lugar en todas las páginas.
+- Al cerrar y volver a abrir, sigue en la receta en la que estaba.
+- Con el libro abierto, **los clicks van al libro y las demás teclas no hacen nada** (ver `userController.whenPlaying`).
 
 | Método | Qué hace |
 |---|---|
-| `setUp()` | Agrega el icono. Lo llama `main.wpgm` |
-| `open()` / `close()` / `toggle()` | Abre (en el índice) y cierra |
-| `onClick(pos)` | Un click con el libro abierto: la cruz cierra; en el índice, un plato abre su página |
-| `prevPage()` / `nextPage()` | Q y E |
-| `entryAt(pos)` | El número de página del plato del índice en esa celda (`null` si no hay) |
+| `setUp()` | Agrega el icono. Lo llama `startMenu` al empezar a jugar |
+| `open()` / `close()` / `toggle()` | Abre y cierra |
+| `onClick(pos)` | Un click con el libro abierto: la cruz lo cierra |
+| `prevPage()` / `nextPage()` | Las flechas. En la primera y en la última receta, o con el libro cerrado, no hacen nada |
 
 **Agregar un plato:**
 
 1. Su página en `assets/recipes_book/recipe_<plato>.png`, de 800x500, con la cruz en el mismo lugar que las demás.
 2. Una línea en `pages`, en el lugar que le toca (el número que tiene dibujado).
-3. Agregarlo al índice: `assets/recipes_book/makeIndex.py` lo arma con la lista `DISHES` (si el índice se dibuja a mano, en la fila que le toca: ver [el plan](../../docs/Plan-Libro-Recetas.md#el-índice-indexpng)).
-4. Entran hasta 10. Los tests avisan si una receta del juego no tiene página o si hay más de 10.
+3. Un test avisa si una receta del juego no tiene página.
 
+## `startMenu.wlk`
+
+La portada (`startScreen`), las instrucciones (`menuControlsOverlay`, con I) y el fondo del menú. **Enter** empieza a jugar: la primera vez arma el juego (las teclas, los menús, el libro, los platitos y el primer nivel). **M** vuelve a la portada y pausa la simulación; **S** en la portada cierra el juego.
+
+- `isPlaying()`: si se está jugando. En la portada y en las instrucciones, las teclas y los clicks del juego no hacen nada (`userController.whenPlaying`); el libro de recetas sí se puede abrir.
+- Antes de que `main.wpgm` llame a `show()`, se considera que se está jugando: así los tests, que no pasan por la portada, pueden usar las teclas y los clicks.
+
+CÓMO JUGAR
+
+LA HISTORIA
+La IA dominó el mundo y echaron a todos los trabajadores del buffet.
+Los ingenieros tenemos hambre y tenemos que seguir comiendo.
+Es tu tarea automatizar todos los procesos del buffet.
+
+EL OBJETIVO
+El juego tiene distintas tareas. En cada una tenés que preparar una
+comida usando las máquinas, sin que nadie las toque: armás la línea
+de producción, prendés la simulación y mirás cómo trabaja sola.
+
+CÓMO SE ARMA UNA COMIDA
+Los ingredientes salen de un dispenser, viajan por cintas, se procesan
+(cortar, cocinar, freír) y se juntan en el ensamblador, que entrega el
+plato terminado.
+Ejemplo: una hamburguesa necesita pan cortado, lechuga cortada, tomate
+cortado y dos carnes cocidas.
+
+LAS MÁQUINAS
+- Dispenser: crea ingredientes.
+- Cinta: lleva los ingredientes hacia donde apunta.
+- Cortadora: corta los ingredientes.
+- Horno: cocina los ingredientes.
+- Freidora: fríe los ingredientes (próximamente).
+- Ensamblador: junta los ingredientes y entrega el plato.
+
+LOS BRAZOS
+Hay dos tipos de brazo, y elegir bien cuál usar es parte del desafío.
+- Brazo básico: agarra el ingrediente que le llega de un lado y lo
+  entrega del lado contrario.
+- Brazo inteligente: además sabe cuándo está listo un ingrediente. Lo
+  saca del horno justo antes de que se queme. Un brazo básico podría
+  sacarlo crudo.
+
+CONTROLES
+- Mouse: hacé click en el tablero para usar la herramienta elegida,
+  y en el menú de la derecha para elegir una máquina.
+- Z: elegir máquinas y colocarlas.
+- X: modificar una máquina ya colocada.
+- C: rotar una máquina ya colocada.
+- V: eliminar una máquina.
+- W, A, S, D: elegir hacia dónde mira la máquina antes de colocarla.
+- Q y E: cambiar de página en el menú de máquinas.
+- F: abrir y cerrar el libro de recetas (las flechas pasan las recetas).
+- ESPACIO: prender y apagar la simulación.
+- 1, 2 y 3: velocidad de la simulación.
+Si apretás de nuevo la herramienta elegida, la deseleccionás.
+Con la simulación prendida no se puede colocar, borrar ni rotar:
+apagala para seguir construyendo.
+
+LA ENERGÍA
+Cada nivel tiene su propia cantidad de energía, y esa energía se
+consume usando robots. Cuantos más robots uses, más energía gastás:
+pensá bien cuáles hacen falta y cuáles no.
+
+CONSEJOS
+- Construí con la simulación apagada y probala cuando esté lista.
+- Si un ingrediente se queda trabado, revisá hacia dónde apunta cada máquina.
+- Empezá por una línea simple y sumá máquinas de a una.

@@ -1,34 +1,20 @@
 import wollok.game.*
-import menu.menuManager.*
-import menu.recipeBookMenu.*
-import input.userController.*
-import food.foodClasses.*
-import food.foodTypes.*
-import directions.*
+import menu.startMenu.*
 import simulation.simulationEngine.*
-import machines.types.deliverySlot.*
-import levels.levelManager.*
 
 program BuffetAlbertEinstein {
-	game.title("Pepita")
+	game.title("Buffet Albert Einstein")
 	game.height(16)
 	game.width(25)
 	game.cellSize(50)
-
 	game.boardGround("background.gif")
 
 
-	userController.setUp()
-	menuManager.setUp()
-	recipeBookMenu.setUp()
-	deliveryPoints.setUp()
-	// Carga el primer nivel (después de los menús: los usa para mostrar el catálogo y la info)
-	levelManager.start()
+	// La portada. El juego (los menús, los platitos y el primer nivel) se arma al apretar Enter (ver startMenu.start)
+	startMenu.show()
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()
-
-
 
 	game.start()
 }

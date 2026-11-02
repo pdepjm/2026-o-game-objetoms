@@ -61,50 +61,50 @@ describe "tests del SmartRoboticArm" {
   }
 
   test "por defecto deja pasar todo por la recta y nada por los costados" {
-    assert.that(arm.canReceive(new Item(kind = potato)))
-    assert.equals(straightOut, arm.routeFor(new Item(kind = meat)).output())
+    assert.that(arm.canReceive(new Item(kind = friedPotato)))
+    assert.equals(straightOut, arm.routeFor(new Item(kind = cookedMeat)).output())
     assert.that(self.leftFilter().value().isEmpty())
     assert.that(self.rightFilter().value().isEmpty())
   }
 
   test "una salida sin ingredientes no deja salir nada" {
     self.straight().value([])
-    assert.notThat(arm.canReceive(new Item(kind = potato)))
+    assert.notThat(arm.canReceive(new Item(kind = friedPotato)))
   }
 
   test "no toma un item que ninguna salida acepta" {
-    self.straight().value([potato])
-    assert.that(arm.canReceive(new Item(kind = potato)))
-    assert.notThat(arm.canReceive(new Item(kind = tomato)))
+    self.straight().value([friedPotato])
+    assert.that(arm.canReceive(new Item(kind = friedPotato)))
+    assert.notThat(arm.canReceive(new Item(kind = eggFryed)))
   }
 
   test "entrega cada item por la salida cuyo filtro lo acepta" {
-    self.straight().value([potato])
-    self.leftFilter().value([meat])
-    self.rightFilter().value([tomato])
+    self.straight().value([friedPotato])
+    self.leftFilter().value([cookedMeat])
+    self.rightFilter().value([eggFryed])
     simulationEngine.run()
-    const meatItem = self.send(meat)
+    const meatItem = self.send(cookedMeat)
     self.steps(catchFrames + 1)
     assert.equals([meatItem], upSink.received())
-    const tomatoItem = self.send(tomato)
+    const tomatoItem = self.send(eggFryed)
     self.steps(2 * catchFrames + 10)
     assert.equals([tomatoItem], downSink.received())
     assert.that(straightSink.received().isEmpty())
   }
 
   test "una salida puede dejar pasar varios ingredientes" {
-    self.leftFilter().value([meat, tomato])
+    self.leftFilter().value([cookedMeat, eggFryed])
     self.straight().value([])
-    assert.equals(leftOut, arm.routeFor(new Item(kind = meat)).output())
-    assert.equals(leftOut, arm.routeFor(new Item(kind = tomato)).output())
+    assert.equals(leftOut, arm.routeFor(new Item(kind = cookedMeat)).output())
+    assert.equals(leftOut, arm.routeFor(new Item(kind = eggFryed)).output())
   }
 
   test "si dos salidas aceptan el item, gana la primera: recta, izquierda, derecha" {
-    self.leftFilter().value([potato])
-    self.rightFilter().value([potato])
-    assert.equals(straightOut, arm.routeFor(new Item(kind = potato)).output())
+    self.leftFilter().value([friedPotato])
+    self.rightFilter().value([friedPotato])
+    assert.equals(straightOut, arm.routeFor(new Item(kind = friedPotato)).output())
     self.straight().value([])
-    assert.equals(leftOut, arm.routeFor(new Item(kind = potato)).output())
+    assert.equals(leftOut, arm.routeFor(new Item(kind = friedPotato)).output())
   }
 
   test "clickear un ingrediente lo prende, y volver a clickearlo lo apaga" {
@@ -169,10 +169,14 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
   }
 
   test "el brazo comun se lleva el item de la freidora al toque, aunque no este frito" {
+    // el de este describe es el inteligente, que no toma la papa cortada: se cambia por uno común
+    const common = new AutomaticArm(direction = left)
+    board.pop(game.at(10, 6))
+    board.push(game.at(10, 6), common)
     const aFryer = self.fryerAtInput()
     const item = self.put(cutPotato, aFryer)
     5.times({ _ => simulationEngine.step() })
-    assert.equals([item], arm.heldItems())
+    assert.equals([item], common.heldItems())
     assert.equals(cutPotato, item.kind())
     assert.that(aFryer.heldItems().isEmpty())
   }
@@ -196,7 +200,7 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = self.fryerAtInput()
     const item = self.put(cutPotato, aFryer)
     // lo frita y después agota la espera (no hay brazo que lo saque porque el brazo está ocupado)
-    arm.receive(new Item(kind = potato))
+    arm.receive(new Item(kind = friedPotato))
     60.times({ _ => simulationEngine.step() })
     assert.equals(burntPotato, item.kind())
   }

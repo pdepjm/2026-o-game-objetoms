@@ -21,11 +21,10 @@ class ArmRoute {
 class SmartRoboticArm inherits AutomaticArm {
 	// Los ingredientes que se pueden elegir en cada salida (hasta 13 para no salirse de la pantalla)
 	const kinds = [
-		potato, cutPotato, friedPotato, burntPotato,
-		egg, eggFryed,
-		meat, cookedMeat,
-		sausage, sausageCooked,
-		cheese
+		friedPotato, burntPotato,
+		eggFryed,
+		cookedMeat,
+		sausageCooked
 	]
 
 	// En el orden de prioridad: recta, izquierda, derecha

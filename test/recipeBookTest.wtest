@@ -4,7 +4,6 @@ import src.machines.machineManager.*
 import src.machines.types.belt.*
 import src.machines.types.deliverySlot.*
 import src.menu.menuManager.*
-import src.menu.placeMenu.*
 import src.menu.recipeBookMenu.*
 import src.input.userController.*
 import src.simulation.simulationEngine.*
@@ -29,11 +28,9 @@ describe "tests del libro de recetas" {
     menuManager.setUp()
     deliveryPoints.setUp()
     recipeBookMenu.setUp()
+    recipeBookMenu.pageIndex(0)
     levelManager.load(bookTestLevel)
   }
-
-  // La celda del índice de esa página (0 a 4: hoja izquierda, 5 a 9: derecha)
-  method entryCell(index) = game.at(if (index < 5) 7 else 14, 8 - index % 5)
 
   // Una acción agendada que avisa si corrió
   method scheduleFlag() {
@@ -44,10 +41,15 @@ describe "tests del libro de recetas" {
 
   // ABRIR Y CERRAR
 
-  test "el icono abre el libro, en el indice" {
+  test "el icono abre el libro" {
     userController.onClick(recipeBookMenu.iconCell())
     assert.that(recipeBookMenu.isOpen())
-    assert.that(recipeBookMenu.showingIndex())
+  }
+
+  test "arranca en la primera receta" {
+    recipeBookMenu.open()
+    assert.equals(0, recipeBookMenu.pageIndex())
+    assert.equals("recipes_book/recipe_papasFritas.png", recipeBookMenu.image())
   }
 
   test "cualquiera de las 4 celdas de la cruz cierra el libro" {
@@ -58,6 +60,13 @@ describe "tests del libro de recetas" {
     }))
   }
 
+  test "un click fuera de la cruz no cierra el libro ni cambia de receta" {
+    recipeBookMenu.open()
+    userController.onClick(game.at(10, 6))
+    assert.that(recipeBookMenu.isOpen())
+    assert.equals(0, recipeBookMenu.pageIndex())
+  }
+
   test "F abre y cierra el libro" {
     recipeBookMenu.toggle()
     assert.that(recipeBookMenu.isOpen())
@@ -65,68 +74,40 @@ describe "tests del libro de recetas" {
     assert.notThat(recipeBookMenu.isOpen())
   }
 
-  test "al volver a abrir, arranca en el indice" {
+  test "al volver a abrir, sigue en la receta en la que estaba" {
     recipeBookMenu.open()
     recipeBookMenu.showPage(3)
     recipeBookMenu.close()
     recipeBookMenu.open()
-    assert.that(recipeBookMenu.showingIndex())
+    assert.equals(3, recipeBookMenu.pageIndex())
   }
 
-  // EL ÍNDICE
+  // LAS FLECHAS
 
-  test "clickear un plato del indice muestra su pagina" {
+  test "la flecha derecha pasa a la receta siguiente, y la izquierda vuelve" {
     recipeBookMenu.open()
-    userController.onClick(self.entryCell(6))
-    assert.equals(6, recipeBookMenu.pageIndex())
-    assert.equals("recipes_book/recipe_hotDog.png", recipeBookMenu.image())
-  }
-
-  test "la primera fila de cada hoja es el primer plato de esa hoja" {
-    assert.equals(0, recipeBookMenu.entryAt(game.at(7, 8)))
-    assert.equals(0, recipeBookMenu.entryAt(game.at(12, 8)))
-    assert.equals(5, recipeBookMenu.entryAt(game.at(14, 8)))
-    assert.equals(4, recipeBookMenu.entryAt(game.at(7, 4)))
-  }
-
-  test "fuera de las filas de los platos no se elige nada" {
-    assert.equals(null, recipeBookMenu.entryAt(game.at(13, 8)))
-    assert.equals(null, recipeBookMenu.entryAt(game.at(7, 9)))
-    assert.equals(null, recipeBookMenu.entryAt(game.at(7, 3)))
-  }
-
-  test "una fila sin plato no elige nada" {
-    assert.equals(null, recipeBookMenu.entryAt(game.at(14, 5)))
-  }
-
-  test "desde una pagina, clickear donde estaria un plato no cambia de pagina" {
-    recipeBookMenu.open()
-    recipeBookMenu.showPage(2)
-    userController.onClick(self.entryCell(0))
-    assert.equals(2, recipeBookMenu.pageIndex())
-  }
-
-  // Q Y E
-
-  test "E desde el indice va a la primera pagina, y Q desde la primera vuelve al indice" {
-    recipeBookMenu.open()
-    userController.nextPage()
+    recipeBookMenu.nextPage()
+    assert.equals("recipes_book/recipe_burger.png", recipeBookMenu.image())
+    recipeBookMenu.prevPage()
     assert.equals(0, recipeBookMenu.pageIndex())
-    userController.prevPage()
-    assert.that(recipeBookMenu.showingIndex())
   }
 
-  test "E en la ultima pagina no hace nada" {
+  test "la flecha izquierda en la primera receta no hace nada" {
+    recipeBookMenu.open()
+    recipeBookMenu.prevPage()
+    assert.equals(0, recipeBookMenu.pageIndex())
+  }
+
+  test "la flecha derecha en la ultima receta no hace nada" {
     recipeBookMenu.open()
     recipeBookMenu.showPage(recipeBookMenu.pages().size() - 1)
-    userController.nextPage()
+    recipeBookMenu.nextPage()
     assert.equals(recipeBookMenu.pages().size() - 1, recipeBookMenu.pageIndex())
   }
 
-  test "con el libro cerrado, Q y E pasan las paginas del menu de maquinas" {
-    levelManager.loadFreePlay()
-    userController.nextPage()
-    assert.equals(1, placeMenu.currentPage())
+  test "con el libro cerrado, las flechas no hacen nada" {
+    recipeBookMenu.nextPage()
+    assert.equals(0, recipeBookMenu.pageIndex())
   }
 
   // PAUSA
@@ -183,7 +164,7 @@ describe "tests del libro de recetas" {
 
   test "con el libro abierto, las acciones de las teclas no corren" {
     recipeBookMenu.open()
-    userController.unlessBookOpen({ levelManager.toggleSimulation() })
+    userController.whenPlaying({ levelManager.toggleSimulation() })
     assert.notThat(simulationEngine.running())
   }
 
@@ -194,9 +175,6 @@ describe "tests del libro de recetas" {
     assert.that(recipeBook.all().all({ recipe => dishes.contains(recipe.result()) }))
   }
 
-  test "las paginas entran en el indice: como mucho 10" {
-    assert.that(recipeBookMenu.pages().size() <= 10)
-  }
 }
 
 class Flag {

@@ -42,4 +42,7 @@ object baconFamily {
     method image(state) = "food/Ingredients/bacons/bacon_" + state + ".png"
 }
 
+object hamFamily {
+    method image(state) = "food/Ingredients/Ham/ham_" + state + ".png"
+}
 
