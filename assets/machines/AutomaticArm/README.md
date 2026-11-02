@@ -5,47 +5,53 @@ Guía para modificar las imágenes del brazo automático. Es una máquina **fram
 Lo que tiene de distinto:
 
 - Ocupa **3x3 celdas**: sus imágenes del tablero son de **150x150**.
-- **No rota**: ni con la herramienta de rotar ni con W/A/S/D en el menú. Siempre se coloca mirando hacia abajo (`down`).
+- **Rotar mueve su entrada**: la dirección elegida (W/A/S/D) o la herramienta de rotar definen por qué lado recibe. El menú, por ahora, muestra siempre `down_menu.png`.
 - **Sus animaciones van de una dirección a otra**: las carpetas se llaman `<desde>_to_<hasta>_<accion>/`, en vez de `<direccion>_<accion>/`.
 - **Al prender la simulación sigue quieto**: sólo se anima cuando le llega un ingrediente.
 
 ## Cómo funciona en el juego
 
-1. Se coloca mirando hacia abajo (`down_game.png`), sin importar la dirección elegida.
-2. Cuando una máquina vecina (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente desde el lado `S`:
-   1. Si no está mirando hacia `S`, **gira hacia ese lado**: animación `<hacia donde mira>_to_<S>_rotate`.
-   2. **Lo agarra y gira hacia el lado contrario**: animación `<S>_to_<contrario de S>_catch`. El ingrediente viaja con la pinza hasta la celda contraria.
-   3. **Lo entrega a la máquina de la celda contraria** y queda quieto mirando hacia ahí (`<contrario de S>_game.png`).
-3. Mientras tiene un ingrediente no acepta otro. Si la máquina de la celda contraria está llena, espera a que se libere; si no hay ninguna máquina, se queda con el ingrediente.
-4. Al apagar la simulación suelta lo que tenía y vuelve a mirar hacia abajo.
+1. Se coloca mirando hacia su entrada `I` (`<I>_game.png`): el lado de la dirección elegida, que cambia al rotarlo.
+2. Cuando la máquina que está en `I` (por ejemplo, una cinta que apunta hacia el brazo) le entrega un ingrediente. **Es la única entrada: de otro lado no recibe**:
+   1. Si no está mirando hacia `I`, **gira hacia ese lado**: animación `<hacia donde mira>_to_<I>_rotate`.
+   2. **Lo agarra y gira hacia el lado de salida `T`**: animación `<I>_to_<T>_catch`. El ingrediente viaja con la pinza hasta la celda de ese lado.
+   3. **Lo entrega a la máquina de la celda de `T`** y queda quieto mirando hacia ahí (`<T>_game.png`).
 
-Por ejemplo, con una cinta a la izquierda y otra a la derecha:
+   `T` se configura con la herramienta edit, **relativo al recorrido del ingrediente** (entra por `I` y viaja hacia el lado opuesto). Con `I = left`: *Recto* → `right`, *Izquierda* → `up`, *Derecha* → `down`. Es el setting `OutputSideSetting` (ver [`machines/README.md`](../../../src/machines/README.md#configuración-settings)).
+3. **También agarra de una cinta que no le apunta**: si pasa un ingrediente por la cinta de su entrada y el brazo está libre, se lo lleva (`tryGrab`). Si estaba ocupado, el ingrediente sigue su camino; al quedar libre, agarra el que haya esperando.
+4. Mientras tiene un ingrediente no acepta otro. Si la máquina de la celda contraria está llena, espera a que se libere; si no hay ninguna máquina, se queda con el ingrediente.
+5. Al apagar la simulación suelta lo que tenía y vuelve a mirar hacia la entrada.
+
+Por ejemplo, con la salida en *Recto*, una cinta a la izquierda y otra a la derecha:
 
 ```
  [Belt →] [ Brazo ] [Belt →]
 ```
 
-`down_to_left_rotate` → `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
+(entrada `left`) `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
 
 > [!NOTE]
-> Entregar del lado contrario es **momentáneo**, para poder probar el brazo hasta que tenga su lógica definitiva (ver la clase `AutomaticArm` en `src/machines/types/automaticArm.wlk`).
+> `SmartRoboticArm` comparte estas imágenes. Es el mismo brazo con tres salidas, cada una con su filtro de items (ver [`machines/README.md`](../../../src/machines/README.md)).
+
+> [!NOTE]
+> Configurar hacia dónde entrega no se pierde al apagar la simulación: es configuración, no estado (`reset()` sólo vuelve a mirar hacia la entrada).
 
 ### Las celdas alrededor del brazo
 
 El brazo se dibuja sobre 3x3 celdas, pero en el tablero **ocupa sólo la del centro** (la celda donde se hizo click). Por eso:
 
 - Las máquinas que le entregan y reciben ingredientes van en las celdas vecinas, aunque queden debajo de su dibujo.
-- En el código, `position` es la esquina del dibujo (corrida con `offsetX()` y `offsetY()`, que valen `-1`), y `cell()` es la celda del centro. Para cualquier cálculo sobre el tablero se usa `cell()`.
+- En el código, `position` es la esquina del dibujo (corrida con `drawOffsetX()` y `drawOffsetX()`, que valen `-1`), y `cell()` es la celda del centro. Para cualquier cálculo sobre el tablero se usa `cell()`.
 
-Si se cambia el tamaño de las imágenes, hay que cambiar también `offsetX()` y `offsetY()`.
+Si se cambia el tamaño de las imágenes, hay que cambiar también `drawOffsetX()` y `drawOffsetX()`.
 
 ## Qué hay en la carpeta
 
 | Archivo | Tamaño | Para qué se usa |
 |---|---|---|
 | `<dir>_game.png` | 150x150 | El brazo quieto mirando hacia `<dir>`. Se usan los 4: es la pose en la que queda después de entregar |
-| `down_menu.png` | 100x100 | El brazo en el menú de máquinas (siempre éste, porque no rota) |
-| `left_menu.png`, `right_menu.png`, `up_menu.png` | — | **No se usan** (el brazo no rota). Se pueden borrar |
+| `down_menu.png` | 100x100 | El brazo en el menú de máquinas (por ahora siempre éste) |
+| `left_menu.png`, `right_menu.png`, `up_menu.png` | — | **No se usan todavía**: quedan para el menú con rotación |
 | `<desde>_to_<hasta>_rotate/` | 150x150 cada PNG | Girar de `<desde>` a `<hasta>`: **7 frames** (`0.png` a `6.png`) |
 | `<desde>_to_<hasta>_catch/` | 150x150 cada PNG | Agarrar y girar de `<desde>` a `<hasta>`: **28 frames** (`0.png` a `27.png`) |
 
@@ -54,7 +60,7 @@ Si se cambia el tamaño de las imágenes, hay que cambiar también `offsetX()` y
 ### Qué animaciones se usan hoy
 
 - **`_rotate`: las 12.** El brazo puede estar mirando hacia cualquier lado cuando le llega un ingrediente desde cualquier otro.
-- **`_catch`: sólo las 4 entre lados opuestos** (`down_to_up`, `up_to_down`, `left_to_right`, `right_to_left`), porque siempre entrega del lado contrario. Las de 90° (`down_to_left`, etc.) quedan listas para cuando el brazo pueda entregar hacia un costado.
+- **`_catch`: las 12.** Salen del lado de la entrada, que ahora puede ser cualquiera.
 
 ### Para que no se vean saltos
 
@@ -77,9 +83,9 @@ Los GIFs originales ya no están en el repo: **las carpetas de frames son la fue
 - **Editando los PNG de la carpeta** directamente (respetando la cantidad y la numeración: `0.png`, `1.png`, ...).
 - **Desde un GIF nuevo**, con `gifToFrames.py`. Parado en `assets/`:
   ```bash
-  python3 machines/gifToFrames.py machines/AutomaticArm/down_to_up_catch.gif
+  python3 machines/gifToFrames.py machines/AutomaticArm/down_to_up_catch.gif --solo
   ```
-  Genera (o reemplaza) la carpeta con el mismo nombre del GIF, remuestreada a 100 ms por frame para que dure lo mismo que el GIF. Después **borrar el GIF de la carpeta**: el juego no lo usa, pero lo cargaría igual al arrancar.
+  Genera (o reemplaza) la carpeta con el mismo nombre del GIF, remuestreada a 100 ms por frame para que dure lo mismo que el GIF. Usar `--solo`: sin él, el script busca las otras direcciones cambiando sólo la última del nombre (`down_to_right_catch`, `down_to_down_catch`...), que no es como se nombran las del brazo. Después **borrar el GIF de la carpeta**: el juego no lo usa, pero lo cargaría igual al arrancar.
 
 Si cambia la cantidad de frames:
 
@@ -101,7 +107,7 @@ Las imágenes de cada dirección son la misma imagen girada. Girando 90° en sen
 | `down_to_right` | `left_to_down` | `up_to_left` | `right_to_up` |
 
 > [!WARNING]
-> `machines/assetGenerator.py` sirve para los `<dir>_game.png`, pero **no** para las animaciones `_to_`: sólo cambia la última dirección del nombre, así que generaría archivos con el nombre equivocado.
+> `machines/assetRotate.py` sirve para los `<dir>_game.png`, pero **no** para las animaciones `_to_`: sólo cambia la última dirección del nombre, así que generaría archivos con el nombre equivocado.
 
 ## Agregar una animación nueva
 

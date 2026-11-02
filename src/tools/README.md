@@ -24,7 +24,7 @@ Cada herramienta es un objeto que entiende `name()` y `onClick(posición)`:
 | `place` | P | Coloca la máquina elegida en el menú, mirando hacia la dirección actual |
 | `delete` | X | Quita la máquina de esa celda (y los ingredientes que tenía) |
 | `edit` | Z | Todavía nada (muestra el panel de info) |
-| `rotate` | R | Rota la máquina de esa celda (el brazo automático no rota) |
+| `rotate` | R | Rota la máquina de esa celda (en el brazo automático mueve su entrada) |
 
 `name()` se usa para la imagen de la barra (`assets/tools/<name>_selected.png`).
 

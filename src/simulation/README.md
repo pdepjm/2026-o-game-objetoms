@@ -2,9 +2,6 @@
 
 El reloj del juego y las animaciones. Los ingredientes y las recetas están en [`food/`](../food/README.md).
 
-> [!IMPORTANT]
-> Este README describe el engine, ya migrado (fases 1 a 5 y 7 del [plan de implementación](../../docs/plan-contrato-maquinas.md)).
-
 | Archivo | Qué tiene |
 |---|---|
 | `simulationEngine.wlk` | El reloj de la simulación: prender, apagar, velocidad y la agenda de acciones |
@@ -19,10 +16,10 @@ Es el **único reloj del juego**. Wollok Game le manda `tick()` cada 100 ms (`ti
   - **Prendida** (tecla 5): corren los pasos y el tablero queda bloqueado.
 - **`run()`:** prende la simulación y le manda `start()` a cada máquina.
 - **`stop()`:** la apaga, vacía la agenda, borra los ingredientes y le manda `reset()` a cada máquina.
-- **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Como máximo se agenda a 15 pasos (`slotCount - 1`).
+- **La agenda:** las máquinas **no se recorren en cada paso** (con muchas era lo más lento del juego). Quien necesita hacer algo más adelante lo agenda con **`after(pasos, bloque)`**, y cuando llega ese paso el engine ejecuta el bloque. Como máximo se agenda a 63 pasos (`slotCount - 1`).
 - **El bloque dice qué se hace:** `after(5, { self.onArrived(item) })`. Nadie tiene que deducir por qué lo despertaron.
 - **En cada paso (`step()`):** primero ejecuta las acciones agendadas y después avanza las animaciones (`animationEngine.tick()`).
-- **Items:** `addItem` pone un ingrediente en pantalla y lo cuenta; `removeItem` lo saca del tablero (lo usan las máquinas que consumen ingredientes, como el Assembler); `allItems` devuelve todos los que tienen las máquinas encima (`heldItems()` de cada una).
+- **Items:** `addItem` pone un ingrediente en pantalla; `removeItem` lo saca del tablero (lo usan las máquinas que consumen ingredientes, como el Assembler); `allItems` devuelve todos los que tienen las máquinas encima (`heldItems()` de cada una).
 - `stepsFor(milisegundos)`: convierte un tiempo en pasos de simulación.
 
 > [!IMPORTANT]

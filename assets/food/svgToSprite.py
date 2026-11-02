@@ -15,6 +15,7 @@ Uso:
     python3 food/svgToSprite.py food/Ingredients/tomatoes/*.svg
     python3 food/svgToSprite.py food/Dishes/burgers/burger.svg --escala 0.8
     python3 food/svgToSprite.py archivo.svg --navegador "C:/ruta/a/chrome.exe"
+    python3 food/svgToSprite.py food/Ingredients/*/*.svg food/Dishes/*/*.svg              PARA EXPORTAR TODOS LOS SVG A PNG
 """
 
 import argparse
@@ -35,7 +36,7 @@ DEFAULT_SCALE = 0.65
 # Se dibuja más grande y se achica al final, para suavizar los bordes
 SUPERSAMPLE = 4
 
-BROWSER_COMMANDS = ["msedge", "microsoft-edge", "google-chrome", "chrome", "chromium", "chromium-browser"]
+BROWSER_COMMANDS = ["msedge", "microsoft-edge", "google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser"]
 BROWSER_PATHS = [
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
     r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",

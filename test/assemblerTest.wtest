@@ -10,6 +10,7 @@ import src.simulation.simulationEngine.*
 import src.simulation.animationEngine.*
 import src.food.foodClasses.*
 import src.food.foodTypes.*
+import src.food.recipes.*
 
 // Una maquina de prueba para recibir lo que entrega el ensamblador: se le controla si acepta o no
 class Sink inherits Machine {
@@ -79,11 +80,14 @@ describe "tests de Assembler con items puestos a mano" {
   const assembler = new Assembler()
   const sink = new Sink()
   const cellSteps = animationEngine.pasosPorCelda()
+  // lo que tarda en llegar el último ingrediente y armarse el plato
+  const dishSteps = cellSteps + burgerRecipe.assembleTime()
 
   method initialize() {
     toolsManager.currentDirection(right)
+    // el ensamblador ocupa de (10, 6) a (11, 7) y entrega a la derecha, en (12, 6)
     board.push(game.at(10, 6), assembler)
-    board.push(game.at(11, 6), sink)
+    board.push(game.at(12, 6), sink)
   }
 
   method steps(amount) {
@@ -115,7 +119,7 @@ describe "tests de Assembler con items puestos a mano" {
   test "al llegar todos los ingredientes de la receta, entrega el plato" {
     simulationEngine.run()
     self.feedAll(self.allIngredients())
-    self.steps(cellSteps)
+    self.steps(dishSteps)
     assert.equals(1, sink.received().size())
     assert.equals(burger, sink.received().first().kind())
   }
@@ -142,7 +146,7 @@ describe "tests de Assembler con items puestos a mano" {
     const ingredients = self.allIngredients()
     simulationEngine.run()
     self.feedAll(ingredients)
-    self.steps(cellSteps)
+    self.steps(dishSteps)
     assert.notThat(ingredients.any({ ingredient => game.hasVisual(ingredient) }))
     assert.that(assembler.heldItems().isEmpty())
     assert.notThat(ingredients.any({ ingredient => sink.received().contains(ingredient) }))
@@ -152,7 +156,7 @@ describe "tests de Assembler con items puestos a mano" {
     sink.close()
     simulationEngine.run()
     self.feedAll(self.allIngredients())
-    self.steps(cellSteps)
+    self.steps(dishSteps)
     assert.equals(1, assembler.heldItems().size())
     assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
   }
@@ -161,7 +165,7 @@ describe "tests de Assembler con items puestos a mano" {
     sink.close()
     simulationEngine.run()
     self.feedAll(self.allIngredients())
-    self.steps(cellSteps)
+    self.steps(dishSteps)
     assert.that(sink.received().isEmpty())
     sink.open()
     self.steps(1)
@@ -175,7 +179,7 @@ describe "tests de Assembler con items puestos a mano" {
     sink.close()
     simulationEngine.run()
     self.feedAll(self.allIngredients())
-    self.steps(cellSteps)
+    self.steps(dishSteps)
     const dish = assembler.heldItems().first()
     simulationEngine.stop()
     assert.that(assembler.heldItems().isEmpty())
@@ -184,36 +188,42 @@ describe "tests de Assembler con items puestos a mano" {
   }
 }
 
-// El ensamblador tiene tres lados libres para recibir (el cuarto es el de la salida),
-// pero la hamburguesa pide cuatro ingredientes distintos. Por eso el pan y la lechuga
-// comparten una cinta:
+// El ensamblador ocupa 2x2 celdas, de (10, 6) a (11, 7), y entrega a la derecha en (12, 6).
+// El pan y la lechuga comparten una cinta; la carne baja desde arriba y el tomate sube
+// desde abajo, cada uno directo a una celda del ensamblador:
 //
-//           lechuga     carne
-//              ↓          ↓
-//   pan  →  cinta  →  ensamblador  →  sink
-//                         ↑
-//                       tomate
-//
-// La carne baja desde arriba y el tomate sube desde abajo, cada uno directo al ensamblador.
+//                      carne (10, 8)
+//                          ↓
+//                     ┌─────────────┐
+//         lechuga     │             │
+//            ↓        │ ensamblador │
+//   pan  →  cinta  →  │             │  →  sink (12, 6)
+//                     └─────────────┘
+//                          ↑
+//                      tomate (10, 5)
 describe "tests de una cadena que termina en el Assembler" {
 
-  const bunDispenser = new Dispenser(product = { => new Item(kind = cutBun) })
-  const lettuceDispenser = new Dispenser(product = { => new Item(kind = cutLettuce) })
-  const meatDispenser = new Dispenser(product = { => new Item(kind = cookedMeat) })
-  const tomatoDispenser = new Dispenser(product = { => new Item(kind = cutTomato) })
+  const bunDispenser = new Dispenser()
+  const lettuceDispenser = new Dispenser()
+  const meatDispenser = new Dispenser()
+  const tomatoDispenser = new Dispenser()
   const belt = new Belt()
   const assembler = new Assembler()
   const sink = new Sink()
 
   method initialize() {
+    bunDispenser.product(cutBun)
+    lettuceDispenser.product(cutLettuce)
+    meatDispenser.product(cookedMeat)
+    tomatoDispenser.product(cutTomato)
     toolsManager.currentDirection(right)
     board.push(game.at(8, 6), bunDispenser)
     board.push(game.at(9, 6), belt)
     board.push(game.at(10, 6), assembler)
-    board.push(game.at(11, 6), sink)
+    board.push(game.at(12, 6), sink)
     toolsManager.currentDirection(down)
     board.push(game.at(9, 7), lettuceDispenser)
-    board.push(game.at(10, 7), meatDispenser)
+    board.push(game.at(10, 8), meatDispenser)
     toolsManager.currentDirection(up)
     board.push(game.at(10, 5), tomatoDispenser)
   }

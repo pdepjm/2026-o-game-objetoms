@@ -4,7 +4,7 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 
 | Archivo | Qué tiene |
 |---|---|
-| `foodClasses.wlk` | Los procesos (`cutting`, `frying`, `cooking`) y las clases `IngredientKind`, `DishKind` e `Item` |
+| `foodClasses.wlk` | Los procesos (`cutting`, `frying`, `burning`, `cooking`) y las clases `IngredientKind`, `DishKind` e `Item` |
 | `foodPaths.wlk` | Las familias de ingredientes (`potatoFamily`, `meatFamily`...), que arman la ruta de sus imágenes |
 | `foodTypes.wlk` | Los kinds concretos: ingredientes (`potato`, `meat`...) y platos (`burger`) |
 | `recipesClasses.wlk` | Las clases `Requirement` y `Recipe` |
@@ -12,11 +12,12 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 
 ## `foodClasses.wlk`
 
-- **Procesos** (`cutting`, `frying`, `cooking`): objetos vacíos que representan lo que hace cada máquina. Se comparan por identidad.
+- **Procesos** (`cutting`, `frying`, `burning`, `cooking`): objetos vacíos que representan lo que hace cada máquina. Se comparan por identidad. `burning` no lo aplica ninguna máquina a propósito: es lo que le pasa a un item que se queda demasiado en la freidora.
 - `Item`: lo que está en el tablero. Se mueve (`Animado`, de `simulation/animationEngine.wlk`) y delega en su `kind`, que cambia cuando lo procesan. Lo crean el `Dispenser` y las recetas (`prepare()`).
 - **Kinds**: qué es un item en este momento. Hay dos clases, y `Item` no necesita saber cuál tiene:
   - `IngredientKind`: un ingrediente (papa, papa cortada...). Guarda sus transiciones: con qué proceso se convierte en qué. Cada kind concreto las carga en su `initialize()` con `turnsInto(proceso, resultado)`.
   - `DishKind`: un plato final. Ningún proceso se le puede aplicar.
+  - Los dos entienden `accepts(item)`: un kind es también un **filtro de items** que deja pasar a los que son de ese kind. Lo usan los filtros de salida del brazo inteligente (`ItemSetSetting`, en `machines/settings.wlk`).
 
 ### Contrato de un item
 
@@ -38,13 +39,16 @@ Una familia por ingrediente con más de un estado. `image(estado)` arma la ruta 
 
 | Ingrediente | Transiciones |
 |---|---|
-| Papa | `potato` → (`cutting`) → `cutPotato` → (`frying`) → `friedPotato` |
+| Papa | `potato` → (`cutting`) → `cutPotato` → (`frying`) → `friedPotato` → (`burning`) → `burntPotato` |
 | Lechuga | `lettuce` → (`cutting`) → `cutLettuce` |
 | Tomate | `tomato` → (`cutting`) → `cutTomato` |
 | Pan | `bun` → (`cutting`) → `cutBun` |
 | Carne | `meat` → (`cooking`) → `cookedMeat` |
 
 Platos (`DishKind`): `burger`.
+
+> [!NOTE]
+> `burntPotato` usa `potatoFamily.image("burnt")`, pero todavía no existe `assets/food/Ingredients/potatoes/potato_burnt.png`.
 
 ## `recipesClasses.wlk`
 

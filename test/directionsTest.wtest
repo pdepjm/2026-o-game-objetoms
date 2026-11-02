@@ -24,6 +24,13 @@ describe "tests de directions" {
     assert.equals(right, up.next())
   }
 
+  test "previous rota al reves que next: right -> up -> left -> down -> right" {
+    assert.equals(up, right.previous())
+    assert.equals(left, up.previous())
+    assert.equals(down, left.previous())
+    assert.equals(right, down.previous())
+  }
+
   test "name devuelve el nombre correcto de cada direccion" {
     assert.equals("right", right.name())
     assert.equals("down", down.name())

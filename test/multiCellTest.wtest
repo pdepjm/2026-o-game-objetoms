@@ -1,0 +1,178 @@
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.machines.machineManager.*
+import src.machines.types.belt.*
+import src.machines.types.assembler.*
+import src.machines.types.automaticArm.*
+
+// Las celdas del 2x2 de un ensamblador colocado en (10, 5)
+//
+//   y=6  │ (10,6) │ (11,6) │
+//   y=5  │ (10,5) │ (11,5) │
+//          x=10     x=11
+
+describe "tests de las celdas que ocupa una maquina" {
+
+  test "una maquina de 1x1 ocupa solo su celda" {
+    const cells = board.cellsFor(game.at(10, 5), new Belt())
+    assert.equals(1, cells.size())
+    assert.that(cells.contains(game.at(10, 5)))
+  }
+
+  test "una maquina de 2x2 ocupa las 4 celdas desde la de abajo a la izquierda" {
+    const cells = board.cellsFor(game.at(10, 5), new Assembler())
+    assert.equals(4, cells.size())
+    assert.that([game.at(10, 5), game.at(10, 6), game.at(11, 5), game.at(11, 6)].all({ c => cells.contains(c) }))
+  }
+
+  test "el brazo ocupa una sola celda aunque se dibuje en 3x3" {
+    const arm = new AutomaticArm()
+    board.push(game.at(10, 5), arm)
+    assert.equals(game.at(10, 5), arm.cell())
+    assert.notThat(board.isThereAMachine(game.at(9, 4)))
+    assert.notThat(board.isThereAMachine(game.at(11, 6)))
+  }
+}
+
+describe "tests de colocar y quitar una maquina de 2x2" {
+
+  const assembler = new Assembler()
+
+  test "se encuentra desde cualquiera de sus 4 celdas" {
+    board.push(game.at(10, 5), assembler)
+    assert.that([game.at(10, 5), game.at(10, 6), game.at(11, 5), game.at(11, 6)].all({ c => board.machineAt(c) == assembler }))
+  }
+
+  test "no se puede colocar si alguna de sus celdas esta ocupada" {
+    board.push(game.at(11, 6), new Belt())
+    assert.notThat(board.canPlace(game.at(10, 5), assembler))
+    assert.throwsException({ board.push(game.at(10, 5), assembler) })
+    assert.notThat(board.isThereAMachine(game.at(10, 5)))
+  }
+
+  test "no se puede colocar pegada al borde si una parte queda fuera del tablero" {
+    assert.notThat(board.canPlace(game.at(19, 5), assembler))
+    assert.notThat(board.canPlace(game.at(10, 13), assembler))
+    assert.that(board.canPlace(game.at(18, 12), assembler))
+  }
+
+  test "quitarla desde la celda de arriba a la derecha libera las 4" {
+    board.push(game.at(10, 5), assembler)
+    board.pop(game.at(11, 6))
+    assert.notThat([game.at(10, 5), game.at(10, 6), game.at(11, 5), game.at(11, 6)].any({ c => board.isThereAMachine(c) }))
+  }
+
+  test "quitarla no toca a las maquinas vecinas" {
+    const belt = new Belt()
+    board.push(game.at(10, 5), assembler)
+    board.push(game.at(12, 6), belt)
+    board.pop(game.at(10, 5))
+    assert.equals(belt, board.machineAt(game.at(12, 6)))
+  }
+
+  test "rotarla desde cualquier celda la rota y sigue ocupando las mismas celdas" {
+    board.push(game.at(10, 5), assembler)
+    const before = assembler.direction()
+    rotate.onClick(game.at(11, 6))
+    assert.equals(before.next(), assembler.direction())
+    assert.that([game.at(10, 5), game.at(10, 6), game.at(11, 5), game.at(11, 6)].all({ c => board.machineAt(c) == assembler }))
+  }
+}
+
+describe "tests de la herramienta de colocar" {
+
+  test "colocar sobre una celda ocupada no hace nada ni da error" {
+    const belt = new Belt()
+    board.push(game.at(10, 5), belt)
+    toolsManager.select(place)
+    place.onClick(game.at(10, 5))
+    assert.equals(belt, board.machineAt(game.at(10, 5)))
+  }
+
+  test "colocar una de 2x2 pegada al borde no coloca nada ni da error" {
+    machineManager.select({ => new Assembler() })
+    place.onClick(game.at(19, 5))
+    assert.notThat(board.isThereAMachine(game.at(19, 5)))
+  }
+
+  test "colocar una de 2x2 donde entra ocupa sus 4 celdas" {
+    machineManager.select({ => new Assembler() })
+    place.onClick(game.at(10, 5))
+    assert.that([game.at(10, 5), game.at(10, 6), game.at(11, 5), game.at(11, 6)].all({ c => board.isThereAMachine(c) }))
+  }
+}
+
+// Con el ensamblador en (10, 5), la salida es la celda pegada a su borde de adelante:
+//
+//                (10,7) ↑ up
+//           ┌────────┬────────┐
+//           │ (10,6) │ (11,6) │
+//  left ←   ├────────┼────────┤
+//  (9,5)    │ (10,5) │ (11,5) │  → right (12,5)
+//           └────────┴────────┘
+//                (10,4) ↓ down
+describe "tests de la celda de salida" {
+
+  // Coloca un ensamblador mirando hacia `aDirection` y una cinta en `exit`, y devuelve el ensamblador
+  method assemblerFacing(aDirection, exit) {
+    toolsManager.currentDirection(aDirection)
+    const assembler = new Assembler()
+    board.push(game.at(10, 5), assembler)
+    board.push(exit, new Belt())
+    return assembler
+  }
+
+  test "mirando a la derecha entrega a la celda pegada a su borde derecho" {
+    const assembler = self.assemblerFacing(right, game.at(12, 5))
+    assert.equals(board.machineAt(game.at(12, 5)), assembler.nextMachine())
+  }
+
+  test "mirando hacia arriba entrega a la celda pegada a su borde de arriba" {
+    const assembler = self.assemblerFacing(up, game.at(10, 7))
+    assert.equals(board.machineAt(game.at(10, 7)), assembler.nextMachine())
+  }
+
+  test "mirando a la izquierda entrega a la celda pegada a su borde izquierdo" {
+    const assembler = self.assemblerFacing(left, game.at(9, 5))
+    assert.equals(board.machineAt(game.at(9, 5)), assembler.nextMachine())
+  }
+
+  test "mirando hacia abajo entrega a la celda pegada a su borde de abajo" {
+    const assembler = self.assemblerFacing(down, game.at(10, 4))
+    assert.equals(board.machineAt(game.at(10, 4)), assembler.nextMachine())
+  }
+
+  test "en ninguna direccion se entrega a si misma" {
+    [right, up, left, down].forEach({ aDirection =>
+      toolsManager.currentDirection(aDirection)
+      const assembler = new Assembler()
+      board.push(game.at(10, 5), assembler)
+      assert.notThat(assembler.nextMachine() == assembler)
+      board.pop(game.at(10, 5))
+    })
+  }
+
+  test "en una maquina de 1x1 la salida es la celda de al lado, como move" {
+    [right, up, left, down].forEach({ aDirection =>
+      assert.equals(aDirection.move(game.at(10, 5)), aDirection.output(game.at(10, 5), 1, 1))
+    })
+  }
+
+  // outputTarget es la celda; la máquina que está ahí es la que se guarda en next
+  test "outputTarget devuelve la celda de salida y no la maquina" {
+    const assembler = self.assemblerFacing(right, game.at(12, 5))
+    assert.equals(game.at(12, 5), assembler.outputTarget())
+  }
+
+  test "una cinta que apunta a la celda de arriba a la derecha le entrega al ensamblador" {
+    toolsManager.currentDirection(right)
+    board.push(game.at(10, 5), new Assembler())
+    toolsManager.currentDirection(down)
+    const belt = new Belt()
+    board.push(game.at(11, 7), belt)
+    assert.that(belt.nextMachine() == board.machineAt(game.at(11, 6)))
+  }
+}

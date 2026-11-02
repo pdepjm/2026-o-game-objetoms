@@ -51,7 +51,7 @@ describe "tests de board" {
   test "no se puede colocar una maquina donde ya hay otra" {
     const first = new Belt()
     board.push(game.at(10, 5), first)
-    board.push(game.at(10, 5), new Oven())
+    assert.throwsException({ board.push(game.at(10, 5), new Oven()) })
     assert.equals(first, board.machineAt(game.at(10, 5)))
   }
 

@@ -1,16 +1,36 @@
+import src.directions.*
 import machines.machineClasses.*
+import machines.settings.*
 import simulation.simulationEngine.*
 import food.foodClasses.*
 import food.foodTypes.*
 
 // Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
+// Se configura qué ingrediente larga y a qué velocidad (ver settings.wlk).
 class Dispenser inherits Machine {
-	const product = { => new Item(kind = potato) } // item a dispensar, instanciador de clase.
+	// Por defecto papa y velocidad normal. Los ingredientes son los que ofrece el menú.
+	const productSetting = new ProductSetting(
+		value = potato,
+		kinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon,
+				 pizzaDough, egg, salami, sausage, ham]
+	)
+	const speedSetting = new SpeedSetting(value = 1)
 
 	override method name() = "Dispenser"
 
-	// tiempo de simulación entre un dispense y el siguiente
-	method intervalMs() = 1000
+	override method runningImage() = self.gifImage()
+	
+	// El ingrediente que larga
+	method product() = productSetting.value()
+
+	method product(kind) {
+		productSetting.value(kind)
+	}
+
+	override method settings() = [productSetting, speedSetting]
+
+	// tiempo de simulación entre un dispense y el siguiente: 5 segundos a velocidad normal
+	method intervalMs() = 5000 / speedSetting.value()
 
 	// el mismo intervalo, medido en pasos de simulación
 	method intervalSteps() = simulationEngine.stepsFor(self.intervalMs())
@@ -30,10 +50,10 @@ class Dispenser inherits Machine {
 	// (el item recién se hace cuando hay a dónde mandarlo). Si está llena, se anota
 	// para reintentar apenas se libere: no espera al próximo intervalo.
 	method tryDispense() {
-		const target = self.outputTarget()
+		const target = next
 		if (target != null) {
-			const item = product.apply()
-			if (target.canReceive(item)) {
+			const item = new Item(kind = self.product())
+			if (target.canReceiveFrom(self, item)) {
 				item.position(self.position())
 				simulationEngine.addItem(item)
 				inventory.add(item)

@@ -1,18 +1,27 @@
+import src.directions.*
 import machines.machineClasses.*
 import simulation.simulationEngine.*
 import food.recipes.*
+import cellPosition.*
 
 // Ensamblador: junta los ingredientes que pide su receta y entrega el plato armado.
 // Sólo acepta lo que la receta todavía necesita, así que nunca tiene items de más:
 // cuando la receta se puede armar, lo que tiene es justo lo que hace falta y se consume todo.
 class Assembler inherits Machine {
 	// La receta que arma (por ahora fija: sólo existe burgerRecipe)
-	const recipe = burgerRecipe
+	const recipe = breakfastRecipe
 
 	// El plato armado, a la espera de ser entregado. No está en el inventario
 	// (ahí sólo van los ingredientes), por eso se guarda aparte.
 	var dish = null
 	override method name() = "Assembler"
+
+	// Imagenes que va a utilizar para animar
+	override method workImages() = self.actionAnimation("assemble", 22).frames()
+
+	// Ocupa 2x2 celdas, desde la celda donde se colocó (abajo a la izquierda)
+	override method width() = 2
+	override method height() = 2
 
 	// Guarda tantos ingredientes como pide la receta
 	override method capacity() = recipe.totalItems()
@@ -21,11 +30,22 @@ class Assembler inherits Machine {
 	override method canReceive(item) =
 		super(item) && dish == null && recipe.stillNeeds(item, inventory.items())
 
+	// Hay que ver si hay una forma de implementar polymorfismo
+	override method outputTarget() = 
+		if(direction == left || direction == right)
+			super().up(1)
+		else if (direction == down)
+			super().right(1)
+		else super()
+
 	// Cuando el ingrediente llegó: si ya está todo, arma el plato y lo entrega
 	override method onArrived(item) {
+		simulationEngine.removeItem(item)
 		if (recipe.canBeMadeWith(inventory.items())) {
-			self.assemble()
-			self.tryPush()
+			self.animateWork(recipe.assembleTime(), {
+				self.assemble()
+				self.tryPush()
+			})
 		}
 	}
 
@@ -34,10 +54,9 @@ class Assembler inherits Machine {
 		const ingredients = inventory.items().copy()
 		ingredients.forEach({ ingredient =>
 			inventory.release(ingredient)
-			simulationEngine.removeItem(ingredient)
 		})
 		dish = recipe.prepare()
-		dish.position(self.position())
+		dish.position(self.outputTarget())
 		simulationEngine.addItem(dish)
 	}
 

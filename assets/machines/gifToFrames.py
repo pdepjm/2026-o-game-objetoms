@@ -13,13 +13,21 @@ los frames se remuestrean a ese intervalo: la animación dura lo mismo que el GI
 
     down_to_left_catch.gif  ->  down_to_left_catch/0.png, 1.png, ..., 27.png
 
+Con pasar UNA dirección alcanza: si el nombre tiene right/down/left/up, también
+convierte los GIF de las otras direcciones que estén en la misma carpeta.
+No rota nada: esos GIF ya tienen que existir (se generan con assetRotate.py).
+
+    up_assemble.gif  ->  up_assemble/, right_assemble/, down_assemble/, left_assemble/
+
 Uso:
-    python3 gifToFrames.py machines/AutomaticArm/*.gif
+    python3 gifToFrames.py machines/Assembler/up_assemble.gif
     python3 gifToFrames.py animacion.gif --ms 50     # otro intervalo entre frames
+    python3 gifToFrames.py up_assemble.gif --solo    # sólo ese GIF, sin las otras direcciones
 """
 
 import argparse
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -30,6 +38,28 @@ except ImportError:
 
 # Tiene que coincidir con simulationEngine.tickMs
 MS_POR_PASO = 100
+
+# Las mismas direcciones y la misma forma de encontrarlas en el nombre que assetRotate.py
+DIRECCIONES = ["right", "down", "left", "up"]
+PATRON = re.compile(r"(?<![a-z])(right|down|left|up)(?![a-z])", re.IGNORECASE)
+
+
+def con_otras_direcciones(ruta):
+    """El GIF y los de las otras direcciones que existan, cambiando la última dirección del nombre.
+    Si el nombre no tiene dirección, sólo el GIF."""
+    coincidencias = list(PATRON.finditer(ruta.stem))
+    if not coincidencias:
+        return [ruta]
+    m = coincidencias[-1]
+    rutas = []
+    for direccion in DIRECCIONES:
+        nombre = ruta.stem[:m.start()] + direccion + ruta.stem[m.end():]
+        hermano = ruta.with_name(nombre + ruta.suffix)
+        if hermano.is_file():
+            rutas.append(hermano)
+        else:
+            print(f"  - {hermano.name} no existe, lo salteo (se genera con assetRotate.py)")
+    return rutas
 
 
 def frames_con_tiempo(ruta):
@@ -65,13 +95,21 @@ def main():
     parser.add_argument("archivos", nargs="+", type=Path, help="GIFs a convertir")
     parser.add_argument("--ms", type=int, default=MS_POR_PASO,
                         help=f"milisegundos entre frames (por defecto {MS_POR_PASO}, un paso de simulación)")
+    parser.add_argument("--solo", action="store_true",
+                        help="convertir sólo los GIF pasados, sin buscar los de las otras direcciones")
     args = parser.parse_args()
 
+    # Cada GIF se convierte una sola vez, aunque se pasen varias direcciones de la misma animación
+    convertidos = set()
     for ruta in args.archivos:
         if not ruta.is_file() or ruta.suffix.lower() != ".gif":
             print(f"  ✗ {ruta}: no es un GIF")
             continue
-        convertir(ruta, args.ms)
+        for gif in ([ruta] if args.solo else con_otras_direcciones(ruta)):
+            clave = gif.resolve()
+            if clave not in convertidos:
+                convertidos.add(clave)
+                convertir(gif, args.ms)
 
 
 if __name__ == "__main__":
