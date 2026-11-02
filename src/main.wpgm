@@ -1,5 +1,6 @@
 import wollok.game.*
 import menu.menuManager.*
+import menu.recipeBookMenu.*
 import input.userController.*
 import food.foodClasses.*
 import food.foodTypes.*
@@ -19,6 +20,7 @@ program BuffetAlbertEinstein {
 
 	userController.setUp()
 	menuManager.setUp()
+	recipeBookMenu.setUp()
 	deliveryPoints.setUp()
 	// Carga el primer nivel (después de los menús: los usa para mostrar el catálogo y la info)
 	levelManager.start()

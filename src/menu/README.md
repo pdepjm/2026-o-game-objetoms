@@ -103,3 +103,30 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 
 Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial. Las imágenes se generan con `assets/tutorial/makeMarks.py`.
 - `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).
+
+## `recipeBookMenu.wlk`
+
+El libro de recetas: un índice y una página por plato. Se abre con el icono (`bookIcon`, en la celda (20, 0): abajo de todo, en la columna de la izquierda del + de la barra) o con **F**, y se cierra con la cruz o con **F**. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
+
+- **Cada página es una imagen entera** de 800x500 (`assets/recipes_book/`), dibujada desde la celda (5, 2): ocupa x 5 a 20 e y 2 a 11. El código no dibuja textos: sólo cambia la imagen y sabe qué celdas se clickean.
+- **Lo clickeable ocupa celdas enteras de la imagen**, porque Wollok avisa los clicks por celda:
+  - la cruz: las 4 celdas de arriba a la derecha (x 19 y 20, y 10 y 11), en todas las páginas;
+  - el índice: un plato por fila (y 8 a 4). Hoja izquierda x 7 a 12 (páginas 1 a 5), derecha x 14 a 18 (6 a 10).
+- **Q y E** pasan las páginas mientras está abierto (si no, las del menú de máquinas). El índice está antes de la primera página: Q en la primera vuelve al índice.
+- Con el libro abierto, **los clicks van al libro y las demás teclas no hacen nada** (ver `userController.unlessBookOpen`).
+
+| Método | Qué hace |
+|---|---|
+| `setUp()` | Agrega el icono. Lo llama `main.wpgm` |
+| `open()` / `close()` / `toggle()` | Abre (en el índice) y cierra |
+| `onClick(pos)` | Un click con el libro abierto: la cruz cierra; en el índice, un plato abre su página |
+| `prevPage()` / `nextPage()` | Q y E |
+| `entryAt(pos)` | El número de página del plato del índice en esa celda (`null` si no hay) |
+
+**Agregar un plato:**
+
+1. Su página en `assets/recipes_book/recipe_<plato>.png`, de 800x500, con la cruz en el mismo lugar que las demás.
+2. Una línea en `pages`, en el lugar que le toca (el número que tiene dibujado).
+3. Agregarlo al índice: `assets/recipes_book/makeIndex.py` lo arma con la lista `DISHES` (si el índice se dibuja a mano, en la fila que le toca: ver [el plan](../../docs/Plan-Libro-Recetas.md#el-índice-indexpng)).
+4. Entran hasta 10. Los tests avisan si una receta del juego no tiene página o si hay más de 10.
+

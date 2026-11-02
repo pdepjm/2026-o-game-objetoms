@@ -14,6 +14,7 @@ Es el **único reloj del juego**. Wollok Game le manda `tick()` cada 100 ms (`ti
 - **Dos modos:**
   - **Apagada** (modo construcción): no corre ningún paso y se puede editar el tablero.
   - **Prendida** (tecla 5): corren los pasos y el tablero queda bloqueado.
+  - **En pausa** (`pause()` / `resume()`): prendida, pero `tick()` no corre ningún paso. La usa el libro de recetas. **No es lo mismo que apagada**: los items y la agenda quedan como estaban, y al seguir continúa desde ahí. `stop()` y `reset()` sacan la pausa; `step()` no la mira (los tests lo usan para avanzar a mano).
 - **`run()`:** prende la simulación y le manda `start()` a cada máquina.
 - **`stop()`:** la apaga, vacía la agenda, borra los ingredientes y le manda `reset()` a cada máquina.
 - **`reset()`:** vuelve a como arranca el juego: si está prendida la apaga (`stop()`) y pone la velocidad en 1. **No saca las máquinas**: se van del engine cuando el tablero las saca (`board.clear()`, que llama a `pop`). Así el engine nunca se olvida de una máquina que sigue en el tablero.

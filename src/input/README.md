@@ -8,16 +8,19 @@
 
 | Tecla | Acción | Quién la hace |
 |---|---|---|
-| Click | Usar la herramienta elegida, o elegir en el menú | `toolsManager.onClick` |
+| Click | Con el libro de recetas abierto, lo que se clickeó en el libro. Si no, el icono del libro lo abre, y el resto usa la herramienta elegida o elige en el menú | `userController.onClick` |
 | Z / X / C / V | Elegir la herramienta place / edit / rotate / delete | `toolsManager.select` |
 | W / A / S / D | Dirección para colocar: arriba / izquierda / abajo / derecha | `toolsManager.currentDirection` |
-| Q / E | Página anterior / siguiente del menú | `menuManager` |
+| Q / E | Página anterior / siguiente: la del libro de recetas si está abierto, si no la del menú de máquinas | `userController.prevPage` / `nextPage` |
 | 1 / 2 / 3 | Velocidad de la simulación x1 / x2 / x3 | `simulationEngine.speed` |
 | 5 | Prender / apagar la simulación (con el nivel completo, no hace nada) | `levelManager.toggleSimulation` |
 | N | Pasar al siguiente nivel (sólo después de ganar) | `levelManager.loadNext` |
 | 0 | Reiniciar el nivel (borra también lo que se construyó) | `levelManager.restart` |
 | L | Ir al modo libre (todas las máquinas, sin objetivo), o volver de él al nivel que toca jugar. Con la simulación prendida no hace nada | `levelManager.toggleFreePlay` |
 | Enter | En el tutorial, seguir después de una explicación. En los demás niveles no hace nada | `levelManager.continueTutorial` |
+| F | Abrir o cerrar el libro de recetas | `recipeBookMenu.toggle` |
 | Espacio | Lo mismo que la 5 | `levelManager.toggleSimulation` |
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).
+
+**Con el libro de recetas abierto sólo funcionan F, Q y E.** Las demás teclas pasan por `unlessBookOpen`, que no hace nada mientras el libro está abierto: así el juego de atrás no cambia sin que el jugador lo vea.

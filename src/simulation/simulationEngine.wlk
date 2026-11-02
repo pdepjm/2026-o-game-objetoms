@@ -13,6 +13,8 @@
 // - Apagada (modo construcción): no corre ningún paso y se puede editar el tablero.
 // - Prendida: corre la simulación y el tablero queda bloqueado (ver toolsManager).
 //   Por eso las máquinas pueden calcular a su vecina una sola vez, al prender.
+// - En pausa: prendida, pero sin correr pasos (la usa el libro de recetas). No es lo mismo que
+//   apagada: los items y la agenda quedan como estaban, y al seguir continúa desde ahí.
 
 import wollok.game.*
 import simulation.animationEngine.*
@@ -46,6 +48,9 @@ object simulationEngine {
 	// el juego arranca en modo construcción, con la simulación apagada
 	var property running = false
 
+	// prendida pero congelada (ver MODOS arriba)
+	var property paused = false
+
 	// Engancha el engine al reloj de Wollok Game. Se llama una sola vez, desde el main.
 	method start() {
 		game.onTick(tickMs, "simulacion", { self.tick() })
@@ -54,8 +59,13 @@ object simulationEngine {
 	// Lo llama Wollok Game cada tickMs. A velocidad x2 o x3 ejecuta 2 o 3 pasos seguidos,
 	// así el resultado es el mismo que a x1, sólo que llega antes.
 	method tick() {
-		if (running) speed.times({ _ => self.step() })
+		if (running && !paused) speed.times({ _ => self.step() })
 	}
+
+	// Congela la simulación sin borrar nada, y la sigue desde donde estaba.
+	// step() no mira la pausa: los tests lo siguen usando para avanzar a mano.
+	method pause() { paused = true }
+	method resume() { paused = false }
 
 	// Un paso de simulación: se ejecutan las acciones agendadas y avanzan las animaciones.
 	// Los tests llaman a step() directo para avanzar sin depender del tiempo real.
@@ -92,6 +102,7 @@ object simulationEngine {
 
 	method reset(){
 		if(running) self.stop()
+		paused = false
 		speed = 1
 	}
 
@@ -106,6 +117,7 @@ object simulationEngine {
 	// Se vacía la agenda para que nadie se despierte con un item que ya no existe.
 	method stop() {
 		running = false
+		paused = false
 		agenda.forEach({ slot => slot.clear() })
 		animationEngine.reset()
 		self.allItems().forEach({ item =>
