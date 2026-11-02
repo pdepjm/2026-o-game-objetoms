@@ -41,6 +41,7 @@ object simulationEngine {
 
 	// el juego arranca en modo construcción, con la simulación apagada
 	var property running = false
+	var paused = false
 
 	// Engancha el engine al reloj de Wollok Game. Se llama una sola vez, desde el main.
 	method start() {
@@ -50,7 +51,7 @@ object simulationEngine {
 	// Lo llama Wollok Game cada tickMs. A velocidad x2 o x3 ejecuta 2 o 3 pasos seguidos,
 	// así el resultado es el mismo que a x1, sólo que llega antes.
 	method tick() {
-		if (running) speed.times({ _ => self.step() })
+		if (running && !paused) speed.times({ _ => self.step() })
 	}
 
 	// Un paso de simulación: se ejecutan las acciones agendadas y avanzan las animaciones.
@@ -92,6 +93,14 @@ object simulationEngine {
 	method run() {
 		running = true
 		simulatedObjects.forEach({ machine => machine.start() })
+	}
+
+	method pause() {
+		paused = true
+	}
+
+	method resume() {
+		paused = false
 	}
 
 	// Apaga la simulación y limpia el tablero de items, para construir tranquilo.

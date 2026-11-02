@@ -3,6 +3,8 @@
 import wollok.game.*
 import board.*
 import menu.menuManager.*
+import menu.recipeBook.*
+import menu.startMenu.*
 import tools.toolsManager.*
 import tools.userTools.*
 import directions.*
@@ -37,5 +39,13 @@ object userController {
 		keyboard.s().onPressDo({ => toolsManager.currentDirection(down)})
 		keyboard.a().onPressDo({ => toolsManager.currentDirection(left)})
 		keyboard.d().onPressDo({ => toolsManager.currentDirection(right)})
+
+		// RECETARIO
+		keyboard.f().onPressDo({ => recipeBook.toggle() })
+		keyboard.right().onPressDo({ => recipeBook.nextPage() })
+		keyboard.left().onPressDo({ => recipeBook.prevPage() })
+
+		// MENU
+		keyboard.m().onPressDo({ => startMenu.backToCover() })
 	}
 }
