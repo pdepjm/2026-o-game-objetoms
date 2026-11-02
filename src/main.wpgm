@@ -1,6 +1,7 @@
 import wollok.game.*
 import menu.startMenu.*
 import simulation.simulationEngine.*
+import sound.musicManager.*
 
 program BuffetAlbertEinstein {
 	game.title("Buffet Albert Einstein")
@@ -15,6 +16,8 @@ program BuffetAlbertEinstein {
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()
+
+	game.schedule(500, {musicManager.playBackground() })
 
 	game.start()
 }
