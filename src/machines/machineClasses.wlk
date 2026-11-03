@@ -233,6 +233,8 @@ class Machine inherits MachineSprite {
 	// Nace con la dirección seleccionada al momento de colocarla.
 	var direction = toolsManager.currentDirection()
 
+	var property locked = false
+
 	// ----------- DIRECCION -----------
 	override method direction() = direction
 	

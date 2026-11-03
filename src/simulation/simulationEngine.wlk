@@ -13,6 +13,8 @@
 // - Apagada (modo construcción): no corre ningún paso y se puede editar el tablero.
 // - Prendida: corre la simulación y el tablero queda bloqueado (ver toolsManager).
 //   Por eso las máquinas pueden calcular a su vecina una sola vez, al prender.
+// - En pausa: prendida, pero sin correr pasos (la usa el libro de recetas). No es lo mismo que
+//   apagada: los items y la agenda quedan como estaban, y al seguir continúa desde ahí.
 
 import wollok.game.*
 import simulation.animationEngine.*
@@ -21,12 +23,16 @@ object simulationEngine {
 	// todas las máquinas que están en el tablero
 	const simulatedObjects = []
 
-	// Cantidad de casilleros de la agenda. Tiene que ser mayor que la demora
-	// más larga que se agende (hoy, el dispenser: 10 pasos).
+	// Cantidad de casilleros de la agenda. NO es un límite: se puede agendar a cualquier
+	// cantidad de pasos (cada acción recuerda en qué paso vence, ver ScheduledAction).
+	// Sólo conviene que sea mayor que las demoras que se agendan seguido (hoy, la más larga
+	// es la del dispenser en velocidad lenta: 100 pasos, y pasa pocas veces): una acción a
+	// más pasos se saltea una vuelta antes de vencer.
 	const slotCount = 64
 
-	// La agenda es una lista de casilleros que se usa en ronda: las acciones a ejecutar
-	// en el paso p están en el casillero p % slotCount.
+	// La agenda es una lista de casilleros que se usa en ronda: una acción que vence en el
+	// paso p está en el casillero p % slotCount. Así cada paso revisa un solo casillero,
+	// y no todas las acciones pendientes.
 	// Es una lista y no un Dictionary porque el Dictionary es mucho más lento.
 	const agenda = (1 .. slotCount).map({ _ => [] })
 
@@ -41,7 +47,9 @@ object simulationEngine {
 
 	// el juego arranca en modo construcción, con la simulación apagada
 	var property running = false
-	var paused = false
+
+	// prendida pero congelada (ver MODOS arriba)
+	var property paused = false
 
 	// Engancha el engine al reloj de Wollok Game. Se llama una sola vez, desde el main.
 	method start() {
@@ -54,16 +62,22 @@ object simulationEngine {
 		if (running && !paused) speed.times({ _ => self.step() })
 	}
 
+	// Congela la simulación sin borrar nada, y la sigue desde donde estaba.
+	// step() no mira la pausa: los tests lo siguen usando para avanzar a mano.
+	method pause() { paused = true }
+	method resume() { paused = false }
+
 	// Un paso de simulación: se ejecutan las acciones agendadas y avanzan las animaciones.
 	// Los tests llaman a step() directo para avanzar sin depender del tiempo real.
 	method step() {
 		currentStep += 1
 		const slot = agenda.get(currentStep % slotCount)
 		if (!slot.isEmpty()) {
-			// Se copia y se vacía antes de ejecutar, porque una acción puede volver a agendarse
-			const due = slot.copy()
-			slot.clear()
-			due.forEach({ action => action.apply() })
+			// Sólo las que vencen en este paso: las demás son de una vuelta posterior.
+			// Se sacan del casillero antes de ejecutar, porque una acción puede volver a agendarse.
+			const due = slot.filter({ scheduled => scheduled.dueStep() == currentStep })
+			slot.removeAll(due)
+			due.forEach({ scheduled => scheduled.action().apply() })
 		}
 		animationEngine.tick()
 	}
@@ -73,10 +87,8 @@ object simulationEngine {
 	// IMPORTANTE: toda acción agendada revisa el estado antes de actuar. Entre que se
 	// agenda y que se ejecuta pueden pasar cosas (por ejemplo, otra máquina ocupó el lugar).
 	method after(steps, action) {
-		const delay = steps.max(1)
-		if (delay >= slotCount)
-			self.error("No se puede agendar a más de " + (slotCount - 1) + " pasos")
-		agenda.get((currentStep + delay) % slotCount).add(action)
+		const dueStep = currentStep + steps.max(1)
+		agenda.get(dueStep % slotCount).add(new ScheduledAction(dueStep = dueStep, action = action))
 	}
 
 	// Cantidad de pasos de simulación que equivalen a esos milisegundos
@@ -88,6 +100,12 @@ object simulationEngine {
 		console.println("Simulation: " + running)
 	}
 
+	method reset(){
+		if(running) self.stop()
+		paused = false
+		speed = 1
+	}
+
 	// Prende la simulación: cada máquina busca a su vecina y agenda lo que necesite.
 	// Mientras está prendida no se puede editar el tablero (ver toolsManager).
 	method run() {
@@ -95,18 +113,11 @@ object simulationEngine {
 		simulatedObjects.forEach({ machine => machine.start() })
 	}
 
-	method pause() {
-		paused = true
-	}
-
-	method resume() {
-		paused = false
-	}
-
 	// Apaga la simulación y limpia el tablero de items, para construir tranquilo.
 	// Se vacía la agenda para que nadie se despierte con un item que ya no existe.
 	method stop() {
 		running = false
+		paused = false
 		agenda.forEach({ slot => slot.clear() })
 		animationEngine.reset()
 		self.allItems().forEach({ item =>
@@ -143,4 +154,12 @@ object simulationEngine {
 
 	// Cantidad de acciones agendadas (para tests)
 	method pendingActions() = agenda.sum({ slot => slot.size() })
+}
+
+// Una acción de la agenda y el paso en el que vence. Gracias a dueStep se puede agendar a
+// cualquier cantidad de pasos: si es a más de slotCount, la acción espera en su casillero
+// las vueltas que haga falta.
+class ScheduledAction {
+	const property dueStep
+	const property action
 }

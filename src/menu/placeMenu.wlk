@@ -47,6 +47,10 @@ object placeMenu{
         if (visible) self.renderItems()
     }
 
+    method resetPage() {
+        currentPage = 0
+        if (visible) self.renderItems()
+    }
 
     // GETTERS DE POSICIONES DE LOS SLOTS 
     /* 

@@ -155,7 +155,8 @@ describe "tests del panel de edit" {
     assert.equals(2, self.markers().size())
     assert.equals("PRODUCCION", self.texts().find({ t => t.position().y() == 14 }).text())
     assert.equals("Ingrediente", self.texts().find({ t => t.position().y() == 13 }).text())
-    assert.equals("Velocidad", self.texts().find({ t => t.position().y() == 9 }).text())
+    // 13 ingredientes, de a 4 por fila: ocupan las filas 12 a 9
+    assert.equals("Velocidad", self.texts().find({ t => t.position().y() == 8 }).text())
   }
 
   test "la categoria se muestra una sola vez aunque tenga dos settings" {
@@ -178,7 +179,7 @@ describe "tests del panel de edit" {
 
   test "clickear una velocidad se la aplica al dispenser" {
     toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(23, 8)
+    self.clickPanel(23, 7)
     assert.equals(2, dispenser.settings().last().value())
   }
 

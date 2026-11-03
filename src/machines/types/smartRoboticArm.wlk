@@ -1,6 +1,7 @@
 import machines.types.automaticArm.*
 import machines.settings.*
 import food.foodTypes.*
+import food.foodClasses.*
 import directions.*
 
 // Una de las tres salidas del brazo inteligente: hacia dónde va (relativo a la entrada) y qué deja salir
@@ -33,11 +34,11 @@ class SmartRoboticArm inherits AutomaticArm {
 		new ArmRoute(output = rightOut, filter = new ItemSetSetting(outputName = "Der.", columnIndex = 2, kinds = kinds, value = []))
 	]
 
-	override method name() = "SmartRoboticArm"
+	override method name() = "AutomaticArm"
 
-	override method staticImage() = "machines/AutomaticArm-Smart/" + direction.name() + "_game.png"
+	override method staticImage() = "machines/AutomaticArm/" + direction.name() + "_game.png"
 	
-	override method menuImage(aDirection) = "machines/AutomaticArm-Smart/down_menu.png"
+	override method menuImage(aDirection) = "machines/AutomaticArm/down_menu.png"
 
 	override method settings() = routes.map({ route => route.filter() })
 
@@ -45,6 +46,13 @@ class SmartRoboticArm inherits AutomaticArm {
 	method routeFor(item) = routes.findOrDefault({ route => route.accepts(item) }, null)
 
 	override method outputSideFor(item) = self.routeFor(item).output().sideFor(inputSide)
+
+	// El lado por el que saldría un item de ese kind (null si no lo toma). Sirve para preguntarle
+	// cómo está configurado sin saber cómo guarda sus salidas (lo usa el tutorial).
+	method exitSideFor(kind) {
+		const route = self.routeFor(new Item(kind = kind))
+		return if (route == null) null else route.output().sideFor(inputSide)
+	}
 
 	// No toma lo que no tiene por dónde salir
 	override method canReceive(item) = super(item) && self.routeFor(item) != null

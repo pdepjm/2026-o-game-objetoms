@@ -1,0 +1,140 @@
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.machines.machineManager.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.assembler.*
+import src.machines.types.deliverySlot.*
+import src.menu.menuManager.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.food.foodTypes.*
+import src.levels.levelClasses.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+
+// Un nivel sólo para estos tests: se puede construir en dos franjas, x 5 a 8 y x 9 a 10 (pegadas),
+// todo el alto; y trae un Dispenser fijo FUERA de esas zonas, en (15, 7)
+object zonedLevel inherits Level(
+  name = "Zonas",
+  availableMachines = [{ => new Belt() }, { => new Assembler() }],
+  availableRecipes = [],
+  buildZones = [new Zone(minX = 5, maxX = 8, minY = 1, maxY = 13), new Zone(minX = 9, maxX = 10, minY = 1, maxY = 13)],
+  fixedMachines = [new Placement(position = game.at(15, 7), factory = { => new Dispenser(direction = left) })],
+  goals = [noGoal]
+) {}
+
+describe "tests de las zonas donde se puede construir" {
+
+  method useSmallZone() {
+    board.buildZones([new Zone(minX = 5, maxX = 8, minY = 1, maxY = 4)])
+  }
+
+  // Coloca con la herramienta place, como el jugador
+  method place(factory, pos) {
+    machineManager.changeCatalog([factory])
+    toolsManager.select(place)
+    toolsManager.onClick(pos)
+  }
+
+  // Cuántas marcas de celda bloqueada hay en pantalla
+  method marksOnScreen() = board.boardCells().count({ pos => game.getObjectsIn(pos).any({ visual => visual.className().endsWith("BlockedCell") }) })
+
+  test "por defecto se puede construir en todo el tablero, y no hay celdas marcadas" {
+    assert.that(board.boardCells().all({ pos => board.isBuildable(pos) }))
+    assert.equals(0, self.marksOnScreen())
+  }
+
+  test "fuera del tablero no se puede construir" {
+    assert.notThat(board.isBuildable(game.at(4, 5)))
+    assert.notThat(board.isBuildable(game.at(16, 14)))
+  }
+
+  test "con una zona, se puede construir adentro y no afuera" {
+    self.useSmallZone()
+    assert.that(board.isBuildable(game.at(5, 1)))
+    assert.that(board.isBuildable(game.at(8, 4)))
+    assert.notThat(board.isBuildable(game.at(9, 4)))
+    assert.notThat(board.isBuildable(game.at(5, 5)))
+  }
+
+  test "las celdas donde no se puede construir quedan marcadas, una marca por celda" {
+    self.useSmallZone()
+    // el tablero tiene 15 x 13 celdas, y la zona 4 x 4
+    assert.equals(15 * 13 - 4 * 4, self.marksOnScreen())
+    assert.equals(15 * 13 - 4 * 4, board.blockedMarks().size())
+  }
+
+  test "cambiar las zonas reemplaza las marcas, sin dejar las anteriores" {
+    self.useSmallZone()
+    board.buildZones([wholeBoard])
+    assert.equals(0, self.marksOnScreen())
+  }
+
+  test "la herramienta place no coloca fuera de las zonas" {
+    self.useSmallZone()
+    self.place({ => new Belt(direction = right) }, game.at(12, 7))
+    assert.notThat(board.isThereAMachine(game.at(12, 7)))
+  }
+
+  test "la herramienta place coloca dentro de las zonas" {
+    self.useSmallZone()
+    self.place({ => new Belt(direction = right) }, game.at(6, 2))
+    assert.that(board.isThereAMachine(game.at(6, 2)))
+  }
+
+  // El Assembler ocupa 2x2: en (8, 3) llegaría a x 9, fuera de la zona
+  test "una maquina de 2x2 que queda en parte fuera de la zona no se coloca" {
+    self.useSmallZone()
+    self.place({ => new Assembler(direction = right) }, game.at(8, 3))
+    assert.notThat(board.isThereAMachine(game.at(8, 3)))
+  }
+
+  test "una maquina de 2x2 repartida entre dos zonas pegadas si se coloca" {
+    board.buildZones([new Zone(minX = 5, maxX = 8, minY = 1, maxY = 13), new Zone(minX = 9, maxX = 10, minY = 1, maxY = 13)])
+    self.place({ => new Assembler(direction = right) }, game.at(8, 3))
+    assert.that(board.isThereAMachine(game.at(9, 4)))
+  }
+
+  test "board.push (lo que usa el nivel para sus maquinas fijas) no mira las zonas" {
+    self.useSmallZone()
+    board.push(game.at(12, 7), new Belt(direction = right))
+    assert.that(board.isThereAMachine(game.at(12, 7)))
+  }
+}
+
+describe "tests de las zonas de un nivel" {
+
+  method initialize() {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.load(zonedLevel)
+  }
+
+  test "cargar un nivel aplica sus zonas" {
+    assert.that(board.isBuildable(game.at(10, 7)))
+    assert.notThat(board.isBuildable(game.at(11, 7)))
+  }
+
+  test "las maquinas fijas se colocan aunque esten fuera de las zonas" {
+    assert.equals("Dispenser", board.machineAt(game.at(15, 7)).name())
+  }
+
+  test "reiniciar el nivel mantiene sus zonas y no duplica las marcas" {
+    const marksBefore = board.blockedMarks().size()
+    levelManager.restart()
+    assert.equals(marksBefore, board.blockedMarks().size())
+    assert.notThat(board.isBuildable(game.at(11, 7)))
+  }
+
+  test "el modo libre vuelve a dejar construir en todo el tablero" {
+    levelManager.loadFreePlay()
+    assert.that(board.isBuildable(game.at(11, 7)))
+    assert.that(board.blockedMarks().isEmpty())
+  }
+
+  test "un nivel sin buildZones deja construir en todo el tablero" {
+    assert.equals([wholeBoard], freePlay.buildZones())
+  }
+}

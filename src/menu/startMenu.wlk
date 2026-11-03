@@ -1,9 +1,11 @@
 import wollok.game.*
 import input.userController.*
 import menu.menuManager.*
-import menu.recipeBook.*
+import menu.recipeBookMenu.*
 import tools.toolsManager.*
 import simulation.simulationEngine.*
+import machines.types.deliverySlot.*
+import levels.levelManager.*
 import directions.*
 
 // ¡OJO ACÁ! Agregamos "menu/" al principio de la ruta.
@@ -23,8 +25,14 @@ object menuBackground {
 }
 
 object startMenu {
-	var screen = "cover"
+	// Hasta que main.wpgm llama a show(), se está jugando: así los tests, que no pasan por la portada,
+	// pueden usar las teclas y los clicks del juego
+	var screen = "playing"
 	var initialized = false
+
+	// ¿Se está jugando? (y no en la portada ni en las instrucciones). Mientras no, las teclas y los
+	// clicks del juego no hacen nada (ver userController.whenPlaying)
+	method isPlaying() = screen == "playing"
 
 	method show() {
 		screen = "cover"
@@ -35,24 +43,29 @@ object startMenu {
 
 		keyboard.enter().onPressDo({ self.start() })
 		keyboard.i().onPressDo({ self.pressI() })
-		keyboard.f().onPressDo({ self.toggleRecipeBook() })
-		keyboard.right().onPressDo({ if (screen != "playing") recipeBook.nextPage() })
-		keyboard.left().onPressDo({ if (screen != "playing") recipeBook.prevPage() })
+		// El libro de recetas, antes de empezar a jugar. Después lo maneja userController (F y las flechas).
+		keyboard.f().onPressDo({ if (!initialized) recipeBookMenu.toggle() })
+		keyboard.right().onPressDo({ if (!initialized) recipeBookMenu.nextPage() })
+		keyboard.left().onPressDo({ if (!initialized) recipeBookMenu.prevPage() })
 		keyboard.s().onPressDo({ self.pressS() })
 	}
 
 	method start() {
 		if (screen == "cover") {
-			if (recipeBook.isOpen()) recipeBook.close()
+			recipeBookMenu.close()
 			screen = "playing"
 			// Al empezar a jugar, ocultamos TODO el menú (fondo incluido)
 			if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
 			if (game.hasVisual(menuBackground)) game.removeVisual(menuBackground)
 			simulationEngine.resume()
+			// La primera vez se arma el juego: las teclas, los menús, los platitos y el primer
+			// nivel (después de los menús: los usa para mostrar el catálogo y la info)
 			if (!initialized) {
 				initialized = true
 				userController.setUp()
 				menuManager.setUp()
+				deliveryPoints.setUp()
+				levelManager.start()
 			}
 		}
 	}
@@ -66,23 +79,6 @@ object startMenu {
 		if (screen == "cover") game.stop()
 	}
 
-	// Lógica para abrir/cerrar el recetario desde el menú
-	method toggleRecipeBook() {
-		if (screen != "playing") {
-			if (!recipeBook.isOpen()) {
-				// Al abrir, ocultamos la portada o los controles
-				if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
-				if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
-				recipeBook.open()
-			} else {
-				// Al cerrar, volvemos a mostrar lo que estábamos viendo
-				recipeBook.close()
-				if (screen == "cover") game.addVisual(startScreen)
-				if (screen == "instructions") game.addVisual(menuControlsOverlay)
-			}
-		}
-	}
-
 	method openInstructions() {
 		screen = "instructions"
 		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
@@ -90,7 +86,7 @@ object startMenu {
 	}
 
 	method backToCover() {
-		if (recipeBook.isOpen()) recipeBook.close()
+		recipeBookMenu.close()
 		screen = "cover"
 		simulationEngine.pause()
 		if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)

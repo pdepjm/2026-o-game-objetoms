@@ -33,10 +33,23 @@ assets/
 │       ├── <dir>.gif               (sólo las máquinas con GIF)
 │       └── <dir>_<accion>/         (sólo las máquinas frame a frame)
 │           └── 0.png, 1.png, ...
+├── menu/
+│   ├── font/                       (una imagen por letra, para escribir sin contorno; las genera makeFont.py)
+│   ├── info/                       (los fondos de la info del nivel: cinta, tarjetas, barras y globos; los genera makeLevelInfo.py)
+│   ├── key_<nombre>.png            (200x25: una tecla con su texto, como las del fondo)
+│   ├── menu_controls_base.png      (la pantalla de controles sin los controles)
+│   ├── menu_controls.png           (la pantalla de controles)
+│   └── makeKeyHints.py             (genera las key_*.png y menu_controls.png)
+├── recipes_book/
+│   ├── cover.png                   (800x500: la tapa)
+│   └── recipe_<plato>.png          (800x500: una página por plato)
 └── tools/
     ├── default.png
     └── <tool>_selected.png
 ```
+
+> [!NOTE]
+> Las páginas del libro de recetas miden **800x500** y la cruz, que se clickea, tiene que ocupar celdas enteras de 50x50: ver [el plan del libro](../docs/Plan-Libro-Recetas.md#fase-0-las-imágenes).
 
 ## Tamaños
 
@@ -66,7 +79,8 @@ Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la
 | `Fryer` | `machines/Fryer/` |
 | `Dispenser` | `machines/Dispenser/` |
 | `AutomaticArm` | `machines/AutomaticArm/` (caso especial, ver abajo) |
-| `SmartRoboticArm` | usa las imágenes de `machines/AutomaticArm/` (`assetFolder()`) |
+| `DeliverySlot` | Ninguna: no se dibuja, porque los platitos ya están en `background.png` |
+| `SmartRoboticArm` | `machines/SmartRoboticArm/` sólo para el menú (`down_menu.png`). En el tablero usa las de `machines/AutomaticArm/` (`assetFolder()`): sus `_game.png` son de 50x50 y faltan sus animaciones, así que todavía no se usan |
 
 Hay **dos tipos de máquinas**, según cómo se animan. Todas tienen, para cada una de las 4 direcciones (`up`, `down`, `left`, `right`):
 
@@ -79,11 +93,8 @@ Y además, según el tipo:
 
 | Tipo | Animación | Cuándo se anima | Máquinas |
 |---|---|---|---|
-| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida (`Belt`), o sólo mientras procesa un item (`Oven`) | `Belt`, `Oven` |
+| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida (`Belt`), o sólo mientras procesa un item (`Oven`, `Fryer`) | `Belt`, `Oven`, `Fryer` |
 | **Frame a frame** | Una carpeta `<direccion>_<accion>/` con `0.png`, `1.png`, ... por cada acción | Sólo cuando la máquina hace algo (por ejemplo, el dispenser al dispensar). En las que procesan, los frames se estiran o comprimen al tiempo de cada ingrediente | `Dispenser`, `CuttingMachine`, `Assembler`, `AutomaticArm` |
-
-> [!NOTE]
-> `Fryer` todavía no tiene imágenes (no tiene carpeta).
 
 Por ejemplo:
 - una cinta hacia arriba tiene `up_menu.png`, `up_game.png` y `up.gif`;
@@ -193,10 +204,10 @@ food/
 | frito | `fried` |
 | quemado | `burnt` |
 
-Hay imágenes de papa, lechuga, tomate, pan, carne y hamburguesa. Las rutas las arman las familias de `src/food/foodPaths.wlk`.
+Hay imágenes de papa, lechuga, tomate, pan, carne, queso, salame, masa de pizza, huevo, salchicha y panceta; y de platos: hamburguesas (común, con queso y doble), pancho, pizza y ensalada. Las rutas las arman las familias de `src/food/foodPaths.wlk`.
 
 > [!NOTE]
-> Falta `potatoes/potato_burnt.png` (y su `.svg`): la usa `burntPotato`, la papa que se quema en la freidora.
+> Algunas imágenes nuevas no siguen la convención, pero el código ya las busca con esos nombres: guiones medios (`pizza-doughs/pizza-dough_raw.png`, `hot-dog/hot-dog.png`, `double-burger.png`, `pizza-pepperoni.png`) y estados fuera de la tabla (`cutted` en vez de `cut`, `fryed` en vez de `fried`). Si se renombran, hay que cambiar también `foodPaths.wlk` y `foodTypes.wlk`.
 
 ### Tamaño del dibujo
 
@@ -232,5 +243,6 @@ El script necesita Edge, Chrome o Chromium instalado: lo usa sin abrir ventanas 
 |---|---|
 | `background.gif` | fondo del juego (se carga con `game.boardGround`). `background.png` es la versión sin animar |
 | `overlay.png` | marco que marca la máquina elegida en el menú |
+| `blocked_cell.png` | 50x50, semitransparente con rayas: oscurece las celdas del tablero donde el nivel no deja construir |
 | `no_texture.png` | imagen de reemplazo cuando todavía no hay una definitiva |
 | `pepita.png` | imagen provisoria que usaban los ingredientes (ya no la usa el código) |

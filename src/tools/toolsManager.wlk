@@ -3,6 +3,7 @@ import menu.menuManager.*
 import directions.*
 import simulation.simulationEngine.*
 import tools.userTools.*
+import levels.levelManager.*
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete, Edit y Rotate
@@ -19,6 +20,7 @@ object toolsManager{
 		else
 			selectedTool = null
 		menuManager.toolChanged(selectedTool)
+		levelManager.toolSelected(selectedTool)
 	}
 
 	// Direccion con la que se colocan las maquinas nuevas
@@ -34,12 +36,20 @@ object toolsManager{
 	}
 
 	// Metodo principal
-	// Con la simulación prendida no se puede colocar, borrar ni rotar nada
+	// Con la simulación prendida no se puede colocar, borrar ni rotar nada.
+	// El tutorial del nivel puede no dejar usar la herramienta en esa celda.
 	method onClick(pos) {
 		if (board.inBoard(pos)) {
-			if (selectedTool != null && !simulationEngine.running()) selectedTool.onClick(pos)
+			if (selectedTool != null && !simulationEngine.running() && levelManager.allowsTool(selectedTool, pos)) selectedTool.onClick(pos)
 		}
 		else if (menuManager.inInteractiveMenu(pos))
 			menuManager.onClick(pos)
+	}
+
+	method reset() {
+		selectedTool = null
+		currentDirection = right
+		menuManager.toolChanged(null)
+		menuManager.directionChanged()
 	}
 }

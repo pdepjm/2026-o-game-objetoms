@@ -3,6 +3,7 @@ import wollok.game.*
 import src.machines.types.smartRoboticArm.*
 import src.machines.types.fryer.*
 import src.machines.types.belt.*
+import src.machines.types.automaticArm.*
 import src.machines.settings.*
 import src.directions.*
 import src.tools.toolsManager.*
@@ -60,50 +61,50 @@ describe "tests del SmartRoboticArm" {
   }
 
   test "por defecto deja pasar todo por la recta y nada por los costados" {
-    assert.that(arm.canReceive(new Item(kind = potato)))
-    assert.equals(straightOut, arm.routeFor(new Item(kind = meat)).output())
+    assert.that(arm.canReceive(new Item(kind = friedPotato)))
+    assert.equals(straightOut, arm.routeFor(new Item(kind = cookedMeat)).output())
     assert.that(self.leftFilter().value().isEmpty())
     assert.that(self.rightFilter().value().isEmpty())
   }
 
   test "una salida sin ingredientes no deja salir nada" {
     self.straight().value([])
-    assert.notThat(arm.canReceive(new Item(kind = potato)))
+    assert.notThat(arm.canReceive(new Item(kind = friedPotato)))
   }
 
   test "no toma un item que ninguna salida acepta" {
-    self.straight().value([potato])
-    assert.that(arm.canReceive(new Item(kind = potato)))
-    assert.notThat(arm.canReceive(new Item(kind = tomato)))
+    self.straight().value([friedPotato])
+    assert.that(arm.canReceive(new Item(kind = friedPotato)))
+    assert.notThat(arm.canReceive(new Item(kind = eggFryed)))
   }
 
   test "entrega cada item por la salida cuyo filtro lo acepta" {
-    self.straight().value([potato])
-    self.leftFilter().value([meat])
-    self.rightFilter().value([tomato])
+    self.straight().value([friedPotato])
+    self.leftFilter().value([cookedMeat])
+    self.rightFilter().value([eggFryed])
     simulationEngine.run()
-    const meatItem = self.send(meat)
+    const meatItem = self.send(cookedMeat)
     self.steps(catchFrames + 1)
     assert.equals([meatItem], upSink.received())
-    const tomatoItem = self.send(tomato)
+    const tomatoItem = self.send(eggFryed)
     self.steps(2 * catchFrames + 10)
     assert.equals([tomatoItem], downSink.received())
     assert.that(straightSink.received().isEmpty())
   }
 
   test "una salida puede dejar pasar varios ingredientes" {
-    self.leftFilter().value([meat, tomato])
+    self.leftFilter().value([cookedMeat, eggFryed])
     self.straight().value([])
-    assert.equals(leftOut, arm.routeFor(new Item(kind = meat)).output())
-    assert.equals(leftOut, arm.routeFor(new Item(kind = tomato)).output())
+    assert.equals(leftOut, arm.routeFor(new Item(kind = cookedMeat)).output())
+    assert.equals(leftOut, arm.routeFor(new Item(kind = eggFryed)).output())
   }
 
   test "si dos salidas aceptan el item, gana la primera: recta, izquierda, derecha" {
-    self.leftFilter().value([potato])
-    self.rightFilter().value([potato])
-    assert.equals(straightOut, arm.routeFor(new Item(kind = potato)).output())
+    self.leftFilter().value([friedPotato])
+    self.rightFilter().value([friedPotato])
+    assert.equals(straightOut, arm.routeFor(new Item(kind = friedPotato)).output())
     self.straight().value([])
-    assert.equals(leftOut, arm.routeFor(new Item(kind = potato)).output())
+    assert.equals(leftOut, arm.routeFor(new Item(kind = friedPotato)).output())
   }
 
   test "clickear un ingrediente lo prende, y volver a clickearlo lo apaga" {
@@ -168,10 +169,14 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
   }
 
   test "el brazo comun se lleva el item de la freidora al toque, aunque no este frito" {
+    // el de este describe es el inteligente, que no toma la papa cortada: se cambia por uno común
+    const common = new AutomaticArm(direction = left)
+    board.pop(game.at(10, 6))
+    board.push(game.at(10, 6), common)
     const aFryer = self.fryerAtInput()
     const item = self.put(cutPotato, aFryer)
     5.times({ _ => simulationEngine.step() })
-    assert.equals([item], arm.heldItems())
+    assert.equals([item], common.heldItems())
     assert.equals(cutPotato, item.kind())
     assert.that(aFryer.heldItems().isEmpty())
   }
@@ -195,7 +200,7 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = self.fryerAtInput()
     const item = self.put(cutPotato, aFryer)
     // lo frita y después agota la espera (no hay brazo que lo saque porque el brazo está ocupado)
-    arm.receive(new Item(kind = potato))
+    arm.receive(new Item(kind = friedPotato))
     60.times({ _ => simulationEngine.step() })
     assert.equals(burntPotato, item.kind())
   }
@@ -218,5 +223,41 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = new Fryer()
     board.push(game.at(9, 6), aFryer)
     assert.equals(arm, aFryer.nextMachine())
+  }
+}
+
+// Sacar las papas de la freidora: el brazo común se las lleva apenas entran, sin freír; el inteligente,
+// con su salida filtrando papas fritas, espera a que se frían. Por eso el tutorial 1 pide el brazo inteligente.
+describe "tests de sacar papas fritas de la freidora" {
+
+  const fryer = new Fryer(direction = right)
+
+  // Coloca la freidora en (10, 5), el brazo a su derecha recibiendo desde ella, y una cinta de salida.
+  // Le da una papa cortada a la freidora y devuelve qué era la papa cuando salió de ahí (null si nunca salió).
+  method kindTakenOutBy(arm) {
+    board.push(game.at(10, 5), fryer)
+    board.push(game.at(11, 5), arm)
+    board.push(game.at(12, 5), new Belt(direction = right))
+    simulationEngine.run()
+    const item = new Item(kind = cutPotato)
+    item.position(fryer.position())
+    simulationEngine.addItem(item)
+    fryer.receive(item)
+    var kindWhenTaken = null
+    (1..200).forEach({ _ =>
+      simulationEngine.step()
+      if (kindWhenTaken == null && !fryer.heldItems().contains(item)) kindWhenTaken = item.kind()
+    })
+    return kindWhenTaken
+  }
+
+  test "el brazo comun saca la papa de la freidora antes de que se fria" {
+    assert.equals(cutPotato, self.kindTakenOutBy(new AutomaticArm(direction = left)))
+  }
+
+  test "el brazo inteligente que filtra papas fritas espera a que se fria para sacarla" {
+    const arm = new SmartRoboticArm(direction = left)
+    arm.settings().find({ setting => setting.name() == "Recto" }).value([friedPotato])
+    assert.equals(friedPotato, self.kindTakenOutBy(arm))
   }
 }

@@ -1,0 +1,171 @@
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.machines.types.belt.*
+import src.machines.types.automaticArm.*
+import src.machines.types.deliverySlot.*
+import src.simulation.simulationEngine.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.levels.levelClasses.*
+
+// Los platitos del fondo, en (16, 14) y (17, 14): justo arriba del tablero (que llega hasta y 13)
+describe "tests de los puntos de entrega" {
+
+  method initialize() {
+    deliveryPoints.setUp()
+  }
+
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+
+  // Avanza de a un paso hasta que se cumpla la condicion (con un tope de 200 pasos)
+  method stepsUntil(condition) {
+    (1..200).forEach({ _ => if (!condition.apply()) simulationEngine.step() })
+  }
+
+  // Le entrega un item a una maquina, como haria la de atras
+  method feed(machine, item) {
+    item.position(machine.position())
+    simulationEngine.addItem(item)
+    machine.receive(item)
+  }
+
+  // Una cinta en (16, 13) que apunta al platito de (16, 14), con la simulacion prendida
+  method beltToSlot() {
+    const belt = new Belt(direction = up)
+    board.push(game.at(16, 13), belt)
+    simulationEngine.run()
+    return belt
+  }
+
+  test "el board encuentra los platitos fuera del tablero" {
+    assert.that(board.machineAt(game.at(16, 14)) != null)
+    assert.that(board.machineAt(game.at(17, 14)) != null)
+    assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
+  }
+
+  test "fuera del tablero, donde no hay platito, sigue sin haber maquina" {
+    assert.equals(null, board.machineAt(game.at(15, 14)))
+  }
+
+  test "una cinta que apunta al platito le entrega a el" {
+    const belt = self.beltToSlot()
+    assert.equals(board.machineAt(game.at(16, 14)), belt.nextMachine())
+  }
+
+  test "lo que llega al platito desaparece del juego" {
+    const belt = self.beltToSlot()
+    const item = new Item(kind = cutPotato)
+    self.feed(belt, item)
+    self.stepsUntil({ !game.hasVisual(item) })
+    assert.notThat(game.hasVisual(item))
+    assert.that(belt.heldItems().isEmpty())
+    assert.that(board.machineAt(game.at(16, 14)).heldItems().isEmpty())
+  }
+
+  test "el platito recibe un item detras de otro" {
+    const belt = self.beltToSlot()
+    const first = new Item(kind = cutPotato)
+    const second = new Item(kind = cutPotato)
+    self.feed(belt, first)
+    self.stepsUntil({ !game.hasVisual(first) })
+    self.feed(belt, second)
+    self.stepsUntil({ !game.hasVisual(second) })
+    assert.notThat(game.hasVisual(second))
+  }
+
+  // El brazo en (17, 13) recibe desde abajo (una cinta en (17, 12)) y entrega recto, hacia arriba
+  test "un brazo cuya salida da al platito tambien le entrega" {
+    const feeder = new Belt(direction = up)
+    const arm = new AutomaticArm(direction = down)
+    board.push(game.at(17, 12), feeder)
+    board.push(game.at(17, 13), arm)
+    simulationEngine.run()
+    const item = new Item(kind = cutPotato)
+    self.feed(feeder, item)
+    self.stepsUntil({ !game.hasVisual(item) })
+    assert.notThat(game.hasVisual(item))
+    assert.that(arm.heldItems().isEmpty())
+  }
+
+  test "no se puede colocar una maquina en un platito" {
+    assert.notThat(board.canPlace(game.at(16, 14), new Belt()))
+    assert.notThat(board.canPlace(game.at(17, 14), new Belt()))
+  }
+
+  test "clear no saca los platitos" {
+    board.push(game.at(16, 13), new Belt(direction = up))
+    board.clear()
+    assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
+    assert.equals("DeliverySlot", board.machineAt(game.at(17, 14)).name())
+  }
+
+  // Por esto los platitos se registran en el simulationEngine: si no, el plato quedaria dibujado
+  // y el platito lleno para siempre
+  test "apagar la simulacion con un plato viajando al platito lo borra y deja el platito libre" {
+    const belt = self.beltToSlot()
+    const slot = board.machineAt(game.at(16, 14))
+    const item = new Item(kind = cutPotato)
+    self.feed(belt, item)
+    self.stepsUntil({ !slot.heldItems().isEmpty() })
+    assert.that(slot.heldItems().contains(item))
+    simulationEngine.stop()
+    assert.notThat(game.hasVisual(item))
+    assert.that(slot.heldItems().isEmpty())
+    assert.that(slot.canReceive(new Item(kind = cutPotato)))
+  }
+}
+
+describe "tests de los objetivos" {
+
+  const goal = new DeliveryGoal(kind = cutPotato, amount = 3, label = "Papas cortadas")
+
+  method deliver(kind, amount) {
+    amount.times({ _ => goal.delivered(new Item(kind = kind)) })
+  }
+
+  test "un objetivo nuevo no esta cumplido y arranca en cero" {
+    assert.notThat(goal.isMet())
+    assert.equals("Papas cortadas: 0/3", goal.progressText())
+  }
+
+  test "entregar lo que pide suma al progreso" {
+    self.deliver(cutPotato, 2)
+    assert.notThat(goal.isMet())
+    assert.equals("Papas cortadas: 2/3", goal.progressText())
+  }
+
+  test "entregar todo lo que pide lo cumple" {
+    self.deliver(cutPotato, 3)
+    assert.that(goal.isMet())
+  }
+
+  test "entregar otra cosa no suma" {
+    self.deliver(potato, 3)
+    self.deliver(friedPotato, 3)
+    assert.notThat(goal.isMet())
+    assert.equals("Papas cortadas: 0/3", goal.progressText())
+  }
+
+  test "el progreso no pasa de lo que pide aunque se entregue de mas" {
+    self.deliver(cutPotato, 5)
+    assert.that(goal.isMet())
+    assert.equals("Papas cortadas: 3/3", goal.progressText())
+  }
+
+  test "reset vuelve el progreso a cero" {
+    self.deliver(cutPotato, 3)
+    goal.reset()
+    assert.notThat(goal.isMet())
+    assert.equals("Papas cortadas: 0/3", goal.progressText())
+  }
+
+  test "noGoal nunca se cumple, no muestra nada y acepta entregas sin fallar" {
+    noGoal.delivered(new Item(kind = cutPotato))
+    noGoal.reset()
+    assert.notThat(noGoal.isMet())
+    assert.equals("", noGoal.progressText())
+  }
+}

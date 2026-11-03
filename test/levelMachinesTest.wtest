@@ -1,0 +1,211 @@
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.machines.machineManager.*
+import src.machines.settings.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.assembler.*
+import src.machines.types.deliverySlot.*
+import src.menu.menuManager.*
+import src.simulation.simulationEngine.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.food.recipes.*
+import src.levels.levelClasses.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+
+// Fase 4 del plan de niveles: máquinas fijas y bloqueadas, máquinas configuradas por el nivel
+// y recetas por nivel.
+
+// Un nivel sólo para los tests de recetas: ofrece un Assembler y sólo la ensalada
+object saladLevel inherits Level(
+  name = "Ensaladas",
+  availableMachines = [{ => new Assembler() }, { => new Belt() }],
+  availableRecipes = [saladRecipe],
+  goals = [new DeliveryGoal(kind = salad, amount = 2, label = "Ensaladas")]
+) {}
+
+// Un nivel sólo para los tests de máquinas fijas: un Dispenser bloqueado en (5, 7) que ofrece tres ingredientes
+object fixedDispenserLevel inherits Level(
+  name = "Dispenser fijo",
+  availableMachines = [{ => new Belt() }],
+  availableRecipes = [],
+  goals = [new DeliveryGoal(kind = friedPotato, amount = 2, label = "Papas Fritas")],
+  fixedMachines = [new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction = right, availableKinds = [potato, lettuce, tomato]) })]
+) {}
+
+describe "tests de maquinas bloqueadas" {
+
+  // Un Dispenser bloqueado en (8, 8), como lo coloca un nivel
+  method placeLockedDispenser() {
+    const dispenser = new Placement(position = game.at(8, 8), factory = { => new Dispenser(direction = right) }).create()
+    board.push(game.at(8, 8), dispenser)
+    return dispenser
+  }
+
+  method useTool(tool, pos) {
+    toolsManager.select(tool)
+    toolsManager.onClick(pos)
+  }
+
+  test "una maquina creada con Placement queda bloqueada" {
+    assert.that(self.placeLockedDispenser().locked())
+  }
+
+  test "un Placement con locked = false crea una maquina que no esta bloqueada" {
+    const placement = new Placement(position = game.at(8, 8), factory = { => new Belt() }, locked = false)
+    assert.notThat(placement.create().locked())
+  }
+
+  test "una maquina nueva no esta bloqueada" {
+    assert.notThat(new Belt().locked())
+  }
+
+  test "la herramienta delete no borra una maquina bloqueada" {
+    self.placeLockedDispenser()
+    self.useTool(delete, game.at(8, 8))
+    assert.that(board.isThereAMachine(game.at(8, 8)))
+  }
+
+  test "la herramienta delete si borra una maquina sin bloquear" {
+    board.push(game.at(8, 8), new Belt(direction = right))
+    self.useTool(delete, game.at(8, 8))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+  }
+
+  test "la herramienta rotate no rota una maquina bloqueada" {
+    const dispenser = self.placeLockedDispenser()
+    self.useTool(rotate, game.at(8, 8))
+    assert.equals(right, dispenser.direction())
+  }
+
+  test "la herramienta edit si muestra los settings de una maquina bloqueada" {
+    menuManager.setUp()
+    self.placeLockedDispenser()
+    self.useTool(edit, game.at(8, 8))
+    const panel = (21..24).flatMap({ x => (0..14).flatMap({ y => game.getObjectsIn(game.at(x, y)) }) })
+    assert.notThat(panel.isEmpty())
+  }
+
+  // El bloqueo es para el jugador: el juego tiene que poder sacarla al reiniciar el nivel
+  test "board.clear tambien saca las maquinas bloqueadas" {
+    self.placeLockedDispenser()
+    board.clear()
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+  }
+}
+
+describe "tests de un nivel con un dispenser fijo" {
+
+  method initialize() {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.load(fixedDispenserLevel)
+  }
+
+  method fixedDispenser() = board.machineAt(game.at(5, 7))
+
+  test "cargar el nivel coloca su dispenser fijo, bloqueado" {
+    assert.equals("Dispenser", self.fixedDispenser().name())
+    assert.that(self.fixedDispenser().locked())
+  }
+
+  test "el dispenser fijo ofrece solo los ingredientes que le dio el nivel" {
+    const offered = self.fixedDispenser().settings().first().options().map({ option => option.value() })
+    assert.equals([potato, lettuce, tomato], offered)
+  }
+
+  // Antes el bloqueo estaba en board.pop: clear no sacaba el dispenser y volver a colocarlo fallaba
+  test "reiniciar el nivel no falla y deja un solo dispenser fijo" {
+    levelManager.restart()
+    assert.equals(1, board.machines().size())
+    assert.that(self.fixedDispenser().locked())
+  }
+
+  test "pasar al modo libre saca el dispenser fijo" {
+    levelManager.loadFreePlay()
+    assert.that(board.machines().isEmpty())
+  }
+
+  test "una maquina creada con direccion la respeta, aunque la elegida en el menu sea otra" {
+    toolsManager.currentDirection(right)
+    assert.equals(up, new Dispenser(direction = up).direction())
+  }
+
+  test "un dispenser sin availableKinds ofrece todos los ingredientes de siempre" {
+    const offered = new Dispenser().settings().first().options().map({ option => option.value() })
+    assert.that(offered.contains(potato))
+    assert.that(offered.size() > 3)
+  }
+}
+
+describe "tests de recetas por nivel" {
+
+  const assembler = new Assembler(direction = right)
+
+  method recipeSetting(anAssembler) = anAssembler.settings().first()
+
+  method offered(anAssembler) = self.recipeSetting(anAssembler).options().map({ option => option.value() })
+
+  method placeAssembler() {
+    board.push(game.at(10, 6), assembler)
+  }
+
+  test "changeAvailable cambia las recetas disponibles, pero no todas las del juego" {
+    const allBefore = recipeBook.all()
+    recipeBook.changeAvailable([saladRecipe])
+    assert.equals([saladRecipe], recipeBook.available())
+    assert.equals(allBefore, recipeBook.all())
+  }
+
+  test "el setting de receta ofrece las disponibles, cada una con la imagen de su plato" {
+    recipeBook.changeAvailable([saladRecipe, burgerRecipe])
+    const options = new Assembler().settings().first().options()
+    assert.equals([saladRecipe, burgerRecipe], options.map({ option => option.value() }))
+    assert.equals([salad.image(), burger.image()], options.map({ option => option.image() }))
+  }
+
+  test "un Assembler nuevo arranca con la primera receta disponible" {
+    recipeBook.changeAvailable([saladRecipe, burgerRecipe])
+    assert.equals(saladRecipe, self.recipeSetting(new Assembler()).value())
+  }
+
+  test "con otra receta elegida, al prender acepta sus ingredientes y no los de la anterior" {
+    self.placeAssembler()
+    self.recipeSetting(assembler).value(saladRecipe)
+    simulationEngine.run()
+    assert.that(assembler.canReceive(new Item(kind = cutLettuce)))
+    assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
+  }
+
+  test "cambiar la receta con la simulacion prendida la cambia recien al volver a prender" {
+    self.placeAssembler()
+    self.recipeSetting(assembler).value(burgerRecipe)
+    simulationEngine.run()
+    self.recipeSetting(assembler).value(saladRecipe)
+    assert.that(assembler.canReceive(new Item(kind = cutBun)))
+    simulationEngine.stop()
+    simulationEngine.run()
+    assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
+    assert.that(assembler.canReceive(new Item(kind = cutLettuce)))
+  }
+
+  test "cargar un nivel deja como disponibles solo sus recetas" {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.load(saladLevel)
+    assert.equals([saladRecipe], self.offered(machineManager.createMachine()))
+  }
+
+  test "el modo libre vuelve a ofrecer todas las recetas" {
+    menuManager.setUp()
+    deliveryPoints.setUp()
+    levelManager.load(saladLevel)
+    levelManager.loadFreePlay()
+    assert.equals(recipeBook.all(), recipeBook.available())
+  }
+}

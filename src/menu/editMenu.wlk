@@ -1,6 +1,8 @@
 import wollok.game.*
 import menu.menuManager.*
+import menu.menuText.*
 import board.*
+import levels.levelManager.*
 
 // Panel de la zona interactiva mientras la herramienta activa es edit.
 // Responde a show, hide y onClick, igual que el resto de los paneles (ver menuManager).
@@ -46,6 +48,7 @@ object editMenu{
         if (slot != null) {
             slot.setting().select(slot.option())
             self.updateMarkers()
+            levelManager.settingChanged(selectedMachine, slot.setting())
         }
     }
 
@@ -217,13 +220,6 @@ object editMenu{
 class OptionImage {
     const property image
     const property position
-}
-
-// Un texto: el título de una categoría, el nombre de un setting o una opción sin imagen
-class MenuText {
-    const property text
-    const property position
-    const property textColor = "FFFFFFFF"
 }
 
 // Qué opción de qué setting hay dibujada en una posición

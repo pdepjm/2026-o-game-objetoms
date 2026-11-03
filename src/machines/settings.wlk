@@ -9,7 +9,7 @@
 // a la elegida es su value, así que se compara por value y no por objeto.
 
 import directions.*
-
+import food.recipes.*
 // ----------- CATEGORIAS -----------
 // Sólo sirven para agrupar los settings en el menú
 
@@ -96,6 +96,16 @@ class OutputSideSetting inherits Setting {
 		new SettingOption(value = leftOut, label = "Izq."),
 		new SettingOption(value = rightOut, label = "Der.")
 	]
+}
+
+
+// Qué plato arma un Assembler. Las opciones son las recetas del nivel (recipeBook), con la imagen de su plato.
+class RecipeSetting inherits Setting {
+	override method name() = "Receta"
+	override method category() = production
+	override method options() = recipeBook.available().map({ recipe =>
+		new SettingOption(value = recipe, image = recipe.result().image())
+	})
 }
 
 // El lado por el que entrega una máquina que recibió por inputSide. Si el item entra por la

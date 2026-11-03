@@ -10,6 +10,8 @@ program BuffetAlbertEinstein {
 	game.cellSize(50)
 	game.boardGround("background.gif")
 
+
+	// La portada. El juego (los menús, los platitos y el primer nivel) se arma al apretar Enter (ver startMenu.start)
 	startMenu.show()
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)

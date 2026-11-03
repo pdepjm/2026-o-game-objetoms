@@ -15,7 +15,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`src/menu/README.md`](src/menu/README.md) | Los menús de la pantalla |
 | [`src/tools/README.md`](src/tools/README.md) | Las herramientas del jugador y la dirección elegida |
 | [`src/input/README.md`](src/input/README.md) | Las teclas y los clicks |
-| [`src/levels/README.md`](src/levels/README.md) | Niveles (todavía sin usar) |
+| [`src/levels/README.md`](src/levels/README.md) | Los niveles, sus objetivos y cómo agregar uno |
 | [`Plan-Implementacion-Niveles.md`](docs/Plan-Implementacion-Niveles.md) | **El plan para implementar los niveles**, por fases y con checklist |
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |
@@ -70,12 +70,31 @@ Es tu tarea automatizar todos los procesos del buffet.
 ### - Control de Simulación
 | Tecla | Acción | Descripción |
 |:---:|---|---|
-| <kbd>Espacio</kbd> | **Play / Pausa** | Inicia o detiene la simulación *(en pausa se construye libremente; al pausar se limpian los items sueltos)* |
+| <kbd>Espacio</kbd> / <kbd>5</kbd> | **Play / Pausa** | Inicia o detiene la simulación *(en pausa se construye libremente; al pausar se limpian los items sueltos)* |
 | <kbd>1</kbd> | **Velocidad x1** | Velocidad estándar (1 paso por tick de 100 ms) |
 | <kbd>2</kbd> | **Velocidad x2** | Velocidad rápida (2 pasos por tick) |
 | <kbd>3</kbd> | **Velocidad x3** | Velocidad ultra rápida (3 pasos por tick) |
 
 
+
+### Niveles
+**N**: Pasar al siguiente nivel (sólo después de ganar el actual)
+
+**0**: Reiniciar el nivel (borra también lo que se construyó)
+
+**L**: Ir al modo libre (todas las máquinas, sin objetivo). Apretándola de nuevo se vuelve al nivel que toca jugar: el primero que todavía no se ganó. No funciona con la simulación prendida
+
+**Enter**: En el tutorial, seguir después de una explicación
+
+**T** (o el botón SALTEAR TUTORIAL): saltear los tutoriales e ir directo al nivel 1
+
+### Libro de recetas
+**F**: abre y cierra el libro de recetas, con cómo se arma cada plato. Se abre en la tapa; las **flechas** (izquierda y derecha) pasan las páginas. Mientras está abierto la simulación queda en pausa. También se abre desde la portada.
+
+**M**: volver a la portada
+
+> [!NOTE]
+> El juego arranca con **dos tutoriales**: el primero enseña a hacer papas fritas paso a paso, y el segundo, panchos (configurar un Dispenser, el horno, el ensamblador y qué hace un brazo). Después siguen los niveles 1 (ensaladas), 2 (hamburguesas) y 3 (desayunos y pizzas), cada uno más difícil. Los tutoriales se pueden saltear. La información del nivel (su objetivo, si se ganó y el mensaje del tutorial) se ve a la izquierda.
 
 ## TAMAÑOS
 

@@ -78,11 +78,19 @@ describe "tests de Machine" {
     assert.equals("machines/Belt/right.gif", belt.image())
   }
 
+  // La cortadora es frame a frame: se anima sólo mientras corta (el Dispenser ahora usa GIF)
   test "al prender la simulacion una maquina sin gif sigue quieta" {
+    toolsManager.currentDirection(right)
+    const cutter = new CuttingMachine()
+    cutter.start()
+    assert.equals("machines/CuttingMachine/right_game.png", cutter.image())
+  }
+
+  test "al prender la simulacion el dispenser pasa a su gif" {
     toolsManager.currentDirection(right)
     const dispenser = new Dispenser()
     dispenser.start()
-    assert.equals("machines/Dispenser/right_game.png", dispenser.image())
+    assert.equals("machines/Dispenser/right.gif", dispenser.image())
   }
 
   test "al apagar la simulacion una maquina vuelve a la imagen quieta" {

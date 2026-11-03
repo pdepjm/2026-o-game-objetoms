@@ -8,9 +8,13 @@
 import simulation.simulationEngine.*
 
 class Inventory {
-	const capacity
+	var capacity
 	const items = []
 	const waiting = []
+
+	method changeCapacity(newCapacity) {
+		capacity = newCapacity
+	}
 
 	// ¿Entra un item más?
 	method hasRoom() = items.size() < capacity
