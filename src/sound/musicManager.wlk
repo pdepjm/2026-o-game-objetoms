@@ -14,6 +14,7 @@ object musicManager {
         self.stopBackground()
         backgroundSound = game.sound("sound/music/background.mp3")
         backgroundSound.shouldLoop(true)
+        backgroundSound.volume(0.6) // más bajita, para que los efectos no queden tapados
         backgroundSound.play()
     }
 

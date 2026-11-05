@@ -5,6 +5,7 @@ import menu.recipeBook.*
 import tools.toolsManager.*
 import simulation.simulationEngine.*
 import directions.*
+import sound.sfx.*
 
 // ¡OJO ACÁ! Agregamos "menu/" al principio de la ruta.
 object startScreen {
@@ -43,6 +44,7 @@ object startMenu {
 
 	method start() {
 		if (screen == "cover") {
+			sfx.simulationStart()
 			if (recipeBook.isOpen()) recipeBook.close()
 			screen = "playing"
 			// Al empezar a jugar, ocultamos TODO el menú (fondo incluido)
@@ -58,8 +60,13 @@ object startMenu {
 	}
 
 	method pressI() {
-		if (screen == "cover") self.openInstructions()
-		else if (screen == "instructions") self.backToCover()
+		if (screen == "cover") {
+			sfx.menuSelect()
+			self.openInstructions()
+		} else if (screen == "instructions") {
+			sfx.menuSelect()
+			self.backToCover()
+		}
 	}
 
 	method pressS() {
