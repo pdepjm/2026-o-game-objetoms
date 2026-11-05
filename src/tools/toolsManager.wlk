@@ -3,6 +3,7 @@ import menu.menuManager.*
 import directions.*
 import simulation.simulationEngine.*
 import tools.userTools.*
+import sound.sfx.*
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete, Edit y Rotate
@@ -18,6 +19,7 @@ object toolsManager{
 			selectedTool = tool
 		else
 			selectedTool = null
+		sfx.toolSelect()
 		menuManager.toolChanged(selectedTool)
 	}
 
@@ -30,6 +32,7 @@ object toolsManager{
 	// Así el menú no tiene que preguntar la dirección en cada frame (ver MenuItem).
 	method currentDirection(direction) {
 		currentDirection = direction
+		sfx.directionChange()
 		menuManager.directionChanged()
 	}
 

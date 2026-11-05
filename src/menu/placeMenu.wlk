@@ -1,6 +1,7 @@
 import tools.toolsManager.*
 import machines.machineManager.*
 import menu.menuManager.*
+import sound.sfx.*
 
 object placeMenu{
     var currentPage = 0
@@ -32,6 +33,7 @@ object placeMenu{
         if (slot > 0 && slot <= pageMachines.size()) {
             machineManager.select(pageMachines.get(slot - 1))
             self.updateOverlay()
+            sfx.menuSelect()
         }
     }
 

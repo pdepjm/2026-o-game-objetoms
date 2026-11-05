@@ -9,6 +9,7 @@ import tools.toolsManager.*
 import tools.userTools.*
 import directions.*
 import simulation.simulationEngine.*
+import sound.sfx.*
 
 object userController {
 	method setUp() {
@@ -17,9 +18,18 @@ object userController {
 
 
 		// VELOCIDAD 
-		keyboard.num1().onPressDo({ => simulationEngine.speed(1)})
-		keyboard.num2().onPressDo({ => simulationEngine.speed(2) })
-		keyboard.num3().onPressDo({ => simulationEngine.speed(3) })
+		keyboard.num1().onPressDo({ =>
+			simulationEngine.speed(1)
+			sfx.speedChange()
+		})
+		keyboard.num2().onPressDo({ =>
+			simulationEngine.speed(2)
+			sfx.speedChange()
+		})
+		keyboard.num3().onPressDo({ =>
+			simulationEngine.speed(3)
+			sfx.speedChange()
+		})
 
 		// ESPACIO: prende/apaga la simulación. Al apagarla se borran los ingredientes.
 		keyboard.space().onPressDo({ => simulationEngine.toggle() })

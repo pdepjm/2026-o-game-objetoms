@@ -4,6 +4,7 @@ import menu.editMenu.*
 import menu.toolBar.*
 import tools.toolsManager.*
 import tools.userTools.*
+import sound.sfx.*
 import wollok.game.*
 
 class Zone {
@@ -89,10 +90,12 @@ object menuManager {
     // Pasar de página (teclas Q y E). Sólo el panel de place tiene páginas.
     method prevPage() {
         placeMenu.prev()
+        sfx.pageChange()
     }
 
     method nextPage() {
         placeMenu.next()
+        sfx.pageChange()
     }
 
     // Click dentro de la zona interactiva (toolsManager.onClick)
