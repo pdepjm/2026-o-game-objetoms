@@ -1,13 +1,16 @@
 import board.*
 import machines.machineManager.*
+import menu.editMenu.*
 
 // HERRAMIENTAS
 // Por el momento, todas las herramientas deben contener el metodo onClick
 
 object place {
 	method name() = "place"
+    // Si no entra (celda ocupada o parte fuera del tablero), no coloca nada
     method onClick(pos) {
-		board.push(pos, machineManager.createMachine())
+		const machine = machineManager.createMachine()
+		if (board.canPlace(pos, machine)) board.push(pos, machine)
     }
 }
 object delete {
@@ -18,7 +21,9 @@ object delete {
 }
 object edit {
 	method name() = "edit"
-	method onClick(pos) {}
+	method onClick(pos) {
+		editMenu.selectMachine(pos)
+	}
 }
 object rotate {
 	method name() = "rotate"

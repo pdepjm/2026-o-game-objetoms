@@ -16,6 +16,7 @@ import board.*
 import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import machines.inventory.*
+import cellPosition.*
 
 // Reproduce animaciones frame a frame (carpetas de PNG, ver FrameAnimation) con el animationEngine.
 class MachineAnimator {
@@ -109,9 +110,9 @@ class MachineSprite inherits MachineAnimator {
 	
 	// ----------- DESPLAZAMIENTO DE LA IMAGEN -----------
 	// Sirven para desplazar la imagen antes de colocarla
-	method offsetX() = 0
+	method drawOffsetX() = 0
 	
-	method offsetY() = 0
+	method drawOffsetY() = 0
 	
 	// ----------- IMAGENES -----------
 	method image() = image
@@ -218,12 +219,15 @@ class Machine inherits MachineSprite {
 	// El inventario se encarga de despertar a las que esperan al liberar un item.
 	const inventory = new Inventory(capacity = self.capacity())
 
-	// La máquina hacia la que apunta (null si no hay ninguna).
-	// Se calcula una sola vez al prender la simulación: con la simulación prendida
-	// no se puede editar el tablero, así que no cambia.
-	// El brazo robot no lo usa, ya que su dirección cambia con la simulación prendida
-	// (ver outputTarget en AutomaticArm).
+	// La máquina a la que entrega (null si no hay ninguna): la que está en outputTarget().
+	// Se calcula al prender la simulación: con la simulación prendida no se puede editar
+	// el tablero, así que no cambia. Si una máquina cambia de dirección mientras corre
+	// (el brazo), la vuelve a calcular con nextMachine().
 	var next = null
+
+	// Los brazos que miran a esta máquina como su entrada: se les avisa cuando llega un item,
+	// por si pueden agarrarlo (ver grabbableItem). Se anotan al prender la simulación.
+	const grabbers = []
 
 	// Cada máquina guarda su propia dirección (un objeto de directions.wlk).
 	// Nace con la dirección seleccionada al momento de colocarla.
@@ -238,16 +242,38 @@ class Machine inherits MachineSprite {
 		self.showStatic()
 	}
 	
+	// ----------- CONFIGURACION -----------
+	// Los settings que acepta (ver settings.wlk), que el menú de la herramienta edit deja cambiar.
+	// Por defecto no tiene ninguno; la sobrescriben las máquinas configurables.
+	method settings() = []
+
+	// Energía que consume: la base más lo que suma cada setting con su opción elegida
+	method energyConsumption() = self.baseEnergy() + self.settings().sum({ setting => setting.energyCost() })
+
+	method baseEnergy() = 0
+
 	//----------- UBICACION EN EL TABLERO -----------
 
 	// La celda del tablero que ocupa. Es position sin el desplazamiento del dibujo:
 	// para casi todas las máquinas son iguales, pero no para las que se dibujan corridas.
-	method cell() = game.at(position.x() - self.offsetX(), position.y() - self.offsetY())
+	method cell() = game.at(position.x() - self.drawOffsetX(), position.y() - self.drawOffsetY())
 	
-	// Busca en el tablero la máquina hacia la que apunta (null si no hay ninguna).
-	// Es una consulta cara con muchas máquinas: durante la simulación se usa next.
-	method nextMachine() = board.machineAt(direction.move(self.cell()))
+	// La CELDA a la que entrega (no la máquina: ésa es next). Por defecto, la pegada a su
+	// borde de adelante. Sobrescribirlo si el dibujo marca la salida en otra celda.
+	method outputTarget() = direction.output(self.cell(), self.width(), self.height())
+
+	// Busca en el tablero la máquina que está en outputTarget() (null si no hay ninguna).
+	// Durante la simulación se usa next, que la guarda.
+	// Una máquina que sólo trabaja con el brazo (armOnly) no entrega a otra cosa que no sea un brazo.
+	method nextMachine() {
+		const machine = board.machineAt(self.outputTarget())
+		return if (self.armOnly() && machine != null && !machine.isArm()) null else machine
+	}
 	
+	// Simboliza la cantidad de celdas que ocupa
+	method width() = 1
+	method height() = 1
+
 	//----------- CICLO DE LA SIMULACION -----------
 	// Se llama al prender la simulación: busca a su vecina y pasa a la imagen animada
 	method start() {
@@ -258,6 +284,7 @@ class Machine inherits MachineSprite {
 	// Vuelve la máquina a su estado inicial (sin items y quieta), al apagar la simulación.
 	// Las que tengan estado propio lo reinician ANTES de llamar a super().
 	method reset() {
+		grabbers.clear()
 		inventory.clear()
 		self.stopAnimation()
 		self.showStatic()
@@ -270,11 +297,29 @@ class Machine inherits MachineSprite {
 	// y las que no aceptan ninguno, con false.
 	method canReceive(item) = inventory.hasRoom()
 
+	// ¿Acepta items que le entrega `source`? Por defecto de cualquiera, salvo que sea armOnly.
+	method acceptsSource(source) = !self.armOnly() || source.isArm()
+
+	// Lo que se pregunta antes de entregar: quién lo entrega y qué item es.
+	// Las máquinas sobrescriben canReceive (qué items) y acceptsSource (de quién), no éste.
+	method canReceiveFrom(source, item) = self.acceptsSource(source) && self.canReceive(item)
+
+	// Una máquina armOnly sólo recibe de un brazo y sólo entrega a un brazo (la freidora)
+	method armOnly() = false
+
+	method isArm() = false
+
 	// Otra máquina le entrega un item. No se sobrescribe: guarda el item
 	// y llama a onReceive, donde cada máquina define qué le pasa.
 	method receive(item) {
 		inventory.add(item)
 		self.onReceive(item)
+		self.notifyGrabbers()
+	}
+
+	// Avisa a los brazos que la miran que hay algo para agarrar (llegó un item, o terminó de procesarse)
+	method notifyGrabbers() {
+		grabbers.forEach({ grabber => simulationEngine.after(1, { grabber.tryGrab() }) })
 	}
 
 	// Qué le pasa al item que acaba de llegar. Por defecto se anima hasta la celda
@@ -286,14 +331,25 @@ class Machine inherits MachineSprite {
 
 	// El item terminó de llegar. Por defecto se entrega a la siguiente, como una cinta.
 	// Las que hacen algo con el item (procesarlo, juntarlo con otros) lo sobrescriben.
+	// OJO: si un brazo se lo llevó mientras venía en camino, ya no hay nada que entregar.
 	method onArrived(item) {
-		self.tryPush()
+		if (inventory.items().contains(item)) self.tryPush()
+	}
+
+	// El item que un brazo puede agarrar sin que esta máquina se lo entregue (null si no hay ninguno).
+	// Sólo la cinta lo ofrece: a una máquina que está procesando no se le saca el item.
+	method grabbableItem() = null
+
+	// Un brazo se llevó el item: deja de ser de esta máquina y despierta a las que esperaban lugar
+	method surrender(item) {
+		inventory.release(item)
+	}
+
+	method addGrabber(arm) {
+		grabbers.add(arm)
 	}
 
 	//----------- ITEMS: SALIDA -----------
-
-	// A quién se le entregan los items (por defecto, la máquina hacia la que apunta)
-	method outputTarget() = next
 
 	// Qué item se entrega (por defecto, el primero del inventario)
 	method itemToPush() = if (inventory.isEmpty()) null else inventory.first()
@@ -307,9 +363,9 @@ class Machine inherits MachineSprite {
 	// actuar: entre el intento y la entrega pueden pasar cosas.
 	method tryPush() {
 		const item = self.itemToPush()
-		const target = self.outputTarget()
+		const target = next
 		if (item != null && target != null) {
-			if (target.canReceive(item)) {
+			if (target.canReceiveFrom(self, item)) {
 				inventory.release(item)
 				target.receive(item)
 				self.onPushed(item)
@@ -349,13 +405,20 @@ class ProcessingMachine inherits Machine {
 
 
 
+	// Se llama cuando terminó de procesar un item (por defecto, no hace nada). Lo usa la freidora para quemarlo.
+	method onProcessed(item) {}
+
 	override method onArrived(item) {
 
 		self.animateWork(item.processTime(), {
 
-			item.process(self.foodProcess())
-
-			self.tryPush()
+			// Un brazo pudo haberse llevado el item mientras trabajaba: entonces ya no es de esta máquina
+			if (self.heldItems().contains(item)) {
+				item.process(self.foodProcess())
+				self.tryPush()
+				self.notifyGrabbers()
+				self.onProcessed(item)
+			}
 
 		})
 

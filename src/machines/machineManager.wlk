@@ -1,8 +1,11 @@
+import src.food.foodClasses.*
+import src.food.foodTypes.*
 // Catálogo de máquinas y máquina seleccionada
 
 import machines.types.belt.*
 import machines.types.dispenser.*
 import machines.types.automaticArm.*
+import machines.types.smartRoboticArm.*
 import machines.types.assembler.*
 import machines.types.oven.*
 import machines.types.cuttingMachine.*
@@ -14,11 +17,12 @@ object machineManager{
 	// Cada elemento es una lambda que crea una máquina nueva.
 	const machines = [
 		{ => new Belt() },
-		{ => new Dispenser() },
-		{ => new AutomaticArm()},
+		{ => new Assembler() },
 		{ => new CuttingMachine() },
 		{ => new Oven() },
-		{ => new Assembler() },
+		{ => new Dispenser()},
+		{ => new AutomaticArm()},
+		{ => new SmartRoboticArm()},
 		{ => new Fryer() }
 	]
 
@@ -32,6 +36,9 @@ object machineManager{
 
 	// Máquinas que se muestran en una página del menú (4 por página)
 	method machinesOfPage(page) = machines.drop(page * 4).take(4)
+
+	// Cuántas páginas ocupa el catálogo en el menú
+	method pageCount() = (machines.size() / 4).roundUp()
 
 	// Selecciona una máquina del catálogo (una de las lambdas de machines)
 	method select(factory) {

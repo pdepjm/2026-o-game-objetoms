@@ -66,6 +66,7 @@ Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la
 | `Fryer` | `machines/Fryer/` |
 | `Dispenser` | `machines/Dispenser/` |
 | `AutomaticArm` | `machines/AutomaticArm/` (caso especial, ver abajo) |
+| `SmartRoboticArm` | usa las imágenes de `machines/AutomaticArm/` (`assetFolder()`) |
 
 Hay **dos tipos de máquinas**, según cómo se animan. Todas tienen, para cada una de las 4 direcciones (`up`, `down`, `left`, `right`):
 
@@ -78,11 +79,11 @@ Y además, según el tipo:
 
 | Tipo | Animación | Cuándo se anima | Máquinas |
 |---|---|---|---|
-| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida | `Belt` |
-| **Frame a frame** | Una carpeta `<direccion>_<accion>/` con `0.png`, `1.png`, ... por cada acción | Sólo cuando la máquina hace algo (por ejemplo, el dispenser al dispensar) | `Dispenser`, `CuttingMachine`, `Assembler`, `AutomaticArm` |
+| **Con GIF** | `<direccion>.gif` | Todo el tiempo mientras la simulación está prendida (`Belt`), o sólo mientras procesa un item (`Oven`) | `Belt`, `Oven` |
+| **Frame a frame** | Una carpeta `<direccion>_<accion>/` con `0.png`, `1.png`, ... por cada acción | Sólo cuando la máquina hace algo (por ejemplo, el dispenser al dispensar). En las que procesan, los frames se estiran o comprimen al tiempo de cada ingrediente | `Dispenser`, `CuttingMachine`, `Assembler`, `AutomaticArm` |
 
 > [!NOTE]
-> `Oven` y `Fryer` todavía no tienen sus imágenes completas: `Oven` sólo tiene `up_game.png` y `up.gif`, y `Fryer` no tiene carpeta.
+> `Fryer` todavía no tiene imágenes (no tiene carpeta).
 
 Por ejemplo:
 - una cinta hacia arriba tiene `up_menu.png`, `up_game.png` y `up.gif`;
@@ -101,15 +102,15 @@ Algunas máquinas no siguen esta convención y tienen su propio README en su car
 
 | Máquina | Qué tiene de distinto | Guía |
 |---|---|---|
-| `AutomaticArm` | Ocupa 3x3 celdas (imágenes de 150x150), no rota, y en vez de `.gif` usa carpetas de PNG por frame que se reproducen cuando le llega un ingrediente | [`machines/AutomaticArm/README.md`](machines/AutomaticArm/README.md) |
+| `AutomaticArm` | Ocupa 3x3 celdas (imágenes de 150x150), rota moviendo su entrada, y en vez de `.gif` usa carpetas de PNG por frame que se reproducen cuando le llega un ingrediente | [`machines/AutomaticArm/README.md`](machines/AutomaticArm/README.md) |
 
 ### Generar las rotaciones
 
-Con una sola dirección alcanza para obtener las otras tres: `machines/assetGenerator.py` deduce la dirección por el nombre del archivo (`up_menu.png`, `up_game.png`, `right.gif`, etc.) y genera las que faltan, tanto para `.png` como para `.gif` (incluso animados).
+Con una sola dirección alcanza para obtener las otras tres: `machines/assetRotate.py` deduce la dirección por el nombre del archivo (`up_menu.png`, `up_game.png`, `right.gif`, etc.) y genera las que faltan, tanto para `.png` como para `.gif` (incluso animados).
 
 ```bash
 pip3 install Pillow
-python3 machines/assetGenerator.py machines/Oven/up_menu.png machines/Oven/up_game.png machines/Oven/up.gif
+python3 machines/assetRotate.py machines/Oven/up_menu.png machines/Oven/up_game.png machines/Oven/up.gif
 ```
 
 | Opción | Qué hace |
@@ -123,17 +124,19 @@ Las máquinas frame a frame muestran una animación en un momento puntual (por e
 
 En el código, una animación de acción se arma con `self.actionAnimation("<accion>", <cantidad de frames>)`, que usa la carpeta `machines/<MachineName>/<direccion>_<accion>/`.
 
-Si la animación se hizo como GIF, se convierte en carpeta de frames con:
+Si la animación se hizo como GIF, primero se generan las otras direcciones con `assetRotate.py` y después se pasan todas a carpetas de frames con `gifToFrames.py`. Alcanza con pasarle **una** dirección: convierte también las otras que estén en la misma carpeta.
 
 ```bash
-python3 machines/gifToFrames.py machines/<MachineName>/<animacion>.gif
+python3 machines/assetRotate.py machines/Assembler/up_assemble.gif    # crea right_, down_ y left_assemble.gif
+python3 machines/gifToFrames.py machines/Assembler/up_assemble.gif    # convierte los 4
 ```
 
-Cada GIF genera una carpeta con su mismo nombre (`down_to_up_catch.gif` → `down_to_up_catch/0.png`, `1.png`, ...). El juego muestra un frame por paso de simulación (100 ms a x1), así que el script remuestrea el GIF a ese intervalo para que la animación dure lo mismo. Si se cambia un GIF, hay que volver a correrlo (y actualizar la cantidad de frames en el código si cambió).
+Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assemble/0.png`, `1.png`, ...). `gifToFrames.py` **no rota**: si falta alguna dirección, avisa y la saltea. El juego muestra un frame por paso de simulación (100 ms a x1), así que el script remuestrea el GIF a ese intervalo para que la animación dure lo mismo. Si se cambia un GIF, hay que volver a correrlo (y actualizar la cantidad de frames en el código si cambió).
 
 | Opción | Qué hace |
 |---|---|
 | `--ms` | milisegundos entre frames (por defecto 100, un paso de simulación) |
+| `--solo` | convierte sólo los GIF que se le pasan, sin buscar las otras direcciones (para el brazo, ver su README) |
 
 > Cada frame es una imagen más que el juego carga al arrancar: conviene que las animaciones sean cortas (de 6 a 10 frames, menos de 1 segundo). Después de convertir un GIF, borrarlo de la carpeta: el juego no lo usa, pero lo cargaría igual.
 
@@ -188,8 +191,12 @@ food/
 | cortado | `cut` |
 | cocinado | `cooked` |
 | frito | `fried` |
+| quemado | `burnt` |
 
 Hay imágenes de papa, lechuga, tomate, pan, carne y hamburguesa. Las rutas las arman las familias de `src/food/foodPaths.wlk`.
+
+> [!NOTE]
+> Falta `potatoes/potato_burnt.png` (y su `.svg`): la usa `burntPotato`, la papa que se quema en la freidora.
 
 ### Tamaño del dibujo
 

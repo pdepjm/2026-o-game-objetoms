@@ -41,9 +41,7 @@ object simulationEngine {
 
 	// el juego arranca en modo construcción, con la simulación apagada
 	var property running = false
-
-	// items creados desde que se prendió la simulación (ver addItem)
-	var itemCount = 0
+	var paused = false
 
 	// Engancha el engine al reloj de Wollok Game. Se llama una sola vez, desde el main.
 	method start() {
@@ -53,7 +51,7 @@ object simulationEngine {
 	// Lo llama Wollok Game cada tickMs. A velocidad x2 o x3 ejecuta 2 o 3 pasos seguidos,
 	// así el resultado es el mismo que a x1, sólo que llega antes.
 	method tick() {
-		if (running) speed.times({ _ => self.step() })
+		if (running && !paused) speed.times({ _ => self.step() })
 	}
 
 	// Un paso de simulación: se ejecutan las acciones agendadas y avanzan las animaciones.
@@ -97,6 +95,14 @@ object simulationEngine {
 		simulatedObjects.forEach({ machine => machine.start() })
 	}
 
+	method pause() {
+		paused = true
+	}
+
+	method resume() {
+		paused = false
+	}
+
 	// Apaga la simulación y limpia el tablero de items, para construir tranquilo.
 	// Se vacía la agenda para que nadie se despierte con un item que ya no existe.
 	method stop() {
@@ -108,15 +114,13 @@ object simulationEngine {
 			game.removeVisual(item)
 		})
 		simulatedObjects.forEach({ machine => machine.reset() })
-		itemCount = 0
 	}
 
 	// Un item nuevo entra al tablero (lo crea, por ejemplo, un Dispenser).
 	// El engine es el que saca los items al apagar la simulación (stop),
-	// así que también es el que los pone: así sabe cuántos se crearon.
+	// así que también es el que los pone.
 	method addItem(item) {
 		game.addVisual(item)
-		itemCount += 1
 	}
 	// Saca un item del tablero (lo consume una máquina, como el Assembler).
 	// Es la contraparte de addItem.
@@ -124,9 +128,6 @@ object simulationEngine {
 		item.detener()
 		game.removeVisual(item)
 	}
-	// Cantidad de items creados desde que se prendió la simulación
-	method itemCount() = itemCount
-
 	// Todos los items que hay en el tablero (cada uno está en alguna máquina)
 	method allItems() = simulatedObjects.flatMap({ machine => machine.heldItems() })
 

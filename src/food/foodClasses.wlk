@@ -9,6 +9,8 @@ import simulation.animationEngine.*
 
 object cutting {}
 object frying {}
+// Quemarse por quedarse demasiado tiempo en la freidora
+object burning {}
 object cooking {}
 
 // Clase para los ingredientes
@@ -16,6 +18,9 @@ class IngredientKind{
     const transitions = new Dictionary()
 
     method image()
+
+    // Un kind también es un filtro de items: deja pasar a los que son de ese kind (ver settings.wlk)
+    method accepts(item) = item.kind() == self
 
     // Pasos de simulación que tarda en procesarse. Sobrescribirlo sólo si tarda distinto.
     method processTime() = 5
@@ -42,6 +47,7 @@ class IngredientKind{
 // Clase para los platos finales: ningún proceso se les puede aplicar
 class DishKind {
     method image()
+    method accepts(item) = item.kind() == self
     method canProcess(_) = false
 }
 
