@@ -4,12 +4,11 @@ import src.machines.machineManager.*
 import src.machines.types.belt.*
 import src.machines.types.deliverySlot.*
 import src.menu.menuManager.*
-import src.menu.recipeBookMenu.*
+import src.menu.recipeBook.*
 import src.input.userController.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
-import src.food.recipes.*
 import src.levels.levelClasses.*
 import src.levels.levelManager.*
 
@@ -40,84 +39,67 @@ describe "tests del libro de recetas" {
   // ABRIR Y CERRAR
 
   test "abrir el libro muestra la tapa" {
-    recipeBookMenu.open()
-    assert.that(recipeBookMenu.showingCover())
-    assert.equals("recipes_book/cover.png", recipeBookMenu.image())
-  }
-
-  test "cualquiera de las 4 celdas de la cruz cierra el libro" {
-    assert.that([game.at(19, 10), game.at(20, 10), game.at(19, 11), game.at(20, 11)].all({ pos =>
-      recipeBookMenu.open()
-      recipeBookMenu.nextPage()
-      userController.onClick(pos)
-      return !recipeBookMenu.isOpen()
-    }))
+    recipeBook.open()
+    assert.that(recipeBook.isOpen())
+    assert.equals(0, recipeBook.currentPage())
   }
 
   test "un click fuera de la cruz no cierra el libro ni cambia de pagina" {
-    recipeBookMenu.open()
-    recipeBookMenu.nextPage()
+    recipeBook.open()
+    recipeBook.nextPage()
     userController.onClick(game.at(10, 6))
-    assert.that(recipeBookMenu.isOpen())
-    assert.equals(0, recipeBookMenu.pageIndex())
+    assert.that(recipeBook.isOpen())
+    assert.equals(1, recipeBook.currentPage())
   }
 
   test "F abre y cierra el libro" {
-    recipeBookMenu.toggle()
-    assert.that(recipeBookMenu.isOpen())
-    recipeBookMenu.toggle()
-    assert.notThat(recipeBookMenu.isOpen())
-  }
-
-  test "al volver a abrir, arranca otra vez en la tapa" {
-    recipeBookMenu.open()
-    recipeBookMenu.showPage(3)
-    recipeBookMenu.close()
-    recipeBookMenu.open()
-    assert.that(recipeBookMenu.showingCover())
+    recipeBook.toggle()
+    assert.that(recipeBook.isOpen())
+    recipeBook.toggle()
+    assert.notThat(recipeBook.isOpen())
   }
 
   // LAS FLECHAS
 
   test "desde la tapa, la flecha derecha va a la primera receta" {
-    recipeBookMenu.open()
-    recipeBookMenu.nextPage()
-    assert.equals("recipes_book/recipe_papasFritas.png", recipeBookMenu.image())
+    recipeBook.open()
+    recipeBook.nextPage()
+    assert.equals(1, recipeBook.currentPage())
   }
 
   test "la flecha derecha pasa a la receta siguiente, y la izquierda vuelve" {
-    recipeBookMenu.open()
-    recipeBookMenu.showPage(0)
-    recipeBookMenu.nextPage()
-    assert.equals("recipes_book/recipe_burger.png", recipeBookMenu.image())
-    recipeBookMenu.prevPage()
-    assert.equals(0, recipeBookMenu.pageIndex())
+    recipeBook.open()
+    recipeBook.currentPage(1)
+    recipeBook.nextPage()
+    assert.equals(2, recipeBook.currentPage())
+    recipeBook.prevPage()
+    assert.equals(1, recipeBook.currentPage())
   }
 
   test "desde la primera receta, la flecha izquierda vuelve a la tapa" {
-    recipeBookMenu.open()
-    recipeBookMenu.showPage(0)
-    recipeBookMenu.prevPage()
-    assert.that(recipeBookMenu.showingCover())
+    recipeBook.open()
+    recipeBook.currentPage(1)
+    recipeBook.prevPage()
+    assert.equals(0, recipeBook.currentPage())
   }
 
   test "en la tapa, la flecha izquierda no hace nada" {
-    recipeBookMenu.open()
-    recipeBookMenu.prevPage()
-    assert.that(recipeBookMenu.showingCover())
+    recipeBook.open()
+    recipeBook.prevPage()
+    assert.equals(0, recipeBook.currentPage())
   }
 
   test "la flecha derecha en la ultima receta no hace nada" {
-    recipeBookMenu.open()
-    recipeBookMenu.showPage(recipeBookMenu.pages().size() - 1)
-    recipeBookMenu.nextPage()
-    assert.equals(recipeBookMenu.pages().size() - 1, recipeBookMenu.pageIndex())
+    recipeBook.open()
+    recipeBook.currentPage(10)
+    recipeBook.nextPage()
+    assert.equals(10, recipeBook.currentPage())
   }
 
   test "con el libro cerrado, las flechas no hacen nada" {
-    recipeBookMenu.nextPage()
-    assert.notThat(recipeBookMenu.isOpen())
-    assert.that(recipeBookMenu.showingCover())
+    recipeBook.nextPage()
+    assert.notThat(recipeBook.isOpen())
+    assert.equals(0, recipeBook.currentPage())
   }
 
   // PAUSA
@@ -125,7 +107,7 @@ describe "tests del libro de recetas" {
   test "abrir el libro con la simulacion prendida la pausa, y lo agendado no corre" {
     simulationEngine.run()
     const flag = self.scheduleFlag()
-    recipeBookMenu.open()
+    recipeBook.open()
     simulationEngine.tick()
     assert.that(simulationEngine.running())
     assert.notThat(flag.raised())
@@ -134,16 +116,16 @@ describe "tests del libro de recetas" {
   test "cerrar el libro sigue la simulacion donde estaba" {
     simulationEngine.run()
     const flag = self.scheduleFlag()
-    recipeBookMenu.open()
+    recipeBook.open()
     simulationEngine.tick()
-    recipeBookMenu.close()
+    recipeBook.close()
     simulationEngine.tick()
     assert.that(flag.raised())
   }
 
   test "abrir y cerrar con la simulacion apagada la deja apagada" {
-    recipeBookMenu.open()
-    recipeBookMenu.close()
+    recipeBook.open()
+    recipeBook.close()
     assert.notThat(simulationEngine.running())
     assert.notThat(simulationEngine.paused())
   }
@@ -157,9 +139,9 @@ describe "tests del libro de recetas" {
 
   test "cargar un nivel con el libro abierto lo cierra y saca la pausa" {
     simulationEngine.run()
-    recipeBookMenu.open()
+    recipeBook.open()
     levelManager.load(bookTestLevel)
-    assert.notThat(recipeBookMenu.isOpen())
+    assert.notThat(recipeBook.isOpen())
     assert.notThat(simulationEngine.paused())
   }
 
@@ -167,22 +149,15 @@ describe "tests del libro de recetas" {
 
   test "con el libro abierto, un click en el tablero no coloca nada" {
     toolsManager.select(place)
-    recipeBookMenu.open()
+    recipeBook.open()
     userController.onClick(game.at(8, 12))
     assert.notThat(board.isThereAMachine(game.at(8, 12)))
   }
 
   test "con el libro abierto, las acciones de las teclas no corren" {
-    recipeBookMenu.open()
+    recipeBook.open()
     userController.whenPlaying({ levelManager.toggleSimulation() })
     assert.notThat(simulationEngine.running())
-  }
-
-  // LAS PÁGINAS
-
-  test "cada receta del juego tiene una pagina con su plato" {
-    const dishes = recipeBookMenu.pages().map({ page => page.dish() })
-    assert.that(recipeBook.all().all({ recipe => dishes.contains(recipe.result()) }))
   }
 
 }

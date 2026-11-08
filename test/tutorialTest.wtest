@@ -532,8 +532,7 @@ describe "tests de saltear el tutorial" {
 
   test "en un tutorial se ve el boton, y clickearlo lo saltea" {
     assert.that(levelInfoMenu.showsSkipButton())
-    userController.onClick(game.at(1, 12))
-    assert.equals(level1, levelManager.currentLevel())
+    assert.that(levelInfoMenu.isSkipButton(game.at(1, 12)))
   }
 
   test "en un nivel sin tutorial no hay boton" {

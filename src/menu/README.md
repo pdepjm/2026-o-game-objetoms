@@ -110,7 +110,7 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial. Las imágenes se generan con `assets/tutorial/makeMarks.py`.
 - `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).
 
-## `recipeBookMenu.wlk`
+## `recipeBook.wlk`
 
 El libro de recetas: una tapa y una página por plato. Se abre con **F** (también desde la portada), **siempre en la tapa**, y se cierra con la cruz o con **F**. **Las flechas (izquierda y derecha) pasan las páginas**: la tapa está antes de la primera receta. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
 

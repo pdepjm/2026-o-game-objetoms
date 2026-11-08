@@ -12,7 +12,7 @@
 | Z / X / C / V | Elegir la herramienta place / edit / rotate / delete | `toolsManager.select` |
 | W / A / S / D | Dirección para colocar: arriba / izquierda / abajo / derecha | `toolsManager.currentDirection` |
 | Q / E | Página anterior / siguiente del menú de máquinas | `menuManager` |
-| ← / → | Receta anterior / siguiente del libro de recetas (con el libro abierto) | `recipeBookMenu.prevPage` / `nextPage` |
+| ← / → | Receta anterior / siguiente del libro de recetas (con el libro abierto) | `recipeBook.prevPage` / `nextPage` |
 | M | Volver a la portada | `startMenu.backToCover` |
 | 1 / 2 / 3 | Velocidad de la simulación x1 / x2 / x3 | `simulationEngine.speed` |
 | 5 | Prender / apagar la simulación (con el nivel completo, no hace nada) | `levelManager.toggleSimulation` |
@@ -21,7 +21,7 @@
 | L | Ir al modo libre (todas las máquinas, sin objetivo), o volver de él al nivel que toca jugar. Con la simulación prendida no hace nada | `levelManager.toggleFreePlay` |
 | Enter | En el tutorial, seguir después de una explicación. En los demás niveles no hace nada | `levelManager.continueTutorial` |
 | T | Saltear los tutoriales (también con el botón SALTEAR TUTORIAL de la info del nivel). Fuera de un tutorial no hace nada | `levelManager.skipTutorial` |
-| F | Abrir o cerrar el libro de recetas | `recipeBookMenu.toggle` |
+| F | Abrir o cerrar el libro de recetas | `startMenu.toggleRecipeBook` |
 | Espacio | Lo mismo que la 5 | `levelManager.toggleSimulation` |
 
 Para agregar una tecla, sumarla en `setUp()` y documentarla también en el [README principal](../../README.md).

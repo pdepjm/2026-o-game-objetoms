@@ -14,7 +14,7 @@ Un libro que el jugador abre para ver cómo se arma cada plato. Se abre con un i
 
 - [x] [Fase 0: Las imágenes](#fase-0-las-imágenes) (las páginas, dibujadas; el índice y el icono los genera `assets/recipes_book/makeIndex.py` a partir de ellas)
 - [x] [Fase 1: Pausa en `simulationEngine`](#fase-1-pausa-en-simulationengine)
-- [x] [Fase 2: `recipeBookMenu`](#fase-2-recipebookmenu)
+- [x] [Fase 2: `recipeBook`](#fase-2-recipebook)
 - [x] [Fase 3: Entrada: la tecla F, los clicks y el bloqueo](#fase-3-entrada-la-tecla-f-los-clicks-y-el-bloqueo)
 - [x] [Fase 4: Tests y documentación](#fase-4-tests-y-documentación)
 
@@ -168,9 +168,9 @@ method resume() { paused = false }
 
 ---
 
-## Fase 2: `recipeBookMenu`
+## Fase 2: `recipeBook`
 
-Archivo nuevo: `src/menu/recipeBookMenu.wlk`.
+Archivo nuevo: `src/menu/recipeBook.wlk`.
 
 ```wollok
 import wollok.game.*
@@ -181,7 +181,7 @@ import simulation.simulationEngine.*
 // El libro de recetas: un índice y una página por plato (las imágenes están en assets/recipeBook/).
 // Se abre con el icono o con F, pausa la simulación mientras está abierto, y se cierra con la cruz o con F.
 // Todas las imágenes miden 800x500 y se dibujan desde bookOrigin. Lo clickeable ocupa celdas enteras.
-object recipeBookMenu {
+object recipeBook {
 	// La celda del icono: abajo de todo, en la columna de la izquierda del (+)
 	const property iconCell = new CellPosition(x = 20, y = 0)
 	// Dónde se dibuja el libro (abajo a la izquierda de la imagen)
@@ -199,7 +199,7 @@ object recipeBookMenu {
 	var pageIndex = null
 	// Si la pausa la puso el libro (para no prender una simulación que estaba apagada al cerrar)
 	var pausedByBook = false
-	const sprite = new BookSprite(position = bookOrigin)
+	const sprite = new RecipeBookVisual(position = bookOrigin)
 
 	method isOpen() = open
 	method pages() = pages
@@ -276,13 +276,13 @@ class BookPage {
 	const property image
 }
 
-class BookSprite {
+class RecipeBookVisual {
 	const property position
 	var property image = "recipes_book/index.png"
 }
 
 object bookIcon {
-	method position() = recipeBookMenu.iconCell()
+	method position() = recipeBook.iconCell()
 	method image() = "recipes_book/icon.png"
 }
 ```
@@ -291,8 +291,8 @@ object bookIcon {
 - **La posición de cada plato en el índice sale de su lugar en `pages`**. Los números de las celdas (7 a 12, 14 a 18, 8 a 4, 19-20 y 10-11) son los de la [fase 0](#el-índice-indexpng): si cambia el dibujo, se cambian ahí y en la tabla.
 - **Navegación:** con el índice se elige un plato con un click; desde una página, **Q y E** pasan a la anterior o a la siguiente (son las mismas teclas que pasan de página en el menú de máquinas), y **Q en la primera página vuelve al índice**. Así no hace falta un botón de "volver" en el dibujo (ver [decisión 2](#decisiones)).
 - `pausedByBook`: si el jugador abre el libro con la simulación apagada, al cerrarlo **sigue apagada**.
-- `main.wpgm` llama a `recipeBookMenu.setUp()` junto con `menuManager.setUp()`.
-- `levelManager._clear()` llama a `recipeBookMenu.close()`, por si algún día se carga un nivel con el libro abierto (hoy las teclas lo impiden: ver fase 3).
+- `main.wpgm` llama a `recipeBook.setUp()` junto con `menuManager.setUp()`.
+- `levelManager._clear()` llama a `recipeBook.close()`, por si algún día se carga un nivel con el libro abierto (hoy las teclas lo impiden: ver fase 3).
 - Cuando haya más de 10 platos, el índice necesita una segunda imagen (`index2.png`) o dos filas más por hoja. Queda para cuando haga falta.
 
 ---
@@ -305,24 +305,24 @@ Todo en `userController`, que es el que traduce lo que hace el jugador.
 
 ```wollok
 game.onClickDo({ pos =>
-	if (recipeBookMenu.isOpen()) recipeBookMenu.onClick(pos)
-	else if (pos.x() == recipeBookMenu.iconCell().x() && pos.y() == recipeBookMenu.iconCell().y()) recipeBookMenu.open()
+	if (recipeBook.isOpen()) recipeBook.onClick(pos)
+	else if (pos.x() == recipeBook.iconCell().x() && pos.y() == recipeBook.iconCell().y()) recipeBook.open()
 	else toolsManager.onClick(pos)
 })
 ```
 
 **Teclas:**
 
-- **F:** `recipeBookMenu.toggle()`.
+- **F:** `startMenu.toggleRecipeBook()`.
 - **Q y E:** con el libro abierto pasan las páginas del libro; si no, las del menú de máquinas, como hoy.
 - **Todas las demás no hacen nada mientras el libro está abierto** (si no, se podría, por ejemplo, apagar la simulación con 5 o reiniciar el nivel con 0 debajo del libro). En vez de repetir el `if` en cada tecla, un método:
 
 ```wollok
 // Ejecuta la acción sólo si el libro de recetas está cerrado
-method unlessBookOpen(action) { if (!recipeBookMenu.isOpen()) action.apply() }
+method unlessBookOpen(action) { if (!recipeBook.isOpen()) action.apply() }
 
 keyboard.num5().onPressDo({ => self.unlessBookOpen({ levelManager.toggleSimulation() }) })
-keyboard.q().onPressDo({ => if (recipeBookMenu.isOpen()) recipeBookMenu.prevPage() else menuManager.prevPage() })
+keyboard.q().onPressDo({ => if (recipeBook.isOpen()) recipeBook.prevPage() else menuManager.prevPage() })
 ```
 
 **Listo cuando:** con el libro abierto, clickear el tablero no coloca nada y las teclas no hacen nada, salvo F, Q y E.
@@ -346,7 +346,7 @@ keyboard.q().onPressDo({ => if (recipeBookMenu.isOpen()) recipeBookMenu.prevPage
 
 **Documentación:**
 
-- `src/menu/README.md`: `recipeBookMenu`, la grilla de las imágenes y cómo agregar un plato.
+- `src/menu/README.md`: `recipeBook`, la grilla de las imágenes y cómo agregar un plato.
 - `src/simulation/README.md`: la diferencia entre apagada y en pausa.
 - `src/input/README.md` y el README principal: la tecla **F**, el icono, y Q/E dentro del libro.
 - `assets/README.md`: el tamaño y la grilla de las imágenes del libro (las tablas de la fase 0).

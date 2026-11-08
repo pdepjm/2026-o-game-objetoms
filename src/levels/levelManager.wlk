@@ -7,7 +7,7 @@ import tools.toolsManager.*
 import machines.machineManager.*
 import menu.levelInfoMenu.*
 import menu.tutorialMarks.*
-import menu.recipeBookMenu.*
+import menu.recipeBook.*
 
 object levelManager {
     // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
@@ -21,7 +21,7 @@ object levelManager {
 
     method _clear() {
         // Hoy las teclas no dejan cambiar de nivel con el libro abierto: es por si algún día pasa
-        recipeBookMenu.close()
+        menu.recipeBook.recipeBook.close()
         simulationEngine.reset()
         board.clear()
         toolsManager.reset()
