@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - los niveles concretos del juego y el modo libre.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import levels.levelClasses.*
 import food.foodTypes.*
 import food.recipes.*
@@ -335,6 +353,101 @@ object hotDogTutorialLevel inherits Level(
     )
 ) {}
 
+// Las celdas del tutorial de energía (ver friesTutorialCells). Una sola línea por la fila de arriba del
+// tablero: dispenser, cinta, cortadora y cintas fijas hasta el platito. Las dos del medio las pone el jugador.
+object energyTutorialCells {
+	const property row = 13
+
+	method at(column) = new CellPosition(x = column, y = row)
+
+	method dispenser() = self.at(11)
+	method belt() = self.at(12)          // la pone el jugador
+	method cutter() = self.at(13)        // la pone el jugador
+	method fixedBelts() = [self.at(14), self.at(15)]
+	method lastBelt() = self.at(deliveryPoints.slots().first().cell().x())   // sube al platito
+
+	method plate() = deliveryPoints.slots().first().cell()
+}
+
+// El tercer tutorial: la energía. Cada máquina gasta energía y el nivel tiene un límite (energyLimit):
+// si se pasa, no se puede prender la simulación. Con todo armado a velocidad normal se gasta 10 y el límite
+// es 9, así que hay que bajarle la velocidad al dispenser (x0.5 gasta 1 menos). Las máquinas fijas también gastan.
+//
+//   fila 13:  Dispenser  cinta    cortadora  cinta  cinta  cinta que sube al platito
+//             fijo       JUGADOR  JUGADOR    fija   fija   fija
+object energyTutorialLevel inherits Level(
+	name = "Tutorial 3",
+	availableMachines = [
+        { => new Belt() },
+        { => new CuttingMachine() }
+    ],
+    availableRecipes = [],
+	goals = [
+        new DeliveryGoal(
+            kind = cutPotato,
+            amount = 2,
+            label = "Papas Cortadas"
+        )
+    ],
+    energyLimit = new EnergyLimit(max = 9),
+    buildZones = [
+        new Zone(
+            minX = energyTutorialCells.belt().x(),
+            maxX = energyTutorialCells.cutter().x(),
+            minY = energyTutorialCells.row(),
+            maxY = energyTutorialCells.row()
+        )
+    ],
+    fixedMachines = [
+        new Placement(
+            position = energyTutorialCells.dispenser(),
+            factory = {=> new Dispenser(direction = right, availableKinds = [potato])}
+        ),
+        new Placement(
+            position = energyTutorialCells.lastBelt(),
+            factory = {=> new Belt(direction = up)}
+        )
+    ]
+    + energyTutorialCells.fixedBelts().map({ cell => new Placement(position = cell, factory = {=> new Belt(direction = right)}) }),
+    tutorial = new StepTutorial(
+        steps = [
+            new ExplainStep(
+                lines = ["Cada máquina", "gasta energía.", "El nivel tiene", "un límite: mirá", "el contador."],
+                keys = ["continue"],
+                pointsAt = [energyTutorialCells.dispenser()]
+            ),
+            new MachineStep(
+                lines = ["Poné la cinta", "en el recuadro"],
+                keys = ["place"],
+                cells = [energyTutorialCells.belt()],
+                condition = { machine => machine.name() == "Belt" && machine.direction() == right }
+            ),
+            new MachineStep(
+                lines = ["Ahora la", "cortadora: gasta", "más que la", "cinta"],
+                cells = [energyTutorialCells.cutter()],
+                condition = { machine => machine.name() == "CuttingMachine" && machine.direction() == right }
+            ),
+            new MachineStep(
+                lines = ["¡Te pasaste del", "límite! Tocá el", "dispenser y", "bajá su", "velocidad a x0.5"],
+                keys = ["edit"],
+                cells = [energyTutorialCells.dispenser()],
+                condition = { machine => machine.speed() == 0.5 }
+            ),
+            new RunStep(
+                lines = ["¡Listo! Ya se", "puede cocinar"],
+                keys = ["start"]
+            ),
+            new TutorialStep(
+                lines = ["Las papas", "cortadas llegan", "al platito.", "Esperá a que", "lleguen 2."],
+                keys = ["stop"],
+                pointsAt = [energyTutorialCells.plate()],
+                allowsSimulation = true
+            )
+        ],
+        finishedLines = ["¡Bien! Ahora", "sabés cuidar", "la energía."]
+    )
+) {}
+
 // NIVEL 1: ensaladas. El primero sin tutorial, y el más simple: dos ingredientes que sólo hay que
 // cortar. Los Dispensers ya largan lo que hace falta; el jugador arma todo lo demás, incluido el
 // ensamblador (y tiene que elegirle la receta: también ofrece la sopa de tomate).
@@ -462,6 +575,48 @@ object level3 inherits Level(
         new Placement(
             position = new CellPosition(x=5, y=3),
             factory = {=> new Dispenser(direction = right, availableKinds = [pizzaDough, cheese, salami, egg, bacon])}
+        )
+    ]
+) {}
+
+// NIVEL 4: hamburguesas con la energía justa. El mismo plato que el nivel 2, pero con un límite de energía
+// (energyLimit): armado a lo grande, con las máquinas desparramadas y todo a velocidad normal, se gasta
+// de más y no se puede prender la simulación. Hay que armar compacto (las cintas gastan 1 cada una, y son
+// las que más pesan) y bajar velocidades donde convenga (x0.5 gasta 1 menos que x1, a costa de tardar el doble).
+// Los Dispensers fijos también gastan: cuatro, que ofrecen todo (hay que elegir qué larga cada uno).
+object level4 inherits Level(
+	name = "Nivel 4",
+	availableMachines = [
+        { => new Belt() },
+        { => new CuttingMachine() },
+        { => new Oven() },
+        { => new Assembler() }
+    ],
+    availableRecipes = [burgerRecipe, cheeseBurgerRecipe],
+	goals = [
+        new DeliveryGoal(
+            kind = burger,
+            amount = 3,
+            label = "Hamburguesas"
+        )
+    ],
+    energyLimit = new EnergyLimit(max = 50),
+    fixedMachines = [
+        new Placement(
+            position = new CellPosition(x=5, y=9),
+            factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
+        ),
+        new Placement(
+            position = new CellPosition(x=5, y=8),
+            factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
+        ),
+        new Placement(
+            position = new CellPosition(x=5, y=6),
+            factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
+        ),
+        new Placement(
+            position = new CellPosition(x=5, y=5),
+            factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
         )
     ]
 ) {}

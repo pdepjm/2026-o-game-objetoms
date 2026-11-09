@@ -84,7 +84,7 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `settings()` | `[]` | acepta configuraciones: devuelve sus settings (el Dispenser: ingrediente y velocidad; el brazo: hacia dónde entrega; el Assembler: su receta) |
-| `baseEnergy()` | `0` | consume energía aunque no tenga ningún setting. `energyConsumption()` suma ésta más la de cada setting |
+| `baseEnergy()` | `0` | consume energía aunque no tenga ningún setting (ver la [tabla de energía](#energía)). `energyConsumption()` suma ésta más la de cada setting |
 
 **Salida**
 
@@ -242,18 +242,38 @@ class Oven inherits ProcessingMachine {
 
 **Por dónde empezar:** si la máquina transforma un ingrediente, heredar de `ProcessingMachine` y definir `foodProcess()` (y, si se anima, `workImages()` o `animateWork`). Si hace otra cosa con el item (juntarlo con otros, como el Assembler), sobrescribir `onArrived(item)`, y si filtra lo que acepta, `canReceive(item)`. El resto, sólo si hace falta.
 
+## Energía
+
+Cada máquina gasta **energía** mientras está colocada: `energyConsumption()` = `baseEnergy()` + lo que suma la opción elegida de cada setting. Un nivel puede limitar el total (ver [Energía en `levels/`](../levels/README.md#energía)).
+
+| Máquina | `baseEnergy()` | Settings que suman energía |
+|---|:---:|---|
+| `Belt` | 1 | — |
+| `Dispenser` | 1 | Velocidad: x0.5 suma 1, x1 suma 2, x2 suma 4 (a velocidad normal gasta 3 en total) |
+| `AutomaticArm` | 2 | — |
+| `SmartRoboticArm` | 3 | — |
+| `CuttingMachine` | 1 | Velocidad (igual que el Dispenser: gasta 3 a velocidad normal) |
+| `Oven` | 2 | Velocidad (gasta 4 a velocidad normal) |
+| `Fryer` | 2 | Velocidad (gasta 4 a velocidad normal) |
+| `Assembler` | 1 | Velocidad (gasta 3 a velocidad normal) |
+| `DeliverySlot` | 0 | — (no está en el tablero: no cuenta) |
+
+**Velocidad** (`SpeedSetting`, en el panel de edit): la tienen el `Dispenser`, la `CuttingMachine`, el `Oven`, la `Fryer` y el `Assembler`. Es un multiplicador (`0.5`, `1` o `2`). En el `Dispenser` cambia cada cuánto crea un ingrediente; en las demás, el tiempo que tardan en trabajar: `workSteps(baseSteps)` divide el tiempo del ingrediente (o de la receta) por la velocidad, redondea y nunca baja de un paso. Más velocidad es más rápido pero gasta más energía; menos velocidad ahorra energía pero tarda el doble. Las máquinas sin velocidad responden `speed()` = 1. La `Fryer` no cambia el tiempo que tarda en quemar lo frito.
+
+Una máquina nueva que no sobrescriba `baseEnergy()` no gasta nada. Los números definen la dificultad de los niveles con límite: si se cambian, revisar el límite de `energyTutorialLevel` (9) y los tests de `test/energyTest.wtest`.
+
 ## `types/`: las máquinas
 
 | Máquina | Qué hace | Cómo se anima | Sobrescribe |
 |---|---|---|---|
-| `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `runningImage` |
-| `Dispenser` | Crea un ingrediente y se lo entrega a la de adelante. Se configura qué ingrediente (papa por defecto, o el primero de los que ofrece si no ofrece papa) y a qué velocidad (un item cada 5 segundos a velocidad normal). Los ingredientes que ofrece salen de `availableKinds`, que un nivel puede limitar al crearlo (`new Dispenser(availableKinds = [potato, tomato])`) | Frame a frame (todavía sin animación) | `name`, `settings`, `canReceive`, `start`, `onPushed` |
-| `AutomaticArm` | Agarra el item que le llega por su única entrada y lo entrega recto, a la izquierda o a la derecha de su recorrido, según su configuración: al girar vuelve a calcular `next`. La entrada es la dirección elegida al colocarlo y rotar la mueve; sólo recibe de la máquina que está ahí, y además agarra los items que pasan por una cinta ahí, aunque la cinta no le apunte. Ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `name`, `settings`, `onReceive`, `onPushed`, `acceptsSource`, `isArm`, `start`, `rotate`, `reset` y el dibujo |
-| `SmartRoboticArm` | Un brazo con tres salidas (izquierda, recta y derecha), cada una con los ingredientes que deja salir (una columna en el panel de edit; sin ingredientes, esa salida no se usa). Entrega cada item por la primera salida que lo acepta (recta, izquierda, derecha) y no toma los que ninguna acepta | Los de `AutomaticArm` (en el menú, su propia imagen) | `name`, `settings`, `canReceive`, `outputSideFor`, `menuImage` |
-| `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `foodProcess`, `workImages` |
-| `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato. La receta se elige en el panel de edit (`RecipeSetting`) entre las del nivel; arranca con la primera, o con `noRecipe` si el nivel no tiene. **La toma al prender la simulación** (`start`), y ahí ajusta el inventario a lo que pide: si se cambia con la simulación prendida, se usa desde la próxima vez que se prende | Frame a frame (al armar) | `name`, `settings`, `start`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` y el tamaño (`width`, `height`, `outputTarget`) |
-| `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `foodProcess`, `animateWork` |
-| `Fryer` | Fríe lo que le entrega un brazo: es `armOnly`, no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | GIF, sólo mientras fríe | `name`, `foodProcess`, `animateWork`, `armOnly`, `grabbableItem`, `onProcessed` |
+| `Belt` | Lleva un item a la máquina a la que apunta | GIF | `name`, `baseEnergy`, `runningImage` |
+| `Dispenser` | Crea un ingrediente y se lo entrega a la de adelante. Se configura qué ingrediente (papa por defecto, o el primero de los que ofrece si no ofrece papa) y a qué velocidad (un item cada 5 segundos a velocidad normal). Los ingredientes que ofrece salen de `availableKinds`, que un nivel puede limitar al crearlo (`new Dispenser(availableKinds = [potato, tomato])`) | Frame a frame (todavía sin animación) | `name`, `baseEnergy`, `settings`, `canReceive`, `start`, `onPushed` |
+| `AutomaticArm` | Agarra el item que le llega por su única entrada y lo entrega recto, a la izquierda o a la derecha de su recorrido, según su configuración: al girar vuelve a calcular `next`. La entrada es la dirección elegida al colocarlo y rotar la mueve; sólo recibe de la máquina que está ahí, y además agarra los items que pasan por una cinta ahí, aunque la cinta no le apunte. Ocupa 1 celda y se dibuja en 3x3 | Frame a frame (giro y agarre) | `name`, `baseEnergy`, `settings`, `onReceive`, `onPushed`, `acceptsSource`, `isArm`, `start`, `rotate`, `reset` y el dibujo |
+| `SmartRoboticArm` | Un brazo con tres salidas (izquierda, recta y derecha), cada una con los ingredientes que deja salir (una columna en el panel de edit; sin ingredientes, esa salida no se usa). Entrega cada item por la primera salida que lo acepta (recta, izquierda, derecha) y no toma los que ninguna acepta | Los de `AutomaticArm` (en el menú, su propia imagen) | `name`, `baseEnergy`, `settings`, `canReceive`, `outputSideFor`, `menuImage` |
+| `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `baseEnergy`, `foodProcess`, `workImages` |
+| `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato. La receta se elige en el panel de edit (`RecipeSetting`) entre las del nivel; arranca con la primera, o con `noRecipe` si el nivel no tiene. **La toma al prender la simulación** (`start`), y ahí ajusta el inventario a lo que pide: si se cambia con la simulación prendida, se usa desde la próxima vez que se prende | Frame a frame (al armar) | `name`, `baseEnergy`, `settings`, `start`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` y el tamaño (`width`, `height`, `outputTarget`) |
+| `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `baseEnergy`, `foodProcess`, `animateWork` |
+| `Fryer` | Fríe lo que le entrega un brazo: es `armOnly`, no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | GIF, sólo mientras fríe | `name`, `baseEnergy`, `foodProcess`, `animateWork`, `armOnly`, `grabbableItem`, `onProcessed` |
 | `DeliverySlot` | Un platito del fondo, donde se entrega la comida. El item viaja hasta él y, al llegar, sale del juego y se le avisa a `levelManager.delivered(item)`, que lo cuenta para el objetivo del nivel. No entrega a nadie. **No lo coloca el jugador ni está en el menú**: los crea `deliveryPoints` (en el mismo archivo), que tiene sus dos posiciones, (16, 14) y (17, 14), y en `setUp()` se los pasa al `board` (lo llama `main.wpgm`) | No se dibuja: el fondo ya muestra los platitos | `name`, `nextMachine`, `onArrived` |
 
 Por defecto una máquina es **frame a frame**: con la simulación prendida se ve quieta y se anima cuando hace algo. Las imágenes de cada tipo se explican en [`assets/README.md`](../../assets/README.md), y el brazo tiene su propia guía en [`assets/machines/AutomaticArm/README.md`](../../assets/machines/AutomaticArm/README.md).

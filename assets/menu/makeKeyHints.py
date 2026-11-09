@@ -1,3 +1,23 @@
+# Buffet Albert Einstein - genera las imágenes de las teclas y la pantalla de controles.
+# Este archivo NO forma parte del juego: es una herramienta auxiliar para crear
+# sprites e imágenes del juego, y no se usa al jugarlo.
+#
+# Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+# Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 # Genera las imágenes con teclas, con el mismo estilo que las teclas dibujadas en el fondo (F Recetario,
 # M Menú): una tecla gris oscura con la letra blanca y, al lado, lo que hace en amarillo.
 #

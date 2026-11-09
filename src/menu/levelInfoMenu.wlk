@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - la información del nivel en la pantalla: nombre, objetivos, progreso y tutorial.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import wollok.game.*
 import menu.menuManager.*
 import menu.menuText.*
@@ -58,11 +76,14 @@ object levelInfoMenu {
     // Los del papel (marrón y gris) son los de las letras: ver assets/menu/font/makeFont.py
     const yellow = "FFD015FF"
     const white = "FFFFFFFF"
+    const red = "FF5A4DFF"
 
     // Las imágenes de atrás (la cinta, la tarjeta, el globo, los platos) empiezan 12 px adentro de la parte azul
     const imageColumn = 0.24
 
     // Lo dibujado, separado según cuándo se reemplaza
+    var energyTexts = []     // el contador de energía: cambia al colocar, borrar o editar máquinas
+    var skipButton = null    // el botón para saltear el tutorial (null si el nivel no tiene tutorial)
     var levelTexts = []      // la cinta, el nombre, la ayuda, la tarjeta y el título: cambian al cargar otro nivel
     var progressTexts = []   // cada objetivo (plato, texto y barra): cambian con cada entrega
     var completedTexts = []  // el mensaje de nivel completo
@@ -73,15 +94,20 @@ object levelInfoMenu {
     // Al cargar un nivel: borra todo lo anterior y dibuja el nombre y los objetivos.
     // Las imágenes van antes que los textos: Wollok dibuja en el orden en que se agregan.
     method show(level) {
-        self.remove(levelTexts + progressTexts + completedTexts)
+        self.remove(levelTexts + progressTexts + completedTexts + energyTexts)
         completedTexts = []
+        energyTexts = []
+        skipButton = null
         levelTexts = [
             self.addImage("menu/info/ribbon.png", nameRow),
             self.addText(level.name().toUpperCase(), column, nameRow, yellow)
         ]
         // un poco más arriba que la fila, para que no quede pegado a la tarjeta (sigue en la fila 12: el click
         // se reconoce por celda)
-        if (level.hasTutorial()) levelTexts.add(self.addKeyHint("menu/key_skip.png", "skip", hintRow + 0.2))
+        if (level.hasTutorial()) {
+            skipButton = self.addKeyHint("menu/key_skip.png", "skip", hintRow + 0.2)
+            levelTexts.add(skipButton)
+        }
         const goals = level.shownGoals().size()
         if (goals > 0) {
             // la tarjeta va del título hasta el borde de abajo de la fila del último objetivo
@@ -94,12 +120,27 @@ object levelInfoMenu {
     // ¿Es una celda del botón para saltear el tutorial? (la imagen ocupa x 0 a 4 de la fila 12)
     method isSkipButton(pos) = self.showsSkipButton() && pos.y() == hintRow && pos.x().between(0, 3)
 
-    method showsSkipButton() = levelTexts.any({ visual => !visual.isText() && visual.description() == "skip" })
+    method showsSkipButton() = skipButton != null
 
     // Una ayuda debajo del nombre (por ejemplo, "L: volver" en el modo libre). Se borra al cargar otro nivel.
     method showHint(text) {
         levelTexts.add(self.addText(text, hintRow))
     }
+
+    // El contador de energía, debajo de la tarjeta de objetivos (rojo si se pasó del límite). Los niveles
+    // sin límite no lo muestran.
+    method updateEnergy(level, total) {
+        self.remove(energyTexts)
+        energyTexts = []
+        const limit = level.energyLimit()
+        if (limit.isLimited()) {
+            const color = if (limit.allows(total)) white else red
+            energyTexts.add(self.addText(limit.text(total), column, goalTitleRow - level.shownGoals().size() - 1, color))
+        }
+    }
+
+    // Lo que dice el contador de energía (para los tests)
+    method energyMessage() = energyTexts.map({ visual => visual.description() })
 
     // Cambió el progreso (una entrega, o se apagó la simulación): reemplaza sólo los objetivos
     method updateProgress(level) {

@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - las clases base de todas las máquinas: animación, imagen y comportamiento.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 // Maneja el que es cada cosa
 //
 // Las clases base de todas las máquinas, en tres capas:
@@ -16,6 +34,7 @@ import board.*
 import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import machines.inventory.*
+import machines.settings.*
 import cellPosition.*
 
 // Reproduce animaciones frame a frame (carpetas de PNG, ver FrameAnimation) con el animationEngine.
@@ -214,6 +233,9 @@ class MachineSprite inherits MachineAnimator {
 //   receive(item) → onReceive(item) → (el item llega a la celda) → onArrived(item) → tryPush()
 // Si la de adelante no puede recibir, se anota con whenFree y reintenta cuando se libere.
 class Machine inherits MachineSprite {
+	// Una máquina de al lado cambió (o ésta acaba de colocarse). Por defecto no hace nada; la cinta lo usa para recalcular su forma.
+	method onNeighbourChanged() {}
+
 	// ----------- ATRIBUTOS -----------
 	// Los items que guarda y las acciones que esperan a que se libere lugar.
 	// El inventario se encarga de despertar a las que esperan al liberar un item.
@@ -253,6 +275,13 @@ class Machine inherits MachineSprite {
 	method energyConsumption() = self.baseEnergy() + self.settings().sum({ setting => setting.energyCost() })
 
 	method baseEnergy() = 0
+
+	// El multiplicador de velocidad con el que trabaja (1 si no tiene un setting de velocidad). Las que lo tienen
+	// lo sobrescriben. Más velocidad es menos tiempo de trabajo (y más energía: ver SpeedSetting).
+	method speed() = 1
+
+	// Los pasos que tarda en trabajar algo que a velocidad normal tarda baseSteps: nunca menos de uno
+	method workSteps(baseSteps) = (baseSteps / self.speed()).round().max(1)
 
 	//----------- UBICACION EN EL TABLERO -----------
 
@@ -399,6 +428,13 @@ class Machine inherits MachineSprite {
 
 class ProcessingMachine inherits Machine {
 
+	// Qué tan rápido procesa (se cambia con la herramienta edit): el tiempo de cada ingrediente se divide por la velocidad
+	const speedSetting = new SpeedSetting(value = 1)
+
+	override method settings() = [speedSetting]
+
+	override method speed() = speedSetting.value()
+
 	method foodProcess()    // abstracto: cutting, cooking, frying…
 
 
@@ -412,7 +448,7 @@ class ProcessingMachine inherits Machine {
 
 	override method onArrived(item) {
 
-		self.animateWork(item.processTime(), {
+		self.animateWork(self.workSteps(item.processTime()), {
 
 			// Un brazo pudo haberse llevado el item mientras trabajaba: entonces ya no es de esta máquina
 			if (self.heldItems().contains(item)) {

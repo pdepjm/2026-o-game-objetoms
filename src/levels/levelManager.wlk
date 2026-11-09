@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - carga los niveles, lleva cuál se está jugando y avisa cuándo se gana.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import src.food.recipes.*
 import src.menu.placeMenu.*
 import levels.levelsTypes.*
@@ -11,7 +29,7 @@ import menu.recipeBook.*
 
 object levelManager {
     // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
-    var levels = [tutorialLevel, hotDogTutorialLevel, level1, level2, level3]
+    var levels = [tutorialLevel, hotDogTutorialLevel, energyTutorialLevel, level1, level2, level3, level4]
     // Los que ya se ganaron, para saber a cuál volver desde el modo libre (levelToPlay).
     // Se guardan mientras el juego está abierto: al cerrarlo se pierden.
     const completedLevels = []
@@ -58,6 +76,7 @@ object levelManager {
         level.placeFixedMachines()
         level.resetGoals()
         levelInfoMenu.show(level)
+        self._showEnergy()
         if (level == freePlay) levelInfoMenu.showHint("L: volver")
         self._notifyTutorial({ tutorial => tutorial.onLevelLoaded(level) })
     }
@@ -86,7 +105,8 @@ object levelManager {
     }
 
     method toggleSimulation() {
-        if (!completed && self.tutorial().allowsSimulationToggle()) {
+        // Prender necesita energía de sobra; apagar siempre se puede
+        if (!completed && self.tutorial().allowsSimulationToggle() && (simulationEngine.running() || self.hasEnergy())) {
 	    	simulationEngine.toggle()
 	    	// Al apagar se borran los items: el progreso vuelve a cero
 	    	if (!simulationEngine.running()) {
@@ -96,6 +116,12 @@ object levelManager {
 	    	self._notifyTutorial({ tutorial => tutorial.onSimulationToggled(simulationEngine.running()) })
 	    }
     }
+
+    // ¿La energía que gastan las máquinas entra en el límite del nivel?
+    method hasEnergy() = currentLevel.energyLimit().allows(board.totalEnergy())
+
+    // Muestra cuánta energía se gasta (si el nivel tiene límite)
+    method _showEnergy() { levelInfoMenu.updateEnergy(currentLevel, board.totalEnergy()) }
 
     method delivered(item) {
 	    if (!completed) {
@@ -126,10 +152,21 @@ object levelManager {
     method tutorial() = currentLevel.tutorial()
 
     method toolSelected(tool) { self._notifyTutorial({ tutorial => tutorial.onToolSelected(tool) }) }
-    method machinePlaced(machine) { self._notifyTutorial({ tutorial => tutorial.onMachinePlaced(machine) }) }
-    method machineRemoved(machine) { self._notifyTutorial({ tutorial => tutorial.onMachineRemoved(machine) }) }
+    method machinePlaced(machine) {
+        self._showEnergy()
+        self._notifyTutorial({ tutorial => tutorial.onMachinePlaced(machine) })
+    }
+    method machineRemoved(machine) {
+        self._showEnergy()
+        self._notifyTutorial({ tutorial => tutorial.onMachineRemoved(machine) })
+    }
     method machineRotated(machine) { self._notifyTutorial({ tutorial => tutorial.onMachineRotated(machine) }) }
-    method settingChanged(machine, setting) { self._notifyTutorial({ tutorial => tutorial.onSettingChanged(machine, setting) }) }
+    // Si con la simulación prendida se sube un setting y se pasa del límite, se apaga
+    method settingChanged(machine, setting) {
+        self._showEnergy()
+        if (simulationEngine.running() && !self.hasEnergy()) self.toggleSimulation()
+        self._notifyTutorial({ tutorial => tutorial.onSettingChanged(machine, setting) })
+    }
     // Enter: seguir después de una explicación. Sin tutorial no hace nada.
     method continueTutorial() { self._notifyTutorial({ tutorial => tutorial.onContinue() }) }
 

@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - tests de los tutoriales.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import wollok.game.*
 import src.board.*
 import src.directions.*
@@ -127,7 +145,7 @@ describe "tests de los eventos del tutorial" {
   }
 
   test "todos los niveles menos el tutorial usan noTutorial" {
-    const tutorials = [tutorialLevel, hotDogTutorialLevel]
+    const tutorials = [tutorialLevel, hotDogTutorialLevel, energyTutorialLevel]
     assert.that((levelManager.levels() + [freePlay]).filter({ level => !tutorials.contains(level) }).all({ level => level.tutorial() == noTutorial }))
   }
 }
@@ -168,8 +186,8 @@ describe "tests del tutorial de papas fritas" {
     self.useTool(rotate, game.at(11, 7))
   }
 
-  test "se juegan los dos tutoriales y despues los niveles 1, 2 y 3" {
-    assert.equals([tutorialLevel, hotDogTutorialLevel, level1, level2, level3], levelManager.levels())
+  test "se juegan los tres tutoriales y despues los niveles 1, 2, 3 y 4" {
+    assert.equals([tutorialLevel, hotDogTutorialLevel, energyTutorialLevel, level1, level2, level3, level4], levelManager.levels())
   }
 
   test "arranca explicando de donde salen las papas" {

@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - la portada, las instrucciones y el paso al juego.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import wollok.game.*
 import input.userController.*
 import menu.menuManager.*
@@ -24,13 +42,13 @@ object menuBackground {
 }
 
 object startMenu {
-	var screen = "cover"
+	var screen = coverScreen
 	var initialized = false
 
-	method isPlaying() = screen == "playing"
+	method isPlaying() = screen.isPlaying()
 
 	method show() {
-		screen = "cover"
+		screen = coverScreen
 		if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground)
 		if (!game.hasVisual(startScreen)) game.addVisual(startScreen)
 
@@ -41,41 +59,37 @@ object startMenu {
 		// (NO PONGAS F NI FLECHAS ACÁ)
 	}
 
-	method start() {
-		if (screen == "cover") {
-			recipeBook.close()
-			screen = "playing"
-			if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
-			if (game.hasVisual(menuBackground)) game.removeVisual(menuBackground)
-			simulationEngine.resume()
-			if (!initialized) {
-				initialized = true
-				menuManager.setUp()
-				// AGREGÁ ESTAS DOS LÍNEAS QUE FALTABAN:
-				deliveryPoints.setUp()
-				levelManager.start()
-			}
+	// Lo que hace cada tecla depende de la pantalla en la que estemos (ver las pantallas, abajo)
+	method start() { screen.start() }
+
+	method pressI() { screen.pressI() }
+
+	method pressS() { screen.pressS() }
+
+	// Las pantallas le piden al menú que cambie de estado
+	method play() {
+		recipeBook.close()
+		screen = playingScreen
+		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
+		if (game.hasVisual(menuBackground)) game.removeVisual(menuBackground)
+		simulationEngine.resume()
+		if (!initialized) {
+			initialized = true
+			menuManager.setUp()
+			deliveryPoints.setUp()
+			levelManager.start()
 		}
 	}
 
-	method pressI() {
-		if (screen == "cover") self.openInstructions()
-		else if (screen == "instructions") self.backToCover()
-	}
-
-	method pressS() {
-		if (screen == "cover") game.stop()
-	}
-
 	method openInstructions() {
-		screen = "instructions"
+		screen = instructionsScreen
 		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
 		game.addVisual(menuControlsOverlay) 
 	}
 
 	method backToCover() {
 		if (recipeBook.isOpen()) recipeBook.close()
-		screen = "cover"
+		screen = coverScreen
 		simulationEngine.pause()
 		if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
 		if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground) 
@@ -85,23 +99,62 @@ object startMenu {
 	method toggleRecipeBook() {
 		if (!recipeBook.isOpen()) {
 			// --- ABRIR EL LIBRO ---
-			// Si no estamos jugando (estamos en el menú), ocultamos la portada o los controles
-			if (!self.isPlaying()) {
-				if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
-				if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
-				// Aseguramos que el fondo azul esté siempre presente
-				if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground)
-			}
+			// Si estamos en el menú, la pantalla le deja lugar al libro (si se está jugando, no hace nada)
+			screen.hideForRecipeBook()
 			recipeBook.open()
 		} else {
 			// --- CERRAR EL LIBRO ---
 			recipeBook.close()
 			// Si estábamos en el menú, volvemos a mostrar la pantalla que correspondía
-			if (!self.isPlaying()) {
-				if (screen == "cover") game.addVisual(startScreen)
-				if (screen == "instructions") game.addVisual(menuControlsOverlay)
-			}
+			screen.showAfterRecipeBook()
 		}
 	}
 
+}
+
+// ----------- LAS PANTALLAS DEL MENÚ -----------
+// Cada pantalla sabe qué hace cada tecla y qué mostrar alrededor del libro de recetas.
+
+// Aseguramos que el fondo azul esté siempre presente cuando se abre el libro en el menú
+object menuScreenSupport {
+	method ensureBackground() {
+		if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground)
+	}
+}
+
+object coverScreen {
+	method isPlaying() = false
+	method start() { startMenu.play() }
+	method pressI() { startMenu.openInstructions() }
+	method pressS() { game.stop() }
+
+	method hideForRecipeBook() {
+		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
+		menuScreenSupport.ensureBackground()
+	}
+
+	method showAfterRecipeBook() { game.addVisual(startScreen) }
+}
+
+object instructionsScreen {
+	method isPlaying() = false
+	method start() {}
+	method pressI() { startMenu.backToCover() }
+	method pressS() {}
+
+	method hideForRecipeBook() {
+		if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
+		menuScreenSupport.ensureBackground()
+	}
+
+	method showAfterRecipeBook() { game.addVisual(menuControlsOverlay) }
+}
+
+object playingScreen {
+	method isPlaying() = true
+	method start() {}
+	method pressI() {}
+	method pressS() {}
+	method hideForRecipeBook() {}
+	method showAfterRecipeBook() {}
 }

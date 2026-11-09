@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - el tablero: sus casillas, las máquinas colocadas y las zonas donde se puede construir.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 // MANEJA EL DONDE
 
 import wollok.game.*
@@ -49,12 +67,12 @@ object board {
 
 	method machines() = grid.flatMap({ column => column.map({ cell => cell.machine()})}).filter({machine => machine != null}).asSet().asList()
 
-	// NUEVO: Avisa a las cintas que recalculen su forma al construir o destruir
+	// La energía que gastan todas las máquinas colocadas (las fijas del nivel también)
+	method totalEnergy() = self.machines().sum({ machine => machine.energyConsumption() })
+
+	// Avisa a la máquina colocada y a las de al lado que algo cambió en su entorno (las cintas recalculan su forma)
 	method updateNeighbourBelts(position, placedElement) {
-		if (placedElement != null && placedElement.name() == "Belt") {
-			placedElement.updateShape()
-			if (!simulationEngine.running()) placedElement.showStatic()
-		}
+		if (placedElement != null) placedElement.onNeighbourChanged()
 
 		const neighbours = [
 			self.machineAt(position.left(1)),
@@ -62,13 +80,8 @@ object board {
 			self.machineAt(position.up(1)),
 			self.machineAt(position.down(1))
 		]
-		
-		neighbours.forEach({ neighbour =>
-			if (neighbour != null && neighbour.name() == "Belt") {
-				neighbour.updateShape()
-				if (!simulationEngine.running()) neighbour.showStatic()
-			}
-		})
+
+		neighbours.filter({ neighbour => neighbour != null }).forEach({ neighbour => neighbour.onNeighbourChanged() })
 	}
 
 	// métodos públicos

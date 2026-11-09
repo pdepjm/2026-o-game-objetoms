@@ -4,8 +4,8 @@ Los niveles del juego: qué máquinas se pueden usar, cuáles vienen colocadas y
 
 | Archivo | Qué tiene |
 |---|---|
-| `levelClasses.wlk` | La clase `Level` y los objetivos (`DeliveryGoal` y `noGoal`) |
-| `levelsTypes.wlk` | Los niveles concretos: `freePlay` (el modo libre), los tutoriales `tutorialLevel` (papas fritas) y `hotDogTutorialLevel` (panchos), y los niveles `level1` (ensaladas), `level2` (hamburguesas) y `level3` (desayunos y pizzas) |
+| `levelClasses.wlk` | La clase `Level`, los objetivos (`DeliveryGoal` y `noGoal`) y el límite de energía (`EnergyLimit` y `unlimitedEnergy`) |
+| `levelsTypes.wlk` | Los niveles concretos: `freePlay` (el modo libre), los tutoriales `tutorialLevel` (papas fritas), `hotDogTutorialLevel` (panchos) y `energyTutorialLevel` (energía), y los niveles `level1` (ensaladas), `level2` (hamburguesas), `level3` (desayunos y pizzas) y `level4` (hamburguesas con límite de energía) |
 | `levelManager.wlk` | `levelManager`: el nivel actual; cargarlo, reiniciarlo, pasar al siguiente y ganar |
 | `tutorial.wlk` | Lo que el juego le avisa al tutorial de un nivel (`Tutorial`, `noTutorial`) y los tutoriales por pasos (`StepTutorial`) |
 
@@ -24,6 +24,7 @@ Un nivel no hace nada por sí mismo: dice cómo es, y `levelManager` lo usa.
 | `buildZones` | Dónde puede colocar máquinas el jugador: una lista de `Zone` (ver abajo). Opcional: por defecto, todo el tablero (`[wholeBoard]`) |
 | `goals` | Los objetivos. **Se gana cuando se cumplen todos** |
 | `tutorial` | El tutorial que lo acompaña (ver [Tutorial](#tutorial)). Opcional: por defecto, `noTutorial` |
+| `energyLimit` | Cuánta energía pueden gastar las máquinas en total (ver [Energía](#energía)). Opcional: por defecto, `unlimitedEnergy` (sin límite) |
 
 Y para hablar con sus objetivos sin que `levelManager` los recorra: `delivered(item)`, `goalsMet()`, `resetGoals()` y `progressLines()` (una línea de texto por objetivo; `noGoal` no suma línea).
 
@@ -81,7 +82,7 @@ Primero se apaga y se limpia, después se arma:
 Pasa por `levelManager` (no directo al engine) para que el engine no sepa de niveles:
 
 - Si el nivel ya está completo, no hace nada: hay que pasar al siguiente (N) o reiniciar (0).
-- Si no, prende o apaga la simulación. **Al apagar, los objetivos vuelven a cero**: se borran los items, así que el progreso también. El objetivo se cumple en una sola corrida.
+- Si no, prende o apaga la simulación. **Prender necesita energía de sobra** (ver [Energía](#energía)); apagar siempre se puede. **Al apagar, los objetivos vuelven a cero**: se borran los items, así que el progreso también. El objetivo se cumple en una sola corrida.
 
 ### Ganar
 
@@ -240,8 +241,28 @@ El segundo. Enseña a configurar un Dispenser, el horno, el ensamblador y con qu
 
 Lo juega entero "armado como dice el tutorial, entrega los panchos y se gana".
 
+### `energyTutorialLevel` ("Tutorial 3"): energía
+
+El tercero. Enseña que cada máquina gasta energía y que un nivel puede limitarla. Una sola línea por la fila de arriba del tablero (`energyTutorialCells`): dispenser fijo, cinta y cortadora (las pone el jugador), dos cintas fijas y una que sube al platito. El límite es **9**: armado a velocidad normal se gastan 10 (dispenser 3 + cintas fijas 3 + cinta 1 + cortadora 3), así que hay que bajar la velocidad del dispenser.
+
+1. Explica la energía y el contador.
+2. **Colocar la cinta** y **la cortadora** en los recuadros. El contador se pone rojo (`SIN ENERGÍA: 10/9`).
+3. **Editar el dispenser** y elegir velocidad **x0.5** (gasta 1 menos: queda justo en 9/9).
+4. Prender la simulación y esperar 2 papas cortadas.
+
+Lo juega entero "armado como dice el tutorial, entrega las papas cortadas y se gana" (`test/energyTest.wtest`).
+
 > [!NOTE]
-> El plan completo de los niveles (incluida la fase que falta: energía) está en [`docs/Plan-Implementacion-Niveles.md`](../../docs/Plan-Implementacion-Niveles.md).
+> El plan completo de los niveles (la energía es la fase 6) está en [`docs/Plan-Implementacion-Niveles.md`](../../docs/Plan-Implementacion-Niveles.md).
+
+## Energía
+
+Cada máquina gasta energía (`energyConsumption()`: su `baseEnergy()` más lo que suma cada setting; ver la tabla en [`machines/README.md`](../machines/README.md#energía)). Un nivel puede limitarla con `energyLimit = new EnergyLimit(max = 9)`:
+
+- `board.totalEnergy()` suma la de **todas** las máquinas colocadas, **las fijas del nivel también**.
+- Se puede gastar **hasta el máximo inclusive**. Si se pasa, `levelManager.toggleSimulation()` no deja prender la simulación (apagarla siempre se puede). Si la simulación ya está prendida y un ajuste hace que se pase, se apaga.
+- `levelInfoMenu` muestra el contador debajo de los objetivos (`Energía: 7/9`, y en rojo `SIN ENERGÍA: 10/9` si se pasó). `levelManager` lo actualiza al cargar el nivel y al colocar, borrar o editar una máquina. Un nivel sin límite no muestra contador.
+- Los niveles que no ponen `energyLimit` no tienen límite: gastar energía no les cambia nada.
 
 ## Los niveles
 
@@ -252,4 +273,5 @@ Van de menos a más difícil. Todos tienen los Dispensers fijos a la izquierda, 
 | `level1` | 3 ensaladas | Dos ingredientes que sólo hay que cortar. Los Dispensers ya largan lechuga y tomate. Hay que elegir la receta (también ofrece la sopa de tomate) |
 | `level2` | 3 hamburguesas | Cuatro ingredientes y dos procesos (cortar y cocinar). Los cuatro Dispensers ofrecen todo: hay que elegir qué larga cada uno, y que cada ingrediente llegue al ensamblador por su lado (el que sobra traba a los demás) |
 | `level3` | 2 desayunos y 2 pizzas | Dos platos a la vez, con dos ensambladores y los dos platitos. El huevo se fríe: la freidora necesita un brazo común que se lo lleve y uno inteligente que lo saque frito. El queso de la pizza se corta una sola vez. **El tablero está limitado**: la pizza se arma arriba (filas 7 a 10) y el desayuno abajo (filas 2 a 5), separados por la fila 6, cada uno con un pasillo angosto hasta su platito |
+| `level4` | 3 hamburguesas, con energía limitada | El mismo plato que el nivel 2, pero con `energyLimit = 50`: armado desparramado y a velocidad normal se gasta de más y no se puede prender la simulación. Hay que armar compacto (cada cinta gasta 1) y bajar velocidades donde convenga (x0.5 gasta 1 menos, pero tarda el doble). Los 4 Dispensers fijos también gastan. Una forma de ganarlo: las cuatro líneas llegando a un ensamblador en (9, 8), con los Dispensers a x0.5 (49 de 50); a velocidad normal esa misma forma gasta 53 |
 

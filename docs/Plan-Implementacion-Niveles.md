@@ -15,8 +15,8 @@ Plan para pasar del modo libre de hoy (todas las máquinas, sin objetivo) a **ni
 - [x] [Fase 2: Puntos de entrega y objetivos](#fase-2-puntos-de-entrega-y-objetivos)
 - [x] [Fase 3: `Level` y `levelManager`](#fase-3-level-y-levelmanager)
 - [x] [Fase 4: Máquinas fijas y parametrizadas](#fase-4-máquinas-fijas-y-parametrizadas) (incluye las recetas por nivel, [4.5](#45-recetas-disponibles-por-nivel), y dónde se puede construir, [4.6](#46-dónde-se-puede-construir))
-- [x] [Fase 5: Entrada para el tutorial](#fase-5-entrada-para-el-tutorial) (con dos tutoriales: `tutorialLevel`, papas fritas, y `hotDogTutorialLevel`, panchos. El viejo nivel 1 se sacó y el nivel 2 pasó a ser el nivel 1)
-- [ ] [Fase 6: Energía](#fase-6-energía) (opcional)
+- [x] [Fase 5: Entrada para el tutorial](#fase-5-entrada-para-el-tutorial) (con tres tutoriales: `tutorialLevel`, papas fritas, `hotDogTutorialLevel`, panchos, y `energyTutorialLevel`, energía. El viejo nivel 1 se sacó y el nivel 2 pasó a ser el nivel 1)
+- [x] [Fase 6: Energía](#fase-6-energía) (hecha: `EnergyLimit` en `Level`, `board.totalEnergy()`, contador en la info del nivel y `energyTutorialLevel`; ver `src/levels/README.md`)
 
 ## La idea
 
