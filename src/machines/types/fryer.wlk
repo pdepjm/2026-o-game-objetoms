@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - la freidora, que sólo trabaja con un brazo.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import machines.machineClasses.*
 import simulation.simulationEngine.*
 import food.foodClasses.*
@@ -12,8 +30,14 @@ class Fryer inherits ProcessingMachine {
 	const burnSteps = 40
 
 	override method name() = "Fryer"
+	override method baseEnergy() = 2
 
 	override method foodProcess() = frying
+
+	// Como el horno: quieta cuando está vacía, el GIF sólo mientras fríe
+	override method animateWork(steps, afterBlock) {
+		self.holdImage(self.gifImage(), steps, afterBlock)
+	}
 
 	override method armOnly() = true
 

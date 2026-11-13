@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - tests de las máquinas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import src.machines.types.automaticArm.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
@@ -78,11 +96,19 @@ describe "tests de Machine" {
     assert.equals("machines/Belt/right.gif", belt.image())
   }
 
+  // La cortadora es frame a frame: se anima sólo mientras corta (el Dispenser ahora usa GIF)
   test "al prender la simulacion una maquina sin gif sigue quieta" {
+    toolsManager.currentDirection(right)
+    const cutter = new CuttingMachine()
+    cutter.start()
+    assert.equals("machines/CuttingMachine/right_game.png", cutter.image())
+  }
+
+  test "al prender la simulacion el dispenser pasa a su gif" {
     toolsManager.currentDirection(right)
     const dispenser = new Dispenser()
     dispenser.start()
-    assert.equals("machines/Dispenser/right_game.png", dispenser.image())
+    assert.equals("machines/Dispenser/right.gif", dispenser.image())
   }
 
   test "al apagar la simulacion una maquina vuelve a la imagen quieta" {

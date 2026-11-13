@@ -1,9 +1,9 @@
 {
     "name": "buffet-albert-einstein",
     "version": "1.0.0",
+    "description": "Buffet Albert Einstein: juego de automatización de un buffet, hecho con Wollok Game.",
     "resourceFolder": "assets",
     "wollokVersion": "4.2.3",
-    "author": "",
-    "license": "ISC"
-  }
-  
+    "author": "grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores, Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)",
+    "license": "GPL-3.0-or-later"
+}

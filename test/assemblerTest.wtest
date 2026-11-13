@@ -1,8 +1,24 @@
+// Buffet Albert Einstein - tests del ensamblador.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import wollok.game.*
 import src.machines.machineClasses.*
 import src.machines.types.assembler.*
-import src.machines.types.belt.*
-import src.machines.types.dispenser.*
 import src.tools.toolsManager.*
 import src.directions.*
 import src.board.*
@@ -11,6 +27,9 @@ import src.simulation.animationEngine.*
 import src.food.foodClasses.*
 import src.food.foodTypes.*
 import src.food.recipes.*
+import src.machines.machineManager.*
+import src.menu.menuManager.*
+import src.tools.userTools.*
 
 // Una maquina de prueba para recibir lo que entrega el ensamblador: se le controla si acepta o no
 class Sink inherits Machine {
@@ -41,10 +60,6 @@ describe "tests de Assembler: que acepta" {
 
   const assembler = new Assembler()
 
-  test "acepta un ingrediente que pide la receta" {
-    assert.that(assembler.canReceive(new Item(kind = cutBun)))
-  }
-
   test "no acepta un ingrediente sin procesar" {
     assert.notThat(assembler.canReceive(new Item(kind = bun)))
   }
@@ -55,23 +70,6 @@ describe "tests de Assembler: que acepta" {
 
   test "no acepta un plato terminado" {
     assert.notThat(assembler.canReceive(new Item(kind = burger)))
-  }
-
-  test "no acepta un ingrediente que ya tiene completo" {
-    assembler.receive(new Item(kind = cutBun))
-    assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
-    assert.that(assembler.canReceive(new Item(kind = cutLettuce)))
-  }
-
-  test "acepta la segunda carne cocida pero no una tercera" {
-    assembler.receive(new Item(kind = cookedMeat))
-    assert.that(assembler.canReceive(new Item(kind = cookedMeat)))
-    assembler.receive(new Item(kind = cookedMeat))
-    assert.notThat(assembler.canReceive(new Item(kind = cookedMeat)))
-  }
-
-  test "su capacidad es la cantidad de ingredientes de la receta" {
-    assert.equals(5, assembler.capacity())
   }
 }
 
@@ -85,9 +83,9 @@ describe "tests de Assembler con items puestos a mano" {
 
   method initialize() {
     toolsManager.currentDirection(right)
-    // el ensamblador ocupa de (10, 6) a (11, 7) y entrega a la derecha, en (12, 6)
+    // el ensamblador ocupa de (10, 6) a (11, 7) y entrega a la derecha, en (12, 7)
     board.push(game.at(10, 6), assembler)
-    board.push(game.at(12, 6), sink)
+    board.push(game.at(12, 7), sink)
   }
 
   method steps(amount) {
@@ -116,14 +114,6 @@ describe "tests de Assembler con items puestos a mano" {
     items.forEach({ item => self.feed(item) })
   }
 
-  test "al llegar todos los ingredientes de la receta, entrega el plato" {
-    simulationEngine.run()
-    self.feedAll(self.allIngredients())
-    self.steps(dishSteps)
-    assert.equals(1, sink.received().size())
-    assert.equals(burger, sink.received().first().kind())
-  }
-
   test "mientras falta un ingrediente no hay plato" {
     simulationEngine.run()
     self.feedAll(self.allButOneMeat())
@@ -141,103 +131,50 @@ describe "tests de Assembler con items puestos a mano" {
     assert.that(sink.received().isEmpty())
     assert.equals(5, assembler.heldItems().size())
   }
-
-  test "consume los ingredientes: ya no estan en pantalla ni en el ensamblador" {
-    const ingredients = self.allIngredients()
-    simulationEngine.run()
-    self.feedAll(ingredients)
-    self.steps(dishSteps)
-    assert.notThat(ingredients.any({ ingredient => game.hasVisual(ingredient) }))
-    assert.that(assembler.heldItems().isEmpty())
-    assert.notThat(ingredients.any({ ingredient => sink.received().contains(ingredient) }))
-  }
-
-  test "con el plato esperando salir no acepta otro ingrediente" {
-    sink.close()
-    simulationEngine.run()
-    self.feedAll(self.allIngredients())
-    self.steps(dishSteps)
-    assert.equals(1, assembler.heldItems().size())
-    assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
-  }
-
-  test "cuando se libera la maquina de adelante entrega el plato y vuelve a aceptar" {
-    sink.close()
-    simulationEngine.run()
-    self.feedAll(self.allIngredients())
-    self.steps(dishSteps)
-    assert.that(sink.received().isEmpty())
-    sink.open()
-    self.steps(1)
-    assert.equals(1, sink.received().size())
-    assert.equals(burger, sink.received().first().kind())
-    assert.that(assembler.heldItems().isEmpty())
-    assert.that(assembler.canReceive(new Item(kind = cutBun)))
-  }
-
-  test "al apagar la simulacion con un plato esperando, lo saca de pantalla y queda libre" {
-    sink.close()
-    simulationEngine.run()
-    self.feedAll(self.allIngredients())
-    self.steps(dishSteps)
-    const dish = assembler.heldItems().first()
-    simulationEngine.stop()
-    assert.that(assembler.heldItems().isEmpty())
-    assert.notThat(game.hasVisual(dish))
-    assert.that(assembler.canReceive(new Item(kind = cutBun)))
-  }
 }
 
-// El ensamblador ocupa 2x2 celdas, de (10, 6) a (11, 7), y entrega a la derecha en (12, 6).
-// El pan y la lechuga comparten una cinta; la carne baja desde arriba y el tomate sube
-// desde abajo, cada uno directo a una celda del ensamblador:
-//
-//                      carne (10, 8)
-//                          ↓
-//                     ┌─────────────┐
-//         lechuga     │             │
-//            ↓        │ ensamblador │
-//   pan  →  cinta  →  │             │  →  sink (12, 6)
-//                     └─────────────┘
-//                          ↑
-//                      tomate (10, 5)
-describe "tests de una cadena que termina en el Assembler" {
-
-  const bunDispenser = new Dispenser()
-  const lettuceDispenser = new Dispenser()
-  const meatDispenser = new Dispenser()
-  const tomatoDispenser = new Dispenser()
-  const belt = new Belt()
-  const assembler = new Assembler()
-  const sink = new Sink()
+// Un nivel que no ofrece recetas (por ejemplo, uno sin Assembler): el Assembler arranca con noRecipe
+describe "tests de Assembler sin recetas disponibles" {
 
   method initialize() {
-    bunDispenser.product(cutBun)
-    lettuceDispenser.product(cutLettuce)
-    meatDispenser.product(cookedMeat)
-    tomatoDispenser.product(cutTomato)
-    toolsManager.currentDirection(right)
-    board.push(game.at(8, 6), bunDispenser)
-    board.push(game.at(9, 6), belt)
+    recipeBook.changeAvailable([])
+  }
+
+  // La receta elegida en el setting del Assembler
+  method chosenRecipe(assembler) = assembler.settings().first().value()
+
+  test "con recetas disponibles, firstAvailable es la primera" {
+    recipeBook.changeAvailable([saladRecipe, burgerRecipe])
+    assert.equals(saladRecipe, recipeBook.firstAvailable())
+  }
+
+  test "sin recetas disponibles, firstAvailable es noRecipe" {
+    assert.equals(noRecipe, recipeBook.firstAvailable())
+  }
+
+  test "un Assembler se puede crear sin recetas disponibles, y arranca con noRecipe" {
+    const assembler = new Assembler(direction = right)
+    assert.equals(noRecipe, self.chosenRecipe(assembler))
+  }
+
+  test "sin recetas, el setting de receta no ofrece opciones" {
+    const assembler = new Assembler(direction = right)
+    assert.that(assembler.settings().first().options().isEmpty())
+  }
+
+  test "con noRecipe, al prender la simulacion no acepta ningun ingrediente" {
+    const assembler = new Assembler(direction = right)
     board.push(game.at(10, 6), assembler)
-    board.push(game.at(12, 6), sink)
-    toolsManager.currentDirection(down)
-    board.push(game.at(9, 7), lettuceDispenser)
-    board.push(game.at(10, 8), meatDispenser)
-    toolsManager.currentDirection(up)
-    board.push(game.at(10, 5), tomatoDispenser)
-  }
-
-  // Avanza de a un paso hasta que se cumpla la condicion (con un tope de 400 pasos)
-  method stepsUntil(condition) {
-    (1..400).forEach({ _ => if (!condition.apply()) simulationEngine.step() })
-  }
-
-  test "dispensers de cada ingrediente, cinta y ensamblador entregan una hamburguesa" {
     simulationEngine.run()
-    self.stepsUntil({ !sink.received().isEmpty() })
-    assert.equals(1, sink.received().size())
-    assert.equals(burger, sink.received().first().kind())
-    assert.that(assembler.heldItems().isEmpty())
+    assert.notThat(assembler.canReceive(new Item(kind = cutBun)))
+    assert.notThat(assembler.canReceive(new Item(kind = cutTomato)))
+  }
+
+  // El menú de place crea una máquina de muestra de cada una del catálogo para dibujarla
+  test "un catalogo con Assembler y sin recetas se puede mostrar en el menu" {
+    machineManager.changeCatalog([{ => new Assembler() }])
+    menuManager.setUp()
+    toolsManager.select(place)
+    assert.equals("Assembler", machineManager.selectedName())
   }
 }

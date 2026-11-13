@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - tests de las máquinas que ocupan varias celdas y de la herramienta de colocar.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import wollok.game.*
 import src.board.*
 import src.directions.*
@@ -105,15 +123,16 @@ describe "tests de la herramienta de colocar" {
   }
 }
 
-// Con el ensamblador en (10, 5), la salida es la celda pegada a su borde de adelante:
+// Con el ensamblador en (10, 5), la salida es una celda pegada a su borde de adelante:
+// la que coincide con dónde la dibuja el sprite (ver Assembler.outputTarget).
 //
 //                (10,7) ↑ up
 //           ┌────────┬────────┐
-//           │ (10,6) │ (11,6) │
-//  left ←   ├────────┼────────┤
-//  (9,5)    │ (10,5) │ (11,5) │  → right (12,5)
+//  left ←   │ (10,6) │ (11,6) │  → right (12,6)
+//  (9,6)    ├────────┼────────┤
+//           │ (10,5) │ (11,5) │
 //           └────────┴────────┘
-//                (10,4) ↓ down
+//                    (11,4) ↓ down
 describe "tests de la celda de salida" {
 
   // Coloca un ensamblador mirando hacia `aDirection` y una cinta en `exit`, y devuelve el ensamblador
@@ -126,8 +145,8 @@ describe "tests de la celda de salida" {
   }
 
   test "mirando a la derecha entrega a la celda pegada a su borde derecho" {
-    const assembler = self.assemblerFacing(right, game.at(12, 5))
-    assert.equals(board.machineAt(game.at(12, 5)), assembler.nextMachine())
+    const assembler = self.assemblerFacing(right, game.at(12, 6))
+    assert.equals(board.machineAt(game.at(12, 6)), assembler.nextMachine())
   }
 
   test "mirando hacia arriba entrega a la celda pegada a su borde de arriba" {
@@ -136,13 +155,13 @@ describe "tests de la celda de salida" {
   }
 
   test "mirando a la izquierda entrega a la celda pegada a su borde izquierdo" {
-    const assembler = self.assemblerFacing(left, game.at(9, 5))
-    assert.equals(board.machineAt(game.at(9, 5)), assembler.nextMachine())
+    const assembler = self.assemblerFacing(left, game.at(9, 6))
+    assert.equals(board.machineAt(game.at(9, 6)), assembler.nextMachine())
   }
 
   test "mirando hacia abajo entrega a la celda pegada a su borde de abajo" {
-    const assembler = self.assemblerFacing(down, game.at(10, 4))
-    assert.equals(board.machineAt(game.at(10, 4)), assembler.nextMachine())
+    const assembler = self.assemblerFacing(down, game.at(11, 4))
+    assert.equals(board.machineAt(game.at(11, 4)), assembler.nextMachine())
   }
 
   test "en ninguna direccion se entrega a si misma" {
@@ -163,8 +182,8 @@ describe "tests de la celda de salida" {
 
   // outputTarget es la celda; la máquina que está ahí es la que se guarda en next
   test "outputTarget devuelve la celda de salida y no la maquina" {
-    const assembler = self.assemblerFacing(right, game.at(12, 5))
-    assert.equals(game.at(12, 5), assembler.outputTarget())
+    const assembler = self.assemblerFacing(right, game.at(12, 6))
+    assert.equals(game.at(12, 6), assembler.outputTarget())
   }
 
   test "una cinta que apunta a la celda de arriba a la derecha le entrega al ensamblador" {

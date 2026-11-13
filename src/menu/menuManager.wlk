@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - conoce los menús y reenvía a cada uno lo que pasa en el juego.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import src.cellPosition.CellPosition
 import menu.placeMenu.*
 import menu.editMenu.*
@@ -6,21 +24,7 @@ import tools.toolsManager.*
 import tools.userTools.*
 import sound.sfx.*
 import wollok.game.*
-
-class Zone {
-    const minX
-    const maxX
-    const minY
-    const maxY
-
-    method contains(pos) = pos.x().between(minX, maxX) && pos.y().between(minY, maxY)
-
-    // Posicion relativa desde la esquina inferior izquierda
-    method at(dx, dy) = new CellPosition(x= minX + dx, y= minY + dy)
-
-    // Getter de posicion inicial
-    method origin() = self.at(0, 0)
-}
+import board.*
 
 // Único que conoce los menús: el resto del juego le avisa lo que pasó (eventos)
 // y él se lo reenvía al menú que corresponda.

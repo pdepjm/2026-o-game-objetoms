@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - las configuraciones de las máquinas (lo que se cambia con la herramienta de editar).
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 // Las configuraciones de las máquinas (lo que se cambia con la herramienta edit).
 //
 // Cada máquina declara los settings que acepta en settings() (por defecto, ninguno).
@@ -9,7 +27,7 @@
 // a la elegida es su value, así que se compara por value y no por objeto.
 
 import directions.*
-
+import food.recipes.*
 // ----------- CATEGORIAS -----------
 // Sólo sirven para agrupar los settings en el menú
 
@@ -96,6 +114,16 @@ class OutputSideSetting inherits Setting {
 		new SettingOption(value = leftOut, label = "Izq."),
 		new SettingOption(value = rightOut, label = "Der.")
 	]
+}
+
+
+// Qué plato arma un Assembler. Las opciones son las recetas del nivel (recipeBook), con la imagen de su plato.
+class RecipeSetting inherits Setting {
+	override method name() = "Receta"
+	override method category() = production
+	override method options() = recipeBook.available().map({ recipe =>
+		new SettingOption(value = recipe, image = recipe.result().image())
+	})
 }
 
 // El lado por el que entrega una máquina que recibió por inputSide. Si el item entra por la

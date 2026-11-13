@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - la cinta transportadora y las formas que puede tener (recta o curva).
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import machines.machineClasses.*
 import board.*
 import directions.*
@@ -5,9 +23,10 @@ import simulation.simulationEngine.*
 
 class Belt inherits Machine {
 	
-	var shape = "straight" 
+	var shape = straightShape
 
 	override method name() = "Belt"
+	override method baseEnergy() = 1
 
 	override method runningImage() = self.gifImage()
 
@@ -50,11 +69,11 @@ class Belt inherits Machine {
 		const myOutput = self.direction()
 
 		if (myInput == null || myInput == myOutput.invert()) {
-			shape = "straight"
+			shape = straightShape
 		} else if (myInput == myOutput.previous()) {
-			shape = "curve_left"
+			shape = curveLeftShape
 		} else {
-			shape = "curve_right"
+			shape = curveRightShape
 		}
 	}
 
@@ -66,12 +85,13 @@ class Belt inherits Machine {
 			board.machineAt(myCell.up(1)),
 			board.machineAt(myCell.down(1))
 		]
-		neighbours.forEach({ neighbour => 
-			if (neighbour != null && neighbour.name() == "Belt") {
-				neighbour.updateShape()
-				if (!simulationEngine.running()) neighbour.showStatic() 
-			}
-		})
+		neighbours.filter({ neighbour => neighbour != null }).forEach({ neighbour => neighbour.onNeighbourChanged() })
+	}
+
+	// Una máquina de al lado cambió (se construyó, se destruyó o rotó): la cinta recalcula su forma
+	override method onNeighbourChanged() {
+		self.updateShape()
+		if (!simulationEngine.running()) self.showStatic()
 	}
 
 	override method rotate() {
@@ -86,19 +106,20 @@ class Belt inherits Machine {
 		super() 
 	}
 
-	override method staticImage() {
-		if (shape == "straight") {
-			return "machines/" + self.name() + "/" + self.direction().name() + "_game.png"
-		} else {
-			return "machines/" + self.name() + "/" + self.direction().name() + "_" + shape + "_game.png"
-		}
-	}
+	override method staticImage() = "machines/" + self.name() + "/" + self.direction().name() + shape.imageSuffix() + "_game.png"
 	
-	override method gifImage() {
-		if (shape == "straight") {
-			return "machines/" + self.name() + "/" + self.direction().name() + ".gif"
-		} else {
-			return "machines/" + self.name() + "/" + self.direction().name() + "_" + shape + ".gif"
-		}
-	}
+	override method gifImage() = "machines/" + self.name() + "/" + self.direction().name() + shape.imageSuffix() + ".gif"
+}
+
+// Las formas que puede tener una cinta. Cada una sabe cómo se llama su imagen.
+object straightShape {
+	method imageSuffix() = ""
+}
+
+object curveLeftShape {
+	method imageSuffix() = "_curve_left"
+}
+
+object curveRightShape {
+	method imageSuffix() = "_curve_right"
 }

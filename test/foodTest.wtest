@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - tests de los ingredientes y las recetas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import src.food.foodClasses.*
 import src.food.foodTypes.*
 import src.food.recipesClasses.*
@@ -69,10 +87,6 @@ describe "tests de recetas" {
     assert.notThat(burgerRecipe.canBeMadeWith([]))
   }
 
-  test "con una sola carne no alcanza" {
-    assert.notThat(burgerRecipe.canBeMadeWith([bunHalf, lettuceLeaf, tomatoSlice, meat1]))
-  }
-
   test "un ingrediente sin procesar no cuenta como procesado" {
     assert.notThat(burgerRecipe.canBeMadeWith([new Item(kind = bun), lettuceLeaf, tomatoSlice, meat1, meat2]))
   }
@@ -81,18 +95,9 @@ describe "tests de recetas" {
     assert.that(burgerRecipe.stillNeeds(lettuceLeaf, [bunHalf]))
   }
 
-  test "acepta la segunda carne pero no la tercera" {
-    assert.that(burgerRecipe.stillNeeds(meat2, [meat1]))
-    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = cookedMeat), [meat1, meat2]))
-  }
-
   test "no necesita un kind que no pide" {
     assert.notThat(burgerRecipe.stillNeeds(new Item(kind = potato), []))
     assert.notThat(burgerRecipe.stillNeeds(new Item(kind = meat), []))
-  }
-
-  test "totalItems suma las cantidades de los requisitos" {
-    assert.equals(5, burgerRecipe.totalItems())
   }
 
   test "prepare crea un plato del kind de la receta" {

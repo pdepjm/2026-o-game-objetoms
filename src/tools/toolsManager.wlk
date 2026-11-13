@@ -1,8 +1,27 @@
+// Buffet Albert Einstein - maneja las herramientas del jugador (colocar, quitar, editar y rotar).
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import board.*
 import menu.menuManager.*
 import directions.*
 import simulation.simulationEngine.*
 import tools.userTools.*
+import levels.levelManager.*
 import sound.sfx.*
 
 object toolsManager{
@@ -21,6 +40,7 @@ object toolsManager{
 			selectedTool = null
 		sfx.toolSelect()
 		menuManager.toolChanged(selectedTool)
+		levelManager.toolSelected(selectedTool)
 	}
 
 	// Direccion con la que se colocan las maquinas nuevas
@@ -37,12 +57,20 @@ object toolsManager{
 	}
 
 	// Metodo principal
-	// Con la simulación prendida no se puede colocar, borrar ni rotar nada
+	// Con la simulación prendida no se puede colocar, borrar ni rotar nada.
+	// El tutorial del nivel puede no dejar usar la herramienta en esa celda.
 	method onClick(pos) {
 		if (board.inBoard(pos)) {
-			if (selectedTool != null && !simulationEngine.running()) selectedTool.onClick(pos)
+			if (selectedTool != null && !simulationEngine.running() && levelManager.allowsTool(selectedTool, pos)) selectedTool.onClick(pos)
 		}
 		else if (menuManager.inInteractiveMenu(pos))
 			menuManager.onClick(pos)
+	}
+
+	method reset() {
+		selectedTool = null
+		currentDirection = right
+		menuManager.toolChanged(null)
+		menuManager.directionChanged()
 	}
 }

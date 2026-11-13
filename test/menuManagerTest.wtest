@@ -1,3 +1,21 @@
+// Buffet Albert Einstein - tests de los menús.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import wollok.game.*
 import src.cellPosition.*
 import src.board.*
@@ -9,6 +27,8 @@ import src.tools.toolsManager.*
 import src.tools.userTools.*
 import src.machines.machineManager.*
 import src.machines.types.dispenser.*
+import src.machines.types.belt.*
+import src.machines.types.oven.*
 import src.directions.*
 
 describe "tests de menuManager" {
@@ -192,12 +212,15 @@ describe "tests de menuManager" {
     assert.that(game.hasVisual(overlay))
   }
 
+  // Lo esperado sale del catálogo, así el test no depende de cuántas máquinas haya:
+  // si la última página no está llena, los slots que sobran son los de abajo
   test "la última página llena los slots desde arriba y deja libres los de abajo" {
     self.startWithPlace()
-    menuManager.nextPage()
-    menuManager.nextPage()
+    const lastPage = machineManager.pageCount() - 1
+    lastPage.times({ _ => menuManager.nextPage() })
+    const inLastPage = machineManager.machinesOfPage(lastPage).size()
     const sizes = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).size() })
-    assert.equals([1, 1, 0, 0], sizes)
+    assert.equals([1, 2, 3, 4].map({ slot => if (slot <= inLastPage) 1 else 0 }), sizes)
     assert.notThat(game.hasVisual(overlay))
   }
 
@@ -226,5 +249,54 @@ describe "tests de menuManager" {
   test "la zona interactiva va de la fila 0 a la 14: la fila 15 es de la barra de herramientas" {
     const results = [0, 14, 15].map({ y => menuManager.inInteractiveMenu(game.at(22, y)) })
     assert.equals([true, true, false], results)
+  }
+
+  // CATÁLOGO Y REINICIO (fase 1 del plan de niveles)
+
+  // un catálogo de 2 máquinas que no empieza como el de siempre (la cinta)
+  method ovenAndBelt() = [{ => new Oven() }, { => new Belt() }]
+
+  test "changeCatalog elige la primera maquina del catalogo nuevo" {
+    machineManager.changeCatalog(self.ovenAndBelt())
+    assert.equals("Oven", machineManager.selectedName())
+    assert.equals(1, machineManager.pageCount())
+  }
+
+  test "con place elegido, changeCatalog y resetPage muestran el catalogo nuevo" {
+    self.startWithPlace()
+    machineManager.changeCatalog(self.ovenAndBelt())
+    placeMenu.resetPage()
+    assert.equals("Oven", self.slotVisuals(1).first().name())
+    assert.equals("Belt", self.slotVisuals(2).first().name())
+    assert.that(self.slotVisuals(3).isEmpty())
+    assert.that(self.slotVisuals(4).isEmpty())
+  }
+
+  test "resetPage vuelve a la primera pagina" {
+    self.startWithPlace()
+    menuManager.nextPage()
+    assert.equals(1, placeMenu.currentPage())
+    placeMenu.resetPage()
+    assert.equals(0, placeMenu.currentPage())
+    assert.equals("Belt", self.slotVisuals(1).first().name())
+  }
+
+  test "toolsManager.reset deja sin herramienta, hacia la derecha y con la zona interactiva vacia" {
+    self.startWithPlace()
+    toolsManager.currentDirection(up)
+    toolsManager.reset()
+    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(right, toolsManager.currentDirection())
+    assert.that(self.zoneVisuals().isEmpty())
+    assert.equals("tools/default.png", toolBar.image())
+  }
+
+  // Importa porque, al reiniciar, esa máquina ya no está en el tablero
+  test "toolsManager.reset con edit mostrando una maquina hace que edit la olvide" {
+    self.editADispenser()
+    toolsManager.reset()
+    assert.that(self.zoneVisuals().isEmpty())
+    toolsManager.select(edit)
+    assert.that(self.zoneVisuals().isEmpty())
   }
 }
