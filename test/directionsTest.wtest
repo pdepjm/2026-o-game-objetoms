@@ -1,0 +1,59 @@
+// Buffet Albert Einstein - tests de las direcciones.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import src.directions.*
+describe "tests de directions" {
+
+  test "right se mueve una casilla a la derecha" {
+    assert.equals(game.at(1, 0), right.move(game.at(0, 0)))
+  }
+
+  test "down se mueve una casilla hacia abajo" {
+    assert.equals(game.at(0, -1), down.move(game.at(0, 0)))
+  }
+
+  test "left se mueve una casilla a la izquierda" {
+    assert.equals(game.at(-1, 0), left.move(game.at(0, 0)))
+  }
+
+  test "up se mueve una casilla hacia arriba" {
+    assert.equals(game.at(0, 1), up.move(game.at(0, 0)))
+  }
+
+  test "next rota en el orden right -> down -> left -> up -> right" {
+    assert.equals(down, right.next())
+    assert.equals(left, down.next())
+    assert.equals(up, left.next())
+    assert.equals(right, up.next())
+  }
+
+  test "previous rota al reves que next: right -> up -> left -> down -> right" {
+    assert.equals(up, right.previous())
+    assert.equals(left, up.previous())
+    assert.equals(down, left.previous())
+    assert.equals(right, down.previous())
+  }
+
+  test "name devuelve el nombre correcto de cada direccion" {
+    assert.equals("right", right.name())
+    assert.equals("down", down.name())
+    assert.equals("left", left.name())
+    assert.equals("up", up.name())
+  }
+
+}

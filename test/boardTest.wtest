@@ -1,0 +1,186 @@
+// Buffet Albert Einstein - tests del tablero.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.board.*
+import src.machines.types.belt.*
+import src.machines.types.oven.*
+import src.machines.types.assembler.*
+import src.machines.types.dispenser.*
+import src.machines.machineManager.*
+import src.simulation.simulationEngine.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.menu.menuManager.*
+import src.menu.placeMenu.*
+import src.directions.*
+
+describe "tests de board" {
+
+  test "una posicion con x fuera del rango no esta en el tablero" {
+    assert.notThat(board.inBoard(game.at(4, 5)))
+    assert.notThat(board.inBoard(game.at(20, 5)))
+  }
+
+  test "una posicion con y fuera del rango no esta en el tablero" {
+    assert.notThat(board.inBoard(game.at(10, 0)))
+    assert.notThat(board.inBoard(game.at(10, 15)))
+  }
+
+  test "una posicion dentro del rango esta en el tablero" {
+    assert.that(board.inBoard(game.at(10, 5)))
+  }
+
+  test "los bordes del rango tambien cuentan como dentro del tablero" {
+    assert.that(board.inBoard(game.at(5, 1)))
+    assert.that(board.inBoard(game.at(19, 13)))
+  }
+
+  test "no hay maquina en una posicion vacia" {
+    assert.notThat(board.isThereAMachine(game.at(10, 5)))
+  }
+
+  // Por un bug de Wollok, una casilla creada sin machine = null explícito devolvía
+  // un "null" que no era == null, y todas las casillas parecían ocupadas
+  test "ninguna casilla del tablero vacio esta ocupada" {
+    const hayAlgunaOcupada = (5..19).any({ x =>
+      (1..13).any({ y => board.isThereAMachine(game.at(x, y)) })
+    })
+    assert.notThat(hayAlgunaOcupada)
+  }
+
+  test "una maquina colocada se encuentra en su posicion" {
+    const belt = new Belt()
+    board.push(game.at(10, 5), belt)
+    assert.equals(belt, board.machineAt(game.at(10, 5)))
+  }
+
+  test "una maquina quitada ya no esta en su posicion" {
+    board.push(game.at(10, 5), new Belt())
+    board.pop(game.at(10, 5))
+    assert.notThat(board.isThereAMachine(game.at(10, 5)))
+  }
+
+  test "no se puede colocar una maquina donde ya hay otra" {
+    const first = new Belt()
+    board.push(game.at(10, 5), first)
+    assert.throwsException({ board.push(game.at(10, 5), new Oven()) })
+    assert.equals(first, board.machineAt(game.at(10, 5)))
+  }
+
+  // por ejemplo, una cinta del borde que apunta hacia afuera busca a su vecina ahí
+  test "fuera del tablero no hay maquina y no da error" {
+    assert.equals(null, board.machineAt(game.at(20, 5)))
+    assert.equals(null, board.machineAt(game.at(10, 14)))
+    assert.equals(null, board.machineAt(game.at(-1, -1)))
+  }
+
+  test "no se puede colocar una maquina fuera del tablero" {
+    assert.throwsException({ board.push(game.at(20, 5), new Belt()) })
+  }
+
+}
+
+// board.machines() y board.clear(): sacar todas las máquinas para empezar de cero (fase 1 del plan de niveles)
+describe "tests de limpiar el tablero" {
+
+  // La dirección se pasa al crearlas: estas constantes se crean antes que cualquier initialize()
+  const belt = new Belt(direction = right)
+  const assembler = new Assembler(direction = right)
+
+  method placeBeltAndAssembler() {
+    board.push(game.at(8, 5), belt)
+    board.push(game.at(10, 5), assembler)
+  }
+
+  // Las 5 casillas que ocupan la cinta (1x1) y el ensamblador (2x2)
+  method occupiedCells() = [game.at(8, 5), game.at(10, 5), game.at(11, 5), game.at(10, 6), game.at(11, 6)]
+
+  test "con el tablero vacio no hay maquinas" {
+    assert.equals([], board.machines())
+  }
+
+  test "machines devuelve cada maquina una sola vez, aunque ocupe varias casillas" {
+    self.placeBeltAndAssembler()
+    const machines = board.machines()
+    assert.equals(2, machines.size())
+    assert.that(machines.contains(belt))
+    assert.that(machines.contains(assembler))
+  }
+
+  test "clear saca todas las maquinas del tablero y de la pantalla" {
+    self.placeBeltAndAssembler()
+    board.clear()
+    assert.notThat(self.occupiedCells().any({ cell => board.isThereAMachine(cell) }))
+    assert.notThat(game.hasVisual(belt))
+    assert.notThat(game.hasVisual(assembler))
+  }
+
+  test "despues de clear se puede volver a colocar en las mismas celdas" {
+    self.placeBeltAndAssembler()
+    board.clear()
+    board.push(game.at(8, 5), new Belt(direction = right))
+    board.push(game.at(10, 5), new Assembler(direction = right))
+    assert.equals(2, board.machines().size())
+  }
+
+  // Si el engine siguiera conociendo al dispenser, al prender le entregaría un item a la cinta nueva
+  test "despues de clear el engine ya no conoce a las maquinas que se sacaron" {
+    const dispenser = new Dispenser(direction = right)
+    board.push(game.at(5, 5), dispenser)
+    board.push(game.at(6, 5), new Belt(direction = right))
+    board.clear()
+    const newBelt = new Belt(direction = right)
+    board.push(game.at(6, 5), newBelt)
+    simulationEngine.run()
+    dispenser.intervalSteps().times({ _ => simulationEngine.step() })
+    assert.that(newBelt.heldItems().isEmpty())
+  }
+}
+
+// Los pasos para dejar el juego como recién abierto, en el orden en que los va a usar levelManager
+describe "tests de reiniciar todo" {
+
+  method resetEverything() {
+    simulationEngine.reset()
+    board.clear()
+    toolsManager.reset()
+    machineManager.changeCatalog(machineManager.allMachines())
+    placeMenu.resetPage()
+  }
+
+  test "despues de reiniciar, el juego queda como recien abierto" {
+    menuManager.setUp()
+    board.push(game.at(5, 5), new Dispenser(direction = right))
+    board.push(game.at(6, 5), new Belt(direction = right))
+    simulationEngine.run()
+    simulationEngine.speed(3)
+    toolsManager.select(delete)
+    toolsManager.currentDirection(up)
+    placeMenu.next()
+
+    self.resetEverything()
+
+    assert.that(board.machines().isEmpty())
+    assert.notThat(simulationEngine.running())
+    assert.equals(1, simulationEngine.speed())
+    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(right, toolsManager.currentDirection())
+    assert.equals(0, placeMenu.currentPage())
+  }
+}

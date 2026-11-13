@@ -1,0 +1,469 @@
+// Buffet Albert Einstein - tests de las animaciones de las máquinas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// test/animationTest.wtest
+import wollok.game.*
+import src.machines.types.automaticArm.*
+import src.machines.settings.*
+import src.machines.types.belt.*
+import src.tools.toolsManager.*
+import src.directions.*
+import src.board.*
+import src.simulation.simulationEngine.*
+import src.simulation.animationEngine.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.machines.machineClasses.*
+
+// Una máquina cualquiera, para probar la animación frame a frame (MachineAnimator) sola
+class Sprite inherits Machine {
+  var property finished = 0
+  
+  override method name() = "Sprite"
+}
+
+// Una máquina de prueba para recibir lo que entrega el brazo: se le controla si acepta o no
+class Sink inherits Machine {
+  var accepting = true
+  const property received = []
+  
+  override method name() = "Sink"
+  
+  override method canReceive(item) = accepting
+  
+  // Registra lo que recibe en vez de animar el item hasta su celda
+  override method onReceive(item) {
+    received.add(item)
+  }
+  
+  method close() {
+    accepting = false
+  }
+  
+  // Se libera y despierta a los que esperaban, como hace una cinta al entregar un item
+  method open() {
+    accepting = true
+    inventory.wakeWaiting()
+  }
+}
+
+describe "tests de MachineAnimator" {
+  const sprite = new Sprite()
+  const threeFrames = new FrameAnimation(path = "anim", frameCount = 3)
+  const twoFrames = new FrameAnimation(path = "otra", frameCount = 2)
+  
+  method ticks(amount) {
+    amount.times({ _ => animationEngine.tick() })
+  }
+  
+  test "una animacion arma las rutas de sus frames" {
+    assert.equals(
+      ["anim/0.png", "anim/1.png", "anim/2.png"],
+      threeFrames.frames()
+    )
+  }
+  
+  test "al empezar una animacion muestra el primer frame" {
+    sprite.play(threeFrames, null)
+    assert.equals("anim/0.png", sprite.image())
+    assert.that(sprite.animando())
+  }
+  
+  // play se llama fuera del tick (como desde una acción agendada): el tick siguiente no saltea el frame 0
+  test "el primer tick despues de empezar sigue mostrando el primer frame" {
+    sprite.play(threeFrames, null)
+    self.ticks(1)
+    assert.equals("anim/0.png", sprite.image())
+  }
+  
+  test "cada tick muestra el frame siguiente" {
+    sprite.play(threeFrames, null)
+    self.ticks(2)
+    assert.equals("anim/1.png", sprite.image())
+    self.ticks(1)
+    assert.equals("anim/2.png", sprite.image())
+  }
+  
+  test "al terminar ejecuta el bloque del final y deja de animarse" {
+    sprite.play(threeFrames, { sprite.finished(sprite.finished() + 1) })
+    self.ticks(3)
+    assert.equals(0, sprite.finished())
+    self.ticks(1)
+    assert.equals(1, sprite.finished())
+    assert.notThat(sprite.animando())
+  }
+  
+  test "una animacion terminada no sigue cambiando la imagen" {
+    sprite.play(threeFrames, { sprite.showStatic() })
+    self.ticks(10)
+    assert.equals(sprite.staticImage(), sprite.image())
+  }
+  
+  // Si al encadenar se anotara dos veces en el engine, avanzaría de a dos frames por tick
+  test "encadenar otra animacion desde el bloque del final avanza de a un frame por tick" {
+    const longer = new FrameAnimation(path = "larga", frameCount = 5)
+    sprite.play(threeFrames, { sprite.play(longer, null) })
+    self.ticks(4)
+    assert.equals("larga/0.png", sprite.image())
+    self.ticks(1)
+    assert.equals("larga/1.png", sprite.image())
+    self.ticks(1)
+    assert.equals("larga/2.png", sprite.image())
+  }
+  
+  test "la segunda vez que se reproduce una animacion arranca desde el principio" {
+    sprite.play(twoFrames, null)
+    self.ticks(10)
+    sprite.play(twoFrames, null)
+    assert.equals("otra/0.png", sprite.image())
+    self.ticks(2)
+    assert.equals("otra/1.png", sprite.image())
+  }
+  
+  test "empezar otra animacion a la mitad reemplaza a la anterior" {
+    sprite.play(threeFrames, { sprite.finished(1) })
+    self.ticks(2)
+    sprite.play(twoFrames, null)
+    assert.equals("otra/0.png", sprite.image())
+    self.ticks(10)
+    assert.equals(0, sprite.finished())
+  }
+  
+  test "detener una animacion la corta sin ejecutar el bloque del final" {
+    sprite.play(threeFrames, { sprite.finished(1) })
+    self.ticks(1)
+    sprite.stopAnimation()
+    self.ticks(10)
+    assert.notThat(sprite.animando())
+    assert.equals(0, sprite.finished())
+    assert.equals("anim/0.png", sprite.image())
+  }
+  
+  test "el bloque del final puede mover un item" {
+    const item = new Item(kind = potato)
+    item.position(game.at(0, 0))
+    sprite.play(threeFrames, { item.move(game.at(3, 0)) })
+    self.ticks(4)
+    assert.that(item.moviendose())
+    self.ticks(14)
+    assert.that(item.moviendose())
+    self.ticks(1)
+    assert.equals(3, item.position().x())
+    assert.equals(0, item.position().y())
+    assert.notThat(item.moviendose())
+  }
+}
+
+describe "tests del AutomaticArm" {
+  const arm = new AutomaticArm()
+  const sink = new Sink()
+  // Frames de cada animación (ver assets/machines/AutomaticArm)
+  const rotateFrames = 7
+  const catchFrames = 28
+  // Pasos desde que le llega un item hasta cada momento, cuando primero tiene que girar:
+  // el giro termina en el paso rotateFrames + 1 y el catch empieza en el siguiente.
+  const catchStart = rotateFrames + 1
+  const catchEnd = catchStart + catchFrames
+  const delivered = catchEnd
+  
+  method initialize() {
+    // la entrada es la izquierda, salvo en los tests que la rotan
+    self.faceInput(left)
+    board.push(game.at(10, 6), arm)
+  }
+  
+  method faceInput(side) {
+    4.times({ _ => if (arm.inputSide() != side) arm.rotate() })
+  }
+  
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+  
+  // Le entrega un item al brazo desde la celda vecina de ese lado, como haría una cinta
+  method itemFrom(side) {
+    const newItem = new Item(kind = potato)
+    newItem.position(side.move(game.at(10, 6)))
+    simulationEngine.addItem(newItem)
+    arm.receive(newItem)
+    return newItem
+  }
+  
+  method image(name) = "machines/AutomaticArm/" + name
+  
+  test "descansa mirando hacia su entrada" {
+    assert.equals(self.image("left_game.png"), arm.image())
+  }
+  
+  test "nace con la entrada del lado elegido" {
+    toolsManager.currentDirection(up)
+    assert.equals(up, new AutomaticArm().inputSide())
+  }
+  
+  test "rotar mueve la entrada y el brazo mira hacia ella" {
+    arm.rotate()
+    assert.equals(up, arm.inputSide())
+    assert.equals(self.image("up_game.png"), arm.image())
+  }
+  
+  test "en el menu muestra siempre la misma imagen" {
+    assert.equals(self.image("down_menu.png"), arm.menuImage(right))
+  }
+  
+  test "su celda es la del centro de su dibujo" {
+    assert.equals(game.at(9, 5), arm.position())
+    assert.equals(game.at(10, 6), arm.cell())
+  }
+  
+  test "al prender la simulacion sigue quieto" {
+    simulationEngine.run()
+    self.steps(10)
+    assert.equals(self.image("left_game.png"), arm.image())
+    assert.notThat(arm.animando())
+  }
+  
+  test "al recibir un item estando mirando a la entrada, lo agarra sin girar" {
+    simulationEngine.run()
+    self.itemFrom(left)
+    assert.equals(self.image("left_to_right_catch/0.png"), arm.image())
+  }
+  
+  test "si quedo mirando a otro lado, gira hacia la entrada antes de agarrar" {
+    board.push(game.at(11, 6), sink)
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(delivered)
+    self.itemFrom(left)
+    assert.equals(self.image("right_to_left_rotate/0.png"), arm.image())
+    self.steps(catchStart)
+    assert.equals(self.image("left_to_right_catch/0.png"), arm.image())
+  }
+  
+  test "con la entrada rotada agarra de ese lado y entrega al contrario" {
+    arm.rotate()
+    board.push(game.at(10, 5), sink)
+    simulationEngine.run()
+    const carried = self.itemFrom(up)
+    assert.equals(self.image("up_to_down_catch/0.png"), arm.image())
+    self.steps(catchEnd)
+    assert.equals([carried], sink.received())
+    assert.equals(self.image("down_game.png"), arm.image())
+  }
+  
+  test "con la entrada rotada la salida configurada es relativa a ella" {
+    arm.rotate()
+    arm.settings().first().value(leftOut)
+    assert.equals(right, arm.outputSide())
+  }
+  
+  test "sólo acepta items de la maquina que esta en su entrada" {
+    const entrance = new Sink()
+    const other = new Sink()
+    board.push(game.at(9, 6), entrance)
+    board.push(game.at(10, 7), other)
+    assert.that(arm.canReceiveFrom(entrance, new Item(kind = potato)))
+    assert.notThat(arm.canReceiveFrom(other, new Item(kind = potato)))
+  }
+
+  test "configurado a la izquierda lo agarra y gira hacia arriba" {
+    arm.settings().first().value(leftOut)
+    simulationEngine.run()
+    self.itemFrom(left)
+    assert.equals(self.image("left_to_up_catch/0.png"), arm.image())
+  }
+
+  test "configurado a la derecha lo agarra y gira hacia abajo" {
+    arm.settings().first().value(rightOut)
+    simulationEngine.run()
+    self.itemFrom(left)
+    assert.equals(self.image("left_to_down_catch/0.png"), arm.image())
+  }
+
+  test "configurado a la izquierda entrega a la maquina de arriba" {
+    arm.settings().first().value(leftOut)
+    board.push(game.at(10, 7), sink)
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered)
+    assert.equals([carried], sink.received())
+  }
+
+  test "configurado a la derecha entrega a la maquina de abajo" {
+    arm.settings().first().value(rightOut)
+    board.push(game.at(10, 5), sink)
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered)
+    assert.equals([carried], sink.received())
+  }
+
+  test "apagar la simulacion no cambia hacia donde entrega" {
+    arm.settings().first().value(rightOut)
+    simulationEngine.run()
+    simulationEngine.stop()
+    assert.equals(down, arm.outputSide())
+  }
+  
+  test "al terminar queda quieto mirando hacia el lado contrario" {
+    board.push(game.at(11, 6), sink)
+    sink.close()
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(catchEnd)
+    assert.equals(self.image("right_game.png"), arm.image())
+    assert.notThat(arm.animando())
+  }
+  
+  test "el item termina en la celda contraria" {
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(catchEnd)
+    assert.equals(11, carried.position().x())
+    assert.equals(6, carried.position().y())
+  }
+  
+  // Una cinta en la entrada que NO apunta al brazo (apunta hacia arriba)
+  method beltPassingBy() {
+    toolsManager.currentDirection(up)
+    const belt = new Belt()
+    board.push(game.at(9, 6), belt)
+    return belt
+  }
+  
+  test "agarra el item de una cinta que pasa por su entrada aunque no le apunte" {
+    const belt = self.beltPassingBy()
+    simulationEngine.run()
+    const item = new Item(kind = potato)
+    item.position(game.at(9, 5))
+    simulationEngine.addItem(item)
+    belt.receive(item)
+    self.steps(1)
+    assert.equals([item], arm.heldItems())
+    assert.that(belt.heldItems().isEmpty())
+    assert.that(arm.image().startsWith(self.image("left_to_right_catch/")))
+  }
+  
+  test "la cinta no entrega el item que se llevó el brazo" {
+    const belt = self.beltPassingBy()
+    const above = new Sink()
+    board.push(game.at(9, 7), above)
+    simulationEngine.run()
+    const item = new Item(kind = potato)
+    item.position(game.at(9, 5))
+    simulationEngine.addItem(item)
+    belt.receive(item)
+    self.steps(8)
+    assert.that(above.received().isEmpty())
+  }
+  
+  test "si el brazo esta ocupado, el item sigue por la cinta" {
+    const belt = self.beltPassingBy()
+    const above = new Sink()
+    board.push(game.at(9, 7), above)
+    simulationEngine.run()
+    self.itemFrom(left)
+    const item = new Item(kind = potato)
+    item.position(game.at(9, 5))
+    simulationEngine.addItem(item)
+    belt.receive(item)
+    self.steps(8)
+    assert.equals([item], above.received())
+  }
+  
+  test "al quedar libre agarra el item que esperaba en la cinta" {
+    const belt = self.beltPassingBy()
+    const above = new Sink()
+    above.close()
+    board.push(game.at(9, 7), above)
+    board.push(game.at(11, 6), sink)
+    simulationEngine.run()
+    self.itemFrom(left)
+    const waiting = new Item(kind = tomato)
+    waiting.position(game.at(9, 5))
+    simulationEngine.addItem(waiting)
+    belt.receive(waiting)
+    self.steps(delivered + 2)
+    assert.equals([waiting], arm.heldItems())
+    assert.that(belt.heldItems().isEmpty())
+  }
+  
+  test "mientras tiene un item no acepta otro" {
+    simulationEngine.run()
+    self.itemFrom(left)
+    assert.notThat(arm.canReceive(new Item(kind = potato)))
+  }
+  
+  test "entrega el item a la maquina de la celda contraria" {
+    board.push(game.at(11, 6), sink)
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered)
+    assert.equals([carried], sink.received())
+    assert.that(arm.heldItems().isEmpty())
+    assert.that(arm.canReceive(new Item(kind = potato)))
+  }
+  
+  test "entrega a una cinta, que sigue llevando el item" {
+    toolsManager.currentDirection(right)
+    const belt = new Belt()
+    board.push(game.at(11, 6), belt)
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(delivered)
+    assert.equals(1, belt.heldItems().size())
+  }
+  
+  test "el siguiente item arranca desde la pose en la que quedo" {
+    board.push(game.at(11, 6), sink)
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(delivered)
+    self.itemFrom(left)
+    assert.equals(self.image("right_to_left_rotate/0.png"), arm.image())
+  }
+  
+  test "si la maquina de entrega esta llena espera y entrega cuando se libera" {
+    board.push(game.at(11, 6), sink)
+    sink.close()
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered + 5)
+    assert.equals([carried], arm.heldItems())
+    sink.open()
+    self.steps(1)
+    assert.equals([carried], sink.received())
+  }
+  
+  test "sin maquina del lado contrario se queda con el item" {
+    simulationEngine.run()
+    const carried = self.itemFrom(left)
+    self.steps(delivered + 5)
+    assert.equals([carried], arm.heldItems())
+    assert.notThat(arm.canReceive(new Item(kind = potato)))
+  }
+  
+  test "al apagar la simulacion suelta el item y vuelve a mirar hacia la entrada" {
+    simulationEngine.run()
+    self.itemFrom(left)
+    self.steps(catchStart + 3)
+    simulationEngine.stop()
+    assert.equals(self.image("left_game.png"), arm.image())
+    assert.notThat(arm.animando())
+    assert.that(arm.heldItems().isEmpty())
+  }
+}

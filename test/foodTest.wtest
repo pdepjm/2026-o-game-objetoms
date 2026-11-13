@@ -1,0 +1,110 @@
+// Buffet Albert Einstein - tests de los ingredientes y las recetas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.food.recipesClasses.*
+import src.food.recipes.*
+
+describe "tests de items" {
+
+  test "una papa cortada queda como cutPotato" {
+    const item = new Item(kind = potato)
+    item.process(cutting)
+    assert.equals(cutPotato, item.kind())
+  }
+
+  test "una papa cortada y frita queda como friedPotato" {
+    const item = new Item(kind = potato)
+    item.process(cutting)
+    item.process(frying)
+    assert.equals(friedPotato, item.kind())
+  }
+
+  test "una papa cortada no se puede volver a cortar" {
+    const item = new Item(kind = potato)
+    item.process(cutting)
+    assert.notThat(item.canProcess(cutting))
+  }
+
+  test "la carne se cocina pero no se corta" {
+    const item = new Item(kind = meat)
+    assert.notThat(item.canProcess(cutting))
+    item.process(cooking)
+    assert.equals(cookedMeat, item.kind())
+  }
+
+  test "procesar un ingrediente con un proceso que no acepta tira error y no lo cambia" {
+    const item = new Item(kind = cutPotato)
+    assert.throwsException({ item.process(cutting) })
+    assert.equals(cutPotato, item.kind())
+  }
+
+  test "a un plato no se le puede aplicar ningun proceso" {
+    const dish = new Item(kind = burger)
+    assert.notThat(dish.canProcess(cutting))
+    assert.notThat(dish.canProcess(cooking))
+  }
+
+  test "la imagen cambia con el kind" {
+    const item = new Item(kind = potato)
+    assert.equals("food/Ingredients/potatoes/potato_raw.png", item.image())
+    item.process(cutting)
+    assert.equals("food/Ingredients/potatoes/potato_cut.png", item.image())
+  }
+}
+
+describe "tests de recetas" {
+  const bunHalf = new Item(kind = cutBun)
+  const lettuceLeaf = new Item(kind = cutLettuce)
+  const tomatoSlice = new Item(kind = cutTomato)
+  const meat1 = new Item(kind = cookedMeat)
+  const meat2 = new Item(kind = cookedMeat)
+
+  // Todo lo que pide la hamburguesa: pan, lechuga, tomate y dos carnes cocidas
+  method allIngredients() = [bunHalf, lettuceLeaf, tomatoSlice, meat1, meat2]
+
+  test "con todos los ingredientes se puede preparar la hamburguesa" {
+    assert.that(burgerRecipe.canBeMadeWith(self.allIngredients()))
+  }
+
+  test "sin items no se puede preparar" {
+    assert.notThat(burgerRecipe.canBeMadeWith([]))
+  }
+
+  test "un ingrediente sin procesar no cuenta como procesado" {
+    assert.notThat(burgerRecipe.canBeMadeWith([new Item(kind = bun), lettuceLeaf, tomatoSlice, meat1, meat2]))
+  }
+
+  test "necesita un ingrediente que pide si todavia no lo tiene" {
+    assert.that(burgerRecipe.stillNeeds(lettuceLeaf, [bunHalf]))
+  }
+
+  test "no necesita un kind que no pide" {
+    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = potato), []))
+    assert.notThat(burgerRecipe.stillNeeds(new Item(kind = meat), []))
+  }
+
+  test "prepare crea un plato del kind de la receta" {
+    assert.equals(burger, burgerRecipe.prepare().kind())
+  }
+
+  test "cada prepare crea un plato distinto" {
+    assert.notThat(burgerRecipe.prepare() === burgerRecipe.prepare())
+  }
+}
