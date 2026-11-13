@@ -21,6 +21,7 @@ import input.userController.*
 import menu.startMenu.*
 import simulation.simulationEngine.*
 import sound.musicManager.*
+import sound.sfx.*
 
 program BuffetAlbertEinstein {
 	game.title("Buffet Albert Einstein")
@@ -36,7 +37,11 @@ program BuffetAlbertEinstein {
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()
 
-	game.schedule(500, {musicManager.playBackground() })
+	// La música y los efectos suenan recién con el juego iniciado (restricción de Wollok Game)
+	game.schedule(500, {
+		sfx.enable()
+		musicManager.playBackground()
+	})
 
 	game.start()
 }

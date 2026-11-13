@@ -20,6 +20,7 @@ import board.*
 import machines.machineManager.*
 import menu.editMenu.*
 import levels.levelManager.*
+import sound.sfx.*
 
 // HERRAMIENTAS
 // Por el momento, todas las herramientas deben contener el metodo onClick
@@ -33,6 +34,9 @@ object place {
 		if (board.canBuild(pos, machine)) {
 			board.push(pos, machine)
 			levelManager.machinePlaced(machine)
+			sfx.place()
+		} else {
+			sfx.invalid()
 		}
     }
 }
@@ -45,6 +49,9 @@ object delete {
         	const machine = board.machineAt(pos)
         	board.pop(pos)
         	levelManager.machineRemoved(machine)
+            sfx.delete()
+        } else {
+            sfx.invalid()
         }
     }
 }
@@ -61,6 +68,7 @@ object rotate {
 		if (board.isThereAMachineUnlocked(pos)) {
 			board.machineAt(pos).rotate()
 			levelManager.machineRotated(board.machineAt(pos))
+			sfx.rotate()
 		}
 	}
 }
