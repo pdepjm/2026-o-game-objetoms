@@ -2,7 +2,8 @@ name: Deploy Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: uqbar-project/wollok-web-tools@main
+
+      # wollok-web-tools toma el nombre del programa de la ruta del .wpgm ("src/main"), pero Wollok
+      # nombra los paquetes con puntos ("src.main"). Como el juego está dentro de src/, se corrige acá.
+      - name: Arreglar el nombre del programa principal
+        run: sed -i "s|\.slice(0, -5)|.slice(0, -5).split('/').join('.')|" game-runner.js
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
