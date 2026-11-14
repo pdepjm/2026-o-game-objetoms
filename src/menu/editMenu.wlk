@@ -22,6 +22,7 @@ import menu.menuManager.*
 import menu.menuText.*
 import board.*
 import levels.levelManager.*
+import sound.sfx.*
 
 // Panel de la zona interactiva mientras la herramienta activa es edit.
 // Responde a show, hide y onClick, igual que el resto de los paneles (ver menuManager).
@@ -58,6 +59,7 @@ object editMenu{
     method selectMachine(pos) {
         selectedMachine = board.machineAt(pos)
         if (visible) self.render()
+        sfx.menuSelect()
     }
 
     // Aplica la opción clickeada a su setting, si se clickeó una
@@ -70,6 +72,7 @@ object editMenu{
         slot.setting().select(slot.option())
         self.updateMarkers()
         levelManager.settingChanged(selectedMachine, slot.setting())
+        sfx.menuSelect()
     }
 
     // DISTRIBUCION

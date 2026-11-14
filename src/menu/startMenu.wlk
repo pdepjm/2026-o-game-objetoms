@@ -25,6 +25,7 @@ import simulation.simulationEngine.*
 import machines.types.deliverySlot.*
 import levels.levelManager.*
 import directions.*
+import sound.sfx.*
 
 object startScreen {
 	method position() = game.origin()
@@ -68,6 +69,7 @@ object startMenu {
 
 	// Las pantallas le piden al menú que cambie de estado
 	method play() {
+		sfx.simulationStart()
 		recipeBook.close()
 		screen = playingScreen
 		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
@@ -82,12 +84,14 @@ object startMenu {
 	}
 
 	method openInstructions() {
+		sfx.menuSelect()
 		screen = instructionsScreen
 		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
 		game.addVisual(menuControlsOverlay) 
 	}
 
 	method backToCover() {
+		sfx.menuSelect()
 		if (recipeBook.isOpen()) recipeBook.close()
 		screen = coverScreen
 		simulationEngine.pause()

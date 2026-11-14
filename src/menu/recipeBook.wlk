@@ -18,6 +18,7 @@
 
 import wollok.game.*
 import simulation.simulationEngine.*
+import sound.sfx.*
 
 class RecipeBookVisual {
 	method position() = game.origin()
@@ -40,6 +41,7 @@ object recipeBook {
 			pausedByBook = simulationEngine.running() && !simulationEngine.paused()
 			if (pausedByBook) simulationEngine.pause()
 			if (!game.hasVisual(recipeBookVisual)) game.addVisual(recipeBookVisual)
+			sfx.pageChange()
 		}
 	}
 
@@ -49,6 +51,7 @@ object recipeBook {
 			if (game.hasVisual(recipeBookVisual)) game.removeVisual(recipeBookVisual)
 			if (pausedByBook) simulationEngine.resume()
 			pausedByBook = false
+			sfx.pageChange()
 		}
 	}
 
@@ -58,6 +61,7 @@ object recipeBook {
 		if (isOpen && currentPage < maxPages) {
 			currentPage += 1
 			self.updateVisual()
+			sfx.pageChange()
 		}
 	}
 
@@ -65,6 +69,7 @@ object recipeBook {
 		if (isOpen && currentPage > 0) {
 			currentPage -= 1
 			self.updateVisual()
+			sfx.pageChange()
 		}
 	}
 
