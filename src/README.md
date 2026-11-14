@@ -38,7 +38,7 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
   - `isBuildable(posición)`: está en el tablero y en alguna de las zonas.
   - `canBuild(posición, máquina)`: como `canPlace`, y además todas sus celdas están en alguna zona (una de 2x2 puede quedar repartida entre dos zonas pegadas). Lo usa la herramienta place.
   - `push` **no** mira las zonas: así el nivel puede colocar sus máquinas fijas en cualquier lugar.
-  - Las celdas donde no se puede construir se ven oscurecidas (`BlockedCell`, con `assets/blocked_cell.png`). Las marcas se crean sólo al cambiar las zonas, no en cada frame.
+  - Las celdas donde no se puede construir se ven oscurecidas con UNA sola imagen por nivel (`BlockedLayer`, la `blockedLayer` del nivel: `assets/levels/blocked_<nivel>.png`), no con un visual por celda. Se genera con `assets/levels/makeBlockedOverlays.py`, y se cambia sólo al cargar el nivel. Si se cambian los `buildZones` de un nivel, hay que actualizar `ZONES` en ese script y volver a correrlo.
 - **No usar `push`, `pop` ni `clear` con la simulación prendida:** las máquinas ya calcularon a sus vecinas. Los clicks se bloquean en `toolsManager`; `clear` no lo controla, así que antes hay que apagarla (`simulationEngine.reset()`).
 
 ### `cellPosition.wlk`

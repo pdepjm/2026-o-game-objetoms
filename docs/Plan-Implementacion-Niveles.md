@@ -847,7 +847,7 @@ override method start() {
 - **`Zone`** pasó de `menu/menuManager.wlk` a `src/board.wlk`: un rectángulo de celdas con `contains(posición)`. Está en el tablero porque es el tablero el que define dónde se puede construir; los menús también la usan, para sus zonas de la pantalla.
 - **`Level`**: `const property buildZones = [wholeBoard]`. Opcional; por defecto, todo el tablero. Ejemplo: `buildZones = [new Zone(minX = 5, maxX = 12, minY = 1, maxY = 13)]`.
 - **`board`** (`src/board.wlk`):
-  - `buildZones(zonas)`: las cambia, y marca las celdas donde no se puede construir con un visual `BlockedCell` (`assets/blocked_cell.png`, oscurecido con rayas). Las marcas se crean sólo acá, no en cada frame.
+  - `buildZones(zonas)`: las cambia, y dibuja la capa del nivel (`BlockedLayer`: una imagen `assets/levels/blocked_<nivel>.png` generada con `makeBlockedOverlays.py`) que oscurece las celdas donde no se puede construir.
   - `isBuildable(posición)`: en el tablero y en alguna zona.
   - `canBuild(posición, máquina)`: `canPlace` y, además, todas sus celdas en alguna zona (una de 2x2 puede quedar repartida entre dos zonas pegadas).
   - `push` **no** mira las zonas: las máquinas fijas del nivel se pueden poner en cualquier lugar.

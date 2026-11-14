@@ -101,6 +101,7 @@ object tutorialLevel inherits Level(
             label = "Papas Fritas"
         )
     ],
+    blockedLayer = new BlockedLayer(image = "levels/blocked_tutorial.png"),
     buildZones = [
         new Zone(
             minX = friesTutorialCells.firstBelt().x(),
@@ -249,6 +250,7 @@ object hotDogTutorialLevel inherits Level(
             label = "Panchos"
         )
     ],
+    blockedLayer = new BlockedLayer(image = "levels/blocked_hotdog.png"),
     buildZones = [
         new Zone(
             minX = hotDogTutorialCells.oven().x(),
@@ -405,6 +407,7 @@ object energyTutorialLevel inherits Level(
         )
     ],
     energyLimit = new EnergyLimit(max = 9),
+    blockedLayer = new BlockedLayer(image = "levels/blocked_energy.png"),
     buildZones = [
         new Zone(
             minX = energyTutorialCells.belt().x(),
@@ -552,6 +555,7 @@ object level3 inherits Level(
         machineManager.assemblerFactory()
     ],
     availableRecipes = [toastRecipe, pizzaPepperoniRecipe, breakfastRecipe],
+    blockedLayer = new BlockedLayer(image = "levels/blocked_level3.png"),
     buildZones = [
         new Zone(minX = 6, maxX = 12, minY = 7, maxY = 10),
         new Zone(minX = 13, maxX = 15, minY = 7, maxY = 12),

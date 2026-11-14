@@ -71,6 +71,7 @@ class Level {
 	const property fixedMachines = []         // Maquinas colocadas desde el comienzo (No se pueden mover)
 	const property goals                      // Lo que hay que cumplir para ganar: TODOS los objetivos
 	const property buildZones = [wholeBoard]  // Dónde puede construir el jugador: Zones (ver board.wlk). Por defecto, todo el tablero
+	const property blockedLayer = noBlockedLayer  // La capa que oscurece esas celdas (ver BlockedLayer). La del nivel, hecha con makeBlockedOverlays.py
 	const property tutorial = noTutorial      // El que acompaña al nivel (ver tutorial.wlk). Por defecto, ninguno
 	const property energyLimit = unlimitedEnergy  // Cuánta energía puede gastar el jugador: un EnergyLimit. Por defecto, sin límite
 

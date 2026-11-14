@@ -72,7 +72,7 @@ object levelManager {
         recipeBook.changeAvailable(level.availableRecipes())
         placeMenu.resetPage()
         // Antes de las máquinas fijas, así las marcas de las celdas bloqueadas quedan debajo de ellas
-        board.buildZones(level.buildZones())
+        board.buildZones(level.buildZones(), level.blockedLayer())
         level.placeFixedMachines()
         level.resetGoals()
         levelInfoMenu.show(level)

@@ -34,7 +34,7 @@ object board {
 	const deliverySlots = []
 	// Dónde puede construir el jugador (ver "ZONAS DONDE SE PUEDE CONSTRUIR", al final)
 	var buildZones = [wholeBoard]
-	var blockedMarks = []
+	var blockedLayer = noBlockedLayer
 	//
 	const grid = (0..maxColumn).map({ x => (0..maxRow).map({ y => new Cell(machine = noMachine) }) })
 
@@ -154,17 +154,22 @@ object board {
 
 	method buildZones() = buildZones
 
-	// Cambia las zonas y marca en el tablero las celdas donde no se puede construir.
-	// RENDIMIENTO: las marcas se crean sólo acá (al cargar un nivel), no en cada frame.
+	// Cambia las zonas y dibuja la capa que oscurece las celdas donde no se puede construir (la del nivel,
+	// ya hecha: ver BlockedLayer). Sin capa, no se marca nada.
+	// RENDIMIENTO: es UN solo visual y se cambia sólo al cargar un nivel, no en cada frame.
 	method buildZones(zones) {
-		buildZones = zones
-		blockedMarks.forEach({ mark => game.removeVisual(mark) })
-		blockedMarks = self.boardCells().filter({ pos => !self.isBuildable(pos) }).map({ pos => new BlockedCell(position = pos) })
-		blockedMarks.forEach({ mark => game.addVisual(mark) })
+		self.buildZones(zones, noBlockedLayer)
 	}
 
-	// Las marcas que se ven en las celdas donde no se puede construir
-	method blockedMarks() = blockedMarks
+	method buildZones(zones, layer) {
+		buildZones = zones
+		blockedLayer.hide()
+		blockedLayer = layer
+		blockedLayer.show()
+	}
+
+	// La capa que se ve sobre las celdas donde no se puede construir
+	method blockedLayer() = blockedLayer
 
 	// Todas las celdas del tablero
 	method boardCells() = (5..maxColumn).flatMap({ x => (1..maxRow).map({ y => new CellPosition(x = x, y = y) }) })
@@ -193,8 +198,24 @@ object wholeBoard {
 	method contains(pos) = true
 }
 
-// La marca de una celda donde el jugador no puede construir (oscurece la celda)
-class BlockedCell {
-	const property position
-	method image() = "blocked_cell.png"
+// La capa de celdas bloqueadas de un nivel: UNA imagen del tamaño de la pantalla, transparente salvo en las
+// celdas donde no se puede construir (se genera con assets/levels/makeBlockedOverlays.py).
+class BlockedLayer {
+	const property image
+	const property position = new CellPosition(x = 0, y = 0)
+
+	method show() {
+		if (!game.hasVisual(self)) game.addVisual(self)
+	}
+
+	method hide() {
+		if (game.hasVisual(self)) game.removeVisual(self)
+	}
+}
+
+// Un nivel sin celdas bloqueadas: no dibuja nada
+object noBlockedLayer {
+	method show() {}
+
+	method hide() {}
 }

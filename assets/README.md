@@ -243,6 +243,7 @@ El script necesita Edge, Chrome o Chromium instalado: lo usa sin abrir ventanas 
 |---|---|
 | `background.gif` | fondo del juego (se carga con `game.boardGround`). `background.png` es la versión sin animar |
 | `overlay.png` | marco que marca la máquina elegida en el menú |
-| `blocked_cell.png` | 50x50, semitransparente con rayas: oscurece las celdas del tablero donde el nivel no deja construir |
+| `blocked_cell.png` | 50x50, semitransparente con rayas: la marca de una celda donde el nivel no deja construir. Sólo la usa `levels/makeBlockedOverlays.py` |
+| `levels/blocked_<nivel>.png` | 1250x800, transparente: la capa de celdas bloqueadas de cada nivel, con la marca en cada celda donde no se puede construir. Se genera con `levels/makeBlockedOverlays.py` (herramienta auxiliar, no forma parte del juego) |
 | `no_texture.png` | imagen de reemplazo cuando todavía no hay una definitiva |
 | `pepita.png` | imagen provisoria que usaban los ingredientes (ya no la usa el código) |
