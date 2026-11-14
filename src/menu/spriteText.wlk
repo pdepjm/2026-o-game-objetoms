@@ -71,7 +71,8 @@ class SpriteLine {
 	const glyphs
 
 	method description() = text
-	method isText() = true
+	method textLines() = [text]
+	method barImages() = []
 
 	method hide() {
 		glyphs.forEach({ glyph => game.removeVisual(glyph) })

@@ -147,7 +147,7 @@ Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pa
 | Mensaje | Cuándo |
 |---|---|
 | `onLevelLoaded(nivel)` | Al final de `levelManager.load` (también al reiniciar) |
-| `onToolSelected(herramienta)` | `toolsManager.select` (llega `null` si se deselecciona) |
+| `onToolSelected(herramienta)` | `toolsManager.select` (llega `noTool` si se deselecciona) |
 | `onMachinePlaced(maquina)` | `place`, después de colocarla |
 | `onMachineRemoved(maquina)` | `delete`, **después** de sacarla (se guarda la máquina antes, así el tutorial ve el tablero sin ella) |
 | `onMachineRotated(maquina)` | `rotate`, después de rotarla |
@@ -159,7 +159,7 @@ Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pa
 | `allowsTool(herramienta, pos)` | `toolsManager.onClick`, antes de usar la herramienta en el tablero. Si es `false`, el click no hace nada |
 | `allowsSimulationToggle()` | `levelManager.toggleSimulation`. Si es `false`, no prende ni apaga |
 | `messageLines()` | Después de cada aviso: las líneas del mensaje (de hasta `levelInfoMenu.tutorialMaxLength()`, 16 caracteres) |
-| `stepLabel()` | Después de cada aviso: dónde va el jugador, arriba del mensaje (`StepTutorial`: `PASO 2 DE 8`). Vacío: no se muestra |
+| `stepLabels()` | Después de cada aviso: una lista con dónde va el jugador, arriba del mensaje (`StepTutorial`: `["PASO 2 DE 8"]`). Vacía: no se muestra |
 | `messageKeys()` | Después de cada aviso: las teclas que acompañan al mensaje (`"place"`, `"continue"`…), que se dibujan con el estilo de las teclas del fondo. **Entre líneas y teclas, como máximo `tutorialMaxLines()` (6)**: lo revisa un test |
 | `allMessages()` | Todos los mensajes que puede mostrar. Sólo para los tests (ver abajo) |
 | `targetCells()` | Después de cada aviso: las celdas donde el jugador tiene que hacer algo. Se marcan con un recuadro amarillo que late |
@@ -188,7 +188,7 @@ Fuera de sus `cells`, un paso deja **editar cualquier máquina, también las fij
 | Paso | Se cumple… |
 |---|---|
 | `TutorialStep` | Nunca. Para el último |
-| `MachineStep(cells, condition)` | Cuando en todas sus celdas hay una máquina que cumple `condition` (`{ machine => machine.name() == "Belt" }`). Si son las cuatro celdas de una de 2x2, es la misma máquina en todas |
+| `MachineStep(cells, condition, allowedMachines)` | Cuando en todas sus celdas hay una máquina que cumple `condition` (`{ machine => machine.direction() == right }`; por defecto, cualquiera). `allowedMachines` son las fábricas del catálogo que deja construir (`machineManager.beltFactory()`): así el paso no le pregunta a la máquina qué es, sino que sólo deja colocar la que corresponde. Vacía: no restringe. Si son las cuatro celdas de una de 2x2, es la misma máquina en todas |
 | `RunStep` | Mientras la simulación está prendida (y deja prenderla) |
 | `ExplainStep` | Al apretar Enter. Para explicar una máquina (con `pointsAt`) antes del paso que pide algo. **Queda cumplido**: si el jugador vuelve a un paso anterior, no se repite |
 | `ToolStep(tool)` | Al elegir esa herramienta. **Queda cumplido** aunque después se elija otra |
@@ -201,7 +201,7 @@ class SettingStep inherits EventStep {
 }
 ```
 
-**Las condiciones le preguntan a la máquina, no a cómo guarda las cosas.** Por ejemplo, el paso de editar el brazo inteligente usa `exitSideFor(kind)` (por dónde saldría ese ingrediente, o `null`) y no el orden de sus salidas.
+**Las condiciones le preguntan a la máquina, no a cómo guarda las cosas.** Por ejemplo, el paso de editar el brazo inteligente usa `exitSideFor(kind)` (por dónde saldría ese ingrediente; antes se pregunta `takes(kind)`) y no el orden de sus salidas.
 
 ### Agregar un tutorial
 
@@ -212,7 +212,7 @@ class SettingStep inherits EventStep {
 
 ### Saltear los tutoriales
 
-En los tutoriales (los niveles con `tutorial`: `level.hasTutorial()`), la info del nivel muestra el botón **T SALTEAR TUTORIAL**, que se clickea o se aprieta con T. `levelManager.skipTutorial()` da por hechos **todos** los tutoriales y carga el primer nivel que toca jugar. Fuera de un tutorial no hace nada.
+En los tutoriales, la info del nivel muestra el botón **T SALTEAR TUTORIAL** (se lo pide al tutorial: `tutorial.skipButton(menu)`; `noTutorial` devuelve `noSkipButton`), que se clickea o se aprieta con T. `levelManager.skipTutorial()` le avisa al tutorial del nivel (`tutorial.skip(manager)`): un tutorial da por hechos **todos** los tutoriales y carga el primer nivel que toca jugar; `noTutorial` no hace nada.
 
 ### `tutorialLevel` ("Tutorial 1"): papas fritas
 

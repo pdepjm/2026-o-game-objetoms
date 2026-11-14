@@ -38,13 +38,7 @@ object tutorialMarks {
 
 	// Arriba de la máquina de esa celda, centrada sobre ella: con una de 2x2, arriba de su fila de
 	// arriba y entre sus dos columnas. Si no hay máquina, arriba de la celda.
-	method arrowPosition(cell) {
-		const machine = board.machineAt(cell)
-		if (machine == null) return new CellPosition(x = cell.x(), y = cell.y() + 1)
-		const origin = machine.cell()
-		// Con decimales (una de 2x2) tiene que ser CellPosition: game.at se redondea a la celda al dibujar
-		return new CellPosition(x = origin.x() + (machine.width() - 1) / 2, y = origin.y() + machine.height())
-	}
+	method arrowPosition(cell) = board.machineAt(cell).arrowPosition(cell)
 }
 
 class TutorialMark {

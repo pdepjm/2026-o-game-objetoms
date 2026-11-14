@@ -260,9 +260,10 @@ describe "tests del tutorial de energia" {
   // Con edit, toca la máquina y elige en el panel esa opción de ese setting
   method chooseOption(machinePos, settingName, value) {
     self.useTool(edit, machinePos)
+    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == settingName })
     const pos = (20 .. 24).flatMap({ x => (0 .. 15).map({ y => game.at(x, y) }) }).find({ pos =>
       const slot = editMenu.slotAt(pos)
-      return slot != null && slot.setting().name() == settingName && slot.option().value() == value
+      return slot.matches(setting, value)
     })
     toolsManager.onClick(pos)
   }

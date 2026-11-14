@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import machines.machineClasses.*
 import wollok.game.*
 import menu.menuManager.*
 import menu.menuText.*
@@ -28,7 +29,7 @@ import levels.levelManager.*
 // y al clickear una opción se la aplica al setting. No sabe de qué máquina se trata: sólo le pide
 // settings() y trabaja con lo que devuelve (ver machines/settings.wlk).
 object editMenu{
-    var selectedMachine = null
+    var selectedMachine = noMachine
 
     // Todo lo que hay dibujado en el panel (títulos, nombres de settings, opciones y marcas)
     var renderedItems = []
@@ -48,7 +49,7 @@ object editMenu{
 
     method hide() {
         visible = false
-        selectedMachine = null
+        selectedMachine = noMachine
         self.vaciarRenders()
     }
 
@@ -61,13 +62,14 @@ object editMenu{
 
     // Aplica la opción clickeada a su setting, si se clickeó una
     method onClick(pos) {
-        const slot = self.slotAt(pos)
+        self.slotAt(pos).selectIn(self)
+    }
 
-        if (slot != null) {
-            slot.setting().select(slot.option())
-            self.updateMarkers()
-            levelManager.settingChanged(selectedMachine, slot.setting())
-        }
+    // Aplica esa opción a su setting (lo llama la opción clickeada, ver OptionSlot)
+    method choose(slot) {
+        slot.setting().select(slot.option())
+        self.updateMarkers()
+        levelManager.settingChanged(selectedMachine, slot.setting())
     }
 
     // DISTRIBUCION
@@ -81,14 +83,14 @@ object editMenu{
     method columns() = 4
     method topRow() = 14
 
-    // La opción dibujada en esa posición (null si el click cayó afuera de todas).
+    // La opción dibujada en esa posición (noSlot si el click cayó afuera de todas).
     // Como las opciones se alinean con las celdas enteras de la cuadrícula de Wollok (x: 21 a 24),
     // la comparación exacta x == pos.x() e y == pos.y() garantiza que cualquier click dentro del
     // casillero de 50x50 px active la opción correcta sin importar si se clickea a la izquierda o derecha.
-    method slotAt(pos) = slots.findOrDefault({ slot => slot.position().x() == pos.x() && slot.position().y() == pos.y() }, null)
+    method slotAt(pos) = slots.findOrDefault({ slot => slot.position().x() == pos.x() && slot.position().y() == pos.y() }, noSlot)
 
     // Los settings de la máquina elegida (ninguno si no hay máquina elegida)
-    method settings() = if (selectedMachine == null) [] else selectedMachine.settings()
+    method settings() = selectedMachine.settings()
 
     // Las categorías de esos settings, sin repetir y en el orden en que aparecen
     method categories() {
@@ -111,13 +113,13 @@ object editMenu{
 
             const inCategory = self.settings().filter({ setting => setting.category() == category })
 
-            inCategory.filter({ setting => setting.column() == null }).forEach({ setting =>
+            inCategory.filter({ setting => !setting.isColumned() }).forEach({ setting =>
                 self.addSettingTitle(setting.name(), row)
                 row -= 1
                 row = self.renderOptions(setting, row)
             })
 
-            const columned = inCategory.filter({ setting => setting.column() != null })
+            const columned = inCategory.filter({ setting => setting.isColumned() })
             if (!columned.isEmpty()) row = self.renderColumns(columned, row)
         })
 
@@ -131,8 +133,7 @@ object editMenu{
 
         setting.options().forEach({ option =>
             const position = menuManager.interactiveZone().at(index.rem(self.columns()), firstRow - index.div(self.columns()))
-            const visual = if (option.hasImage()) new OptionImage(image = option.image(), position = position)
-                else new MenuText(text = option.label(), position = position)
+            const visual = option.visualAt(position)
 
             game.addVisual(visual)
             renderedItems.add(visual)
@@ -155,7 +156,7 @@ object editMenu{
 
             setting.options().forEach({ option =>
                 const position = menuManager.interactiveZone().at(setting.column(), firstRow - 1 - index)
-                const visual = new OptionImage(image = option.image(), position = position)
+                const visual = option.visualAt(position)
 
                 game.addVisual(visual)
                 renderedItems.add(visual)
@@ -245,6 +246,16 @@ class OptionSlot {
     const property setting
     const property option
     const property position
+
+    // ¿Es la opción con ese valor de ese setting?
+    method matches(aSetting, value) = setting == aSetting && option.value() == value
+    method selectIn(menu) { menu.choose(self) }
+}
+
+// "No hay opción ahí": lo que hay en una posición donde se clickeó afuera de todas las opciones
+object noSlot {
+    method matches(aSetting, value) = false
+    method selectIn(menu) {}
 }
 
 // Marca la opción elegida: un recuadro del tamaño de una celda (el overlay de place mide 4x4)

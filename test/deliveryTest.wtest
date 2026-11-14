@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import wollok.game.*
+import src.machines.machineClasses.*
 import src.board.*
 import src.directions.*
 import src.machines.types.belt.*
@@ -59,13 +60,13 @@ describe "tests de los puntos de entrega" {
   }
 
   test "el board encuentra los platitos fuera del tablero" {
-    assert.that(board.machineAt(game.at(16, 14)) != null)
-    assert.that(board.machineAt(game.at(17, 14)) != null)
+    assert.that(board.isThereAMachine(game.at(16, 14)))
+    assert.that(board.isThereAMachine(game.at(17, 14)))
     assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
   }
 
   test "fuera del tablero, donde no hay platito, sigue sin haber maquina" {
-    assert.equals(null, board.machineAt(game.at(15, 14)))
+    assert.equals(noMachine, board.machineAt(game.at(15, 14)))
   }
 
   test "una cinta que apunta al platito le entrega a el" {

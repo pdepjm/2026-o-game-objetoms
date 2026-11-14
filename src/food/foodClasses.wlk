@@ -84,4 +84,22 @@ class Item inherits Animado {
     method process(aProcess) {
         kind = kind.process(aProcess)
     }
+
+    // Las máquinas le piden a su item que se entregue (ver Machine.deliver) o que un brazo lo agarre
+    method asList() = [self]
+    method deliverFrom(machine, target) { machine.deliver(self, target) }
+    method grabbedBy(arm, source) {
+        if (arm.canReceive(self)) {
+            source.surrender(self)
+            arm.receive(self)
+        }
+    }
+}
+
+// "No hay item": lo que devuelve una máquina que no tiene nada para entregar o para que un brazo agarre.
+// Se deja entregar y agarrar sin hacer nada, así nadie tiene que preguntar si hay algo.
+object noItem {
+    method asList() = []
+    method deliverFrom(machine, target) {}
+    method grabbedBy(arm, source) {}
 }

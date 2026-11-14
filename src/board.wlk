@@ -21,10 +21,11 @@
 import wollok.game.*
 import simulation.simulationEngine.*
 import cellPosition.*
+import machines.machineClasses.*
 
-// Una casilla del tablero. Guarda la máquina que está ahí (null si está vacía).
+// Una casilla del tablero. Guarda la máquina que está ahí (noMachine si está vacía).
 class Cell {
-	var property machine = null
+	var property machine = noMachine
 }
 
 object board {
@@ -35,11 +36,7 @@ object board {
 	var buildZones = [wholeBoard]
 	var blockedMarks = []
 	//
-	// OJO: el machine = null explícito es necesario. Por un bug de Wollok, un objeto creado
-	// mientras se inicializa otro objeto (como acá, dentro de board) no toma bien el valor
-	// por defecto null: machine() devuelve algo que se muestra como "null" pero no es == null.
-	// Pasándolo al crear la casilla, sí queda el null de verdad.
-	const grid = (0..maxColumn).map({ x => (0..maxRow).map({ y => new Cell(machine = null) }) })
+	const grid = (0..maxColumn).map({ x => (0..maxRow).map({ y => new Cell(machine = noMachine) }) })
 
 	// métodos privados
 
@@ -49,7 +46,7 @@ object board {
 		const machine = self.machineAt(position)
 
 		self.cellsFor(machine.cell(), machine).forEach({
-			pos => self.cellAt(pos).machine(null)
+			pos => self.cellAt(pos).machine(noMachine)
 		})
 	}
 
@@ -65,14 +62,14 @@ object board {
 		})
 	})
 
-	method machines() = grid.flatMap({ column => column.map({ cell => cell.machine()})}).filter({machine => machine != null}).asSet().asList()
+	method machines() = grid.flatMap({ column => column.flatMap({ cell => cell.machine().asList() }) }).asSet().asList()
 
 	// La energía que gastan todas las máquinas colocadas (las fijas del nivel también)
 	method totalEnergy() = self.machines().sum({ machine => machine.energyConsumption() })
 
 	// Avisa a la máquina colocada y a las de al lado que algo cambió en su entorno (las cintas recalculan su forma)
 	method updateNeighbourBelts(position, placedElement) {
-		if (placedElement != null) placedElement.onNeighbourChanged()
+		placedElement.onNeighbourChanged()
 
 		const neighbours = [
 			self.machineAt(position.left(1)),
@@ -81,7 +78,7 @@ object board {
 			self.machineAt(position.down(1))
 		]
 
-		neighbours.filter({ neighbour => neighbour != null }).forEach({ neighbour => neighbour.onNeighbourChanged() })
+		neighbours.forEach({ neighbour => neighbour.onNeighbourChanged() })
 	}
 
 	// métodos públicos
@@ -96,7 +93,7 @@ object board {
 
 	method machineAt(position) =
 		if (self.inBoard(position)) self.cellAt(position).machine() 
-		else deliverySlots.findOrDefault({ slot => slot.cell() == position }, null)
+		else deliverySlots.findOrDefault({ slot => slot.cell() == position }, noMachine)
 
 	//pushear elemento al tablero. La máquina queda registrada en el simulationEngine.
 	// OJO: push y pop no se deben usar con la simulación prendida, porque las máquinas
@@ -132,13 +129,13 @@ object board {
 			self.removeFromGrid(position)
 			
 			// NUEVO: Al quitar una máquina, actualizamos las cintas de al lado
-			self.updateNeighbourBelts(position, null) 
+			self.updateNeighbourBelts(position, noMachine) 
 		}
 	}
 
 	method inBoard(pos) = pos.x().between(5, 19) && pos.y().between(1, 13)
 
-	method isThereAMachine(pos) = self.machineAt(pos) != null
+	method isThereAMachine(pos) = !self.machineAt(pos).asList().isEmpty()
 
 	method isThereAMachineUnlocked(pos) = self.isThereAMachine(pos) && !self.machineAt(pos).locked()
 

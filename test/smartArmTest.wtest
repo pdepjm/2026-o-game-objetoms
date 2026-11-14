@@ -233,7 +233,7 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = new Fryer()
     board.push(game.at(6, 6), aFryer)
     board.push(game.at(7, 6), new Belt())
-    assert.that(aFryer.nextMachine() == null)
+    assert.that(aFryer.nextMachine().asList().isEmpty())
   }
 
   test "la freidora entrega a un brazo" {

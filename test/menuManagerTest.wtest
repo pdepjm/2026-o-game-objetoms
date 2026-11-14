@@ -61,7 +61,7 @@ describe "tests de menuManager" {
 
   test "al arrancar no hay ninguna herramienta elegida ni panel en la zona interactiva" {
     menuManager.setUp()
-    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(noTool, toolsManager.selectedTool())
     assert.notThat(game.hasVisual(overlay))
     assert.that(self.menuIsEmpty())
   }
@@ -89,7 +89,7 @@ describe "tests de menuManager" {
   test "elegir de nuevo la herramienta activa la deselecciona y vacía la zona interactiva" {
     self.startWithPlace()
     toolsManager.select(place)
-    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(noTool, toolsManager.selectedTool())
     assert.notThat(game.hasVisual(overlay))
     assert.that(self.menuIsEmpty())
     assert.equals("tools/default.png", toolBar.image())
@@ -99,7 +99,7 @@ describe "tests de menuManager" {
     self.editADispenser()
     assert.notThat(self.zoneVisuals().isEmpty())
     toolsManager.select(edit)
-    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(noTool, toolsManager.selectedTool())
     assert.that(self.zoneVisuals().isEmpty())
   }
 
@@ -285,7 +285,7 @@ describe "tests de menuManager" {
     self.startWithPlace()
     toolsManager.currentDirection(up)
     toolsManager.reset()
-    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(noTool, toolsManager.selectedTool())
     assert.equals(right, toolsManager.currentDirection())
     assert.that(self.zoneVisuals().isEmpty())
     assert.equals("tools/default.png", toolBar.image())

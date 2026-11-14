@@ -77,7 +77,7 @@ object levelManager {
         level.resetGoals()
         levelInfoMenu.show(level)
         self._showEnergy()
-        if (level == freePlay) levelInfoMenu.showHint("L: volver")
+        level.showHints(levelInfoMenu)
         self._notifyTutorial({ tutorial => tutorial.onLevelLoaded(level) })
     }
     method restart() {self.load(currentLevel)}
@@ -89,7 +89,7 @@ object levelManager {
     // Con la simulación prendida no hace nada.
     method toggleFreePlay() {
         if (!simulationEngine.running()) {
-            if (currentLevel == freePlay) self.load(self.levelToPlay()) else self.loadFreePlay()
+            currentLevel.toggleFreePlay(self)
         }
     }
 
@@ -173,10 +173,13 @@ object levelManager {
     // La tecla T o el botón SALTEAR TUTORIAL: da por hechos todos los tutoriales y carga el primer nivel
     // que toca jugar. Fuera de un tutorial no hace nada.
     method skipTutorial() {
-        if (currentLevel.hasTutorial()) {
-            levels.filter({ level => level.hasTutorial() && !completedLevels.contains(level) }).forEach({ level => completedLevels.add(level) })
-            self.load(self.levelToPlay())
-        }
+        currentLevel.tutorial().skip(self)
+    }
+
+    // Da por hechos todos los tutoriales y carga el primer nivel que toca jugar (lo llama un tutorial al saltearlo)
+    method skipTutorials() {
+        levels.forEach({ level => level.tutorial().completeIn(completedLevels, level) })
+        self.load(self.levelToPlay())
     }
 
     // ¿Deja usar esa herramienta en esa celda? Lo pregunta toolsManager antes de cada click en el tablero
@@ -185,7 +188,7 @@ object levelManager {
     // Le avisa al tutorial y muestra su mensaje y sus indicadores, que pueden haber cambiado
     method _notifyTutorial(event) {
         event.apply(self.tutorial())
-        levelInfoMenu.showTutorialMessage(self.tutorial().stepLabel(), self.tutorial().messageLines(), self.tutorial().messageKeys())
+        levelInfoMenu.showTutorialMessage(self.tutorial().stepLabels(), self.tutorial().messageLines(), self.tutorial().messageKeys())
         tutorialMarks.show(self.tutorial().targetCells(), self.tutorial().pointedCells())
     }
 }

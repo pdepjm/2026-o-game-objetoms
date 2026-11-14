@@ -41,7 +41,7 @@ class Belt inherits Machine {
 		const oppositeDirection = myOutput.invert()
 		const oppositeNeighbour = board.machineAt(oppositeDirection.move(myCell))
 		
-		if (oppositeNeighbour != null && oppositeNeighbour.outputTarget() == myCell) {
+		if (oppositeNeighbour.feeds(myCell)) {
 			return oppositeDirection
 		}
 		
@@ -49,7 +49,7 @@ class Belt inherits Machine {
 		const leftDirection = myOutput.previous()
 		const leftNeighbour = board.machineAt(leftDirection.move(myCell))
 		
-		if (leftNeighbour != null && leftNeighbour.outputTarget() == myCell) {
+		if (leftNeighbour.feeds(myCell)) {
 			return leftDirection
 		}
 		
@@ -57,18 +57,19 @@ class Belt inherits Machine {
 		const rightDirection = myOutput.next()
 		const rightNeighbour = board.machineAt(rightDirection.move(myCell))
 		
-		if (rightNeighbour != null && rightNeighbour.outputTarget() == myCell) {
+		if (rightNeighbour.feeds(myCell)) {
 			return rightDirection
 		}
 		
-		return null 
+		// Si nadie le entrega, es como una cinta recta
+		return oppositeDirection
 	}
 
 	method updateShape() {
 		const myInput = self.calculateInputDirection()
 		const myOutput = self.direction()
 
-		if (myInput == null || myInput == myOutput.invert()) {
+		if (myInput == myOutput.invert()) {
 			shape = straightShape
 		} else if (myInput == myOutput.previous()) {
 			shape = curveLeftShape
@@ -85,7 +86,7 @@ class Belt inherits Machine {
 			board.machineAt(myCell.up(1)),
 			board.machineAt(myCell.down(1))
 		]
-		neighbours.filter({ neighbour => neighbour != null }).forEach({ neighbour => neighbour.onNeighbourChanged() })
+		neighbours.forEach({ neighbour => neighbour.onNeighbourChanged() })
 	}
 
 	// Una máquina de al lado cambió (se construyó, se destruyó o rotó): la cinta recalcula su forma

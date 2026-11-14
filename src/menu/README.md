@@ -58,7 +58,7 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
   x0.5   x1     x2
   ```
 
-- Un setting con `column()` (no `null`) se dibuja distinto: después de los demás settings de su categoría, en **esa columna**, con su nombre arriba y sus opciones una debajo de la otra. Los settings en columna de una misma categoría quedan uno al lado del otro. Así se ven las tres salidas del brazo inteligente (`ItemSetSetting`):
+- Un setting en columna (`isColumned()`, con su `column()`) se dibuja distinto: después de los demás settings de su categoría, en **esa columna**, con su nombre arriba y sus opciones una debajo de la otra. Los settings en columna de una misma categoría quedan uno al lado del otro. Así se ven las tres salidas del brazo inteligente (`ItemSetSetting`):
 
   ```
   MOVIMIENTO
@@ -84,7 +84,7 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 | 12 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. En los tutoriales, el botón **T SALTEAR TUTORIAL** (`assets/menu/key_skip.png`), que también se clickea: `isSkipButton(pos)` dice si un click cayó en él. Se borra al cargar otro nivel |
 | 11 | `OBJETIVO`, en gris, arriba de una tarjeta de papel (como las hojas del recetario) que llega hasta el último objetivo. No aparece si el nivel no tiene objetivos con texto, como el modo libre |
 | 10 a 8 | Uno por objetivo (`level.shownGoals()`), como máximo 3: la imagen del plato a la izquierda, su texto en marrón y una barra de progreso que se llena por décimos (`goal.progressTenths()`) |
-| 7.5 | El paso del tutorial (`tutorial.stepLabel()`, por ejemplo `PASO 2 DE 8`), en gris, arriba de un globo de diálogo |
+| 7.5 | El paso del tutorial (`tutorial.stepLabels()`, por ejemplo `PASO 2 DE 8`), en gris, arriba de un globo de diálogo |
 | 7 hacia abajo | El mensaje del tutorial, en marrón dentro del globo: como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. El globo tiene el alto justo para las líneas. Vacío en los niveles sin tutorial |
 | 3.65 hacia arriba | Las teclas del mensaje del tutorial, afuera del globo (en amarillo no se leen sobre el papel), la primera arriba: imágenes `assets/menu/key_<nombre>.png` con el estilo de las teclas del fondo (por ejemplo `place`: Z COLOCAR). Se van cuando cambia el mensaje |
 | 4.6 y 3.7 | Al ganar: `¡Nivel completo!` y la tecla N (SIGUIENTE), o `¡Fin del juego!` y la tecla 0 (REINICIAR) si no hay otro nivel. Las teclas son imágenes (`assets/menu/key_next.png` y `key_restart.png`, las genera `makeKeyHints.py`) con el estilo de las teclas del fondo |

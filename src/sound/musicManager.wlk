@@ -26,7 +26,7 @@ import wollok.game.*
 //
 
 object musicManager {
-    var backgroundSound = null
+    var backgroundSound = noSound
 
     method playBackground() {
         self.stopBackground()
@@ -36,9 +36,12 @@ object musicManager {
     }
 
     method stopBackground() {
-        if (backgroundSound != null) {
-            backgroundSound.stop()
-            backgroundSound = null
-        }
+        backgroundSound.stop()
+        backgroundSound = noSound
     }
+}
+
+// "No hay música sonando": detenerla no hace nada
+object noSound {
+    method stop() {}
 }

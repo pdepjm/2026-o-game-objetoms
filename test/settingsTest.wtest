@@ -66,7 +66,7 @@ describe "tests de los settings de las maquinas" {
 
   test "las opciones del ingrediente se dibujan con la imagen del ingrediente" {
     const product = dispenser.settings().first()
-    assert.that(product.options().all({ option => option.hasImage() && option.image() == option.value().image() }))
+    assert.that(product.options().all({ option => option.image() == option.value().image() }))
   }
 
   test "solo esta elegida la opcion del valor actual" {
@@ -77,7 +77,7 @@ describe "tests de los settings de las maquinas" {
 
   test "las opciones de velocidad se dibujan con texto" {
     const speed = dispenser.settings().last()
-    assert.notThat(speed.options().any({ option => option.hasImage() }))
+    assert.equals(["x0.5", "x1", "x2"], speed.options().map({ option => option.label() }))
   }
 
   test "a velocidad normal el dispenser tarda 5 segundos" {

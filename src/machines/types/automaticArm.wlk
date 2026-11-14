@@ -47,11 +47,11 @@ class AutomaticArm inherits Machine {
 
 	// El lado por el que recibe: el que se eligió al colocarlo, y cambia al rotarlo.
 	// direction, en cambio, es hacia dónde está mirando la pinza en este momento.
-	var inputSide = null
+	var inputSide = up   // se fija al inicializar: es la dirección elegida
 	// Hacia dónde entrega se configura (recto, izquierda o derecha, relativo a la entrada)
 	const outputSetting = new OutputSideSetting(value = straightOut)
 
-	var from = null       // lado del que vino el item
+	var from = up         // lado del que vino el item (sólo importa mientras lo lleva)
 	var grabbed = false   // ¿ya lo llevó al lado contrario?
 
 	// ----------- INICIALIZACION -----------
@@ -153,13 +153,13 @@ class AutomaticArm inherits Machine {
 
 	// Se entera de que entregó: queda libre para el próximo item
 	override method onPushed(item) {
-		from = null
+		from = inputSide
 		grabbed = false
 		simulationEngine.after(1, { self.tryGrab() })
 	}
 
 	// ----------- AGARRAR DE LA ENTRADA -----------
-	// La máquina de su entrada, sin importar hacia dónde apunte (null si no hay)
+	// La máquina de su entrada, sin importar hacia dónde apunte (noMachine si no hay)
 	method inputMachine() = board.machineAt(inputSide.move(self.cell()))
 
 	// Si está libre y en su entrada hay un item agarrable (el de una cinta que pasa por ahí), lo toma.
@@ -167,25 +167,20 @@ class AutomaticArm inherits Machine {
 	// SIEMPRE revisa el estado antes de actuar: entre el aviso y este momento pasan cosas.
 	method tryGrab() {
 		const source = self.inputMachine()
-		const item = if (source == null) null else source.grabbableItem()
-		if (item != null && self.canReceive(item)) {
-			source.surrender(item)
-			self.receive(item)
-		}
+		source.grabbableItem().grabbedBy(self, source)
 	}
 
 	// ----------- SIMULACION -----------
 	// Se anota en la máquina de su entrada para enterarse de lo que le llega
 	override method start() {
 		super()
-		const source = self.inputMachine()
-		if (source != null) source.addGrabber(self)
+		self.inputMachine().addGrabber(self)
 	}
 
 	// Al apagar la simulación suelta el item y vuelve a quedar quieto mirando hacia la entrada.
 	// El estado se reinicia antes del super(), que vacía el inventario y muestra staticImage().
 	override method reset() {
-		from = null
+		from = inputSide
 		grabbed = false
 		direction = inputSide
 		super()

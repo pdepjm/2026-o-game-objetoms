@@ -79,20 +79,20 @@ describe "tests de MachineAnimator" {
   }
   
   test "al empezar una animacion muestra el primer frame" {
-    sprite.play(threeFrames, null)
+    sprite.play(threeFrames, noAction)
     assert.equals("anim/0.png", sprite.image())
     assert.that(sprite.animando())
   }
   
   // play se llama fuera del tick (como desde una acción agendada): el tick siguiente no saltea el frame 0
   test "el primer tick despues de empezar sigue mostrando el primer frame" {
-    sprite.play(threeFrames, null)
+    sprite.play(threeFrames, noAction)
     self.ticks(1)
     assert.equals("anim/0.png", sprite.image())
   }
   
   test "cada tick muestra el frame siguiente" {
-    sprite.play(threeFrames, null)
+    sprite.play(threeFrames, noAction)
     self.ticks(2)
     assert.equals("anim/1.png", sprite.image())
     self.ticks(1)
@@ -117,7 +117,7 @@ describe "tests de MachineAnimator" {
   // Si al encadenar se anotara dos veces en el engine, avanzaría de a dos frames por tick
   test "encadenar otra animacion desde el bloque del final avanza de a un frame por tick" {
     const longer = new FrameAnimation(path = "larga", frameCount = 5)
-    sprite.play(threeFrames, { sprite.play(longer, null) })
+    sprite.play(threeFrames, { sprite.play(longer, noAction) })
     self.ticks(4)
     assert.equals("larga/0.png", sprite.image())
     self.ticks(1)
@@ -127,9 +127,9 @@ describe "tests de MachineAnimator" {
   }
   
   test "la segunda vez que se reproduce una animacion arranca desde el principio" {
-    sprite.play(twoFrames, null)
+    sprite.play(twoFrames, noAction)
     self.ticks(10)
-    sprite.play(twoFrames, null)
+    sprite.play(twoFrames, noAction)
     assert.equals("otra/0.png", sprite.image())
     self.ticks(2)
     assert.equals("otra/1.png", sprite.image())
@@ -138,7 +138,7 @@ describe "tests de MachineAnimator" {
   test "empezar otra animacion a la mitad reemplaza a la anterior" {
     sprite.play(threeFrames, { sprite.finished(1) })
     self.ticks(2)
-    sprite.play(twoFrames, null)
+    sprite.play(twoFrames, noAction)
     assert.equals("otra/0.png", sprite.image())
     self.ticks(10)
     assert.equals(0, sprite.finished())

@@ -104,8 +104,8 @@ object menuManager {
         activePanel.onClick(pos)
     }
 
-    // Sin herramienta (null) o sin panel propio (delete y rotate), la zona queda vacía
-    method panelFor(tool) = if (tool == null) emptyMenu else panels.getOrElse(tool, { => emptyMenu })
+    // Sin herramienta (noTool) o sin panel propio (delete y rotate), la zona queda vacía
+    method panelFor(tool) = panels.getOrElse(tool, { => emptyMenu })
 
     // Metodo para saber si se clickeo en la zona interactiva
     method inInteractiveMenu(pos) = interactiveZone.contains(pos)

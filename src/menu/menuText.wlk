@@ -29,7 +29,8 @@ class MenuText {
     // Lo que dice (lo entiende también KeyHint, que es una imagen: así se pueden pedir las dos cosas juntas)
     method description() = text
 
-    method isText() = true
+    method textLines() = [text]
+    method barImages() = []
 
     method hide() { game.removeVisual(self) }
 }

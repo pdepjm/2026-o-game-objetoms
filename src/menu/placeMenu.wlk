@@ -101,7 +101,7 @@ object placeMenu{
 
         machineManager.machinesOfPage(currentPage).forEach({ factory =>
             position += 1
-            if (factory.apply().name() == machineManager.selectedName()) slot = position
+            if (machineManager.selects(factory)) slot = position
         })
 
         return slot
@@ -182,7 +182,7 @@ class MenuItem{
     // La imagen se guarda y se recalcula sólo cuando cambia la dirección (ver updateImage).
     // Antes se armaba el texto en cada frame.
     // Sin setter: desde afuera sólo se le puede pedir que se actualice (updateImage).
-    var image = null
+    var image = "no_texture.png"
 
     method image() = image
 

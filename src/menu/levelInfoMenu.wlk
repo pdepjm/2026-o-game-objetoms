@@ -83,7 +83,7 @@ object levelInfoMenu {
 
     // Lo dibujado, separado según cuándo se reemplaza
     var energyTexts = []     // el contador de energía: cambia al colocar, borrar o editar máquinas
-    var skipButton = null    // el botón para saltear el tutorial (null si el nivel no tiene tutorial)
+    var skipButton = noSkipButton    // el botón para saltear el tutorial (noSkipButton si el nivel no tiene tutorial)
     var levelTexts = []      // la cinta, el nombre, la ayuda, la tarjeta y el título: cambian al cargar otro nivel
     var progressTexts = []   // cada objetivo (plato, texto y barra): cambian con cada entrega
     var completedTexts = []  // el mensaje de nivel completo
@@ -97,17 +97,14 @@ object levelInfoMenu {
         self.remove(levelTexts + progressTexts + completedTexts + energyTexts)
         completedTexts = []
         energyTexts = []
-        skipButton = null
         levelTexts = [
             self.addImage("menu/info/ribbon.png", nameRow),
             self.addText(level.name().toUpperCase(), column, nameRow, yellow)
         ]
         // un poco más arriba que la fila, para que no quede pegado a la tarjeta (sigue en la fila 12: el click
         // se reconoce por celda)
-        if (level.hasTutorial()) {
-            skipButton = self.addKeyHint("menu/key_skip.png", "skip", hintRow + 0.2)
-            levelTexts.add(skipButton)
-        }
+        skipButton = level.tutorial().skipButton(self)
+        levelTexts.add(skipButton)
         const goals = level.shownGoals().size()
         if (goals > 0) {
             // la tarjeta va del título hasta el borde de abajo de la fila del último objetivo
@@ -118,9 +115,10 @@ object levelInfoMenu {
     }
 
     // ¿Es una celda del botón para saltear el tutorial? (la imagen ocupa x 0 a 4 de la fila 12)
-    method isSkipButton(pos) = self.showsSkipButton() && pos.y() == hintRow && pos.x().between(0, 3)
+    method isSkipButton(pos) = skipButton.isClickedAt(pos, hintRow)
 
-    method showsSkipButton() = skipButton != null
+    // El botón de saltear el tutorial (lo pide el tutorial del nivel, ver Tutorial.skipButton)
+    method addSkipButton() = self.addKeyHint("menu/key_skip.png", "skip", hintRow + 0.2)
 
     // Una ayuda debajo del nombre (por ejemplo, "L: volver" en el modo libre). Se borra al cargar otro nivel.
     method showHint(text) {
@@ -161,26 +159,26 @@ object levelInfoMenu {
     method completedMessage() = completedTexts.map({ visual => visual.description() })
 
     // Los textos del nombre, la ayuda y el título del objetivo, en orden (para los tests)
-    method levelMessage() = levelTexts.filter({ visual => visual.isText() }).map({ visual => visual.description() })
+    method levelMessage() = levelTexts.flatMap({ visual => visual.textLines() })
 
     // Lo que dicen los objetivos, en orden (para los tests)
-    method progressMessage() = progressTexts.filter({ visual => visual.isText() }).map({ visual => visual.description() })
+    method progressMessage() = progressTexts.flatMap({ visual => visual.textLines() })
 
     // Las barras de los objetivos que se ven, en orden (para los tests)
-    method progressBars() = progressTexts.filter({ visual => !visual.isText() && visual.image().startsWith("menu/info/bar_") }).map({ visual => visual.image() })
+    method progressBars() = progressTexts.flatMap({ visual => visual.barImages() })
 
     // El mensaje del tutorial: borra el anterior y, si hay líneas, dibuja el globo, el paso (fila 7.5) y una
     // línea debajo de la otra desde la fila 7. Sus teclas (imágenes como las del fondo) van afuera del globo,
     // de abajo hacia arriba desde la fila 3.65, la primera arriba. Cada tecla ocupa más o menos lo que una
     // línea: entre las dos, como máximo 6 (lo revisan los tests). Sin líneas (noTutorial) no queda nada.
-    method showTutorialMessage(stepLabel, lines, keys) {
+    method showTutorialMessage(stepLabels, lines, keys) {
         self.remove(tutorialFrame + tutorialTexts + tutorialKeys)
         tutorialFrame = []
         tutorialTexts = []
         const shown = lines.take(tutorialMaxLines)
         if (!shown.isEmpty()) {
             tutorialFrame.add(self.addImage("menu/info/bubble_" + shown.size() + ".png", self.bubbleBottom(shown.size())))
-            if (stepLabel != "") tutorialFrame.add(self.addSpriteText(stepLabel, labelFont, column, stepLabelRow))
+            stepLabels.forEach({ stepLabel => tutorialFrame.add(self.addSpriteText(stepLabel, labelFont, column, stepLabelRow)) })
         }
         var row = firstTutorialRow
         shown.forEach({ line =>
@@ -211,7 +209,7 @@ object levelInfoMenu {
     method tutorialMessage() = tutorialTexts.map({ label => label.text() })
 
     // El paso que se ve arriba del mensaje del tutorial ("" si no hay)
-    method tutorialStepLabel() = tutorialFrame.filter({ visual => visual.isText() }).map({ visual => visual.description() }).join("")
+    method tutorialStepLabel() = tutorialFrame.flatMap({ visual => visual.textLines() }).join("")
 
     // ----------- DIBUJO -----------
 
@@ -222,7 +220,7 @@ object levelInfoMenu {
         level.shownGoals().forEach({ goal =>
             visuals.add(self.addImage(goal.image(), row))
             visuals.add(self.addSpriteText(goal.progressText(), textFont, goalTextColumn, row + goalTextOffset))
-            visuals.add(self.addVisual(new InfoImage(image = "menu/info/bar_" + goal.progressTenths() + ".png", position = self.exactPosition(goalBarColumn, row + goalBarOffset))))
+            visuals.add(self.addVisual(new ProgressBarImage(image = "menu/info/bar_" + goal.progressTenths() + ".png", position = self.exactPosition(goalBarColumn, row + goalBarOffset))))
             row -= 1
         })
         return visuals
@@ -268,12 +266,23 @@ object levelInfoMenu {
 // Una tecla con lo que hace, dibujada en una imagen con el estilo de las teclas del fondo.
 // description es lo que dice (para los tests): la imagen ya lo tiene escrito. No se llama text porque
 // Wollok dibuja el text() de cualquier visual, y se vería escrito encima de la imagen.
+// "No hay botón de saltear": el de los niveles sin tutorial
+object noSkipButton {
+    method textLines() = []
+    method barImages() = []
+    method isClickedAt(pos, row) = false
+    method hide() {}
+}
+
 class KeyHint {
     const property image
     const property description
     const property position
 
-    method isText() = false
+    method textLines() = []
+    method barImages() = []
+    // ¿Está ahí el click? (la imagen ocupa x 0 a 4 de esa fila)
+    method isClickedAt(pos, row) = pos.y() == row && pos.x().between(0, 3)
     method hide() { game.removeVisual(self) }
 }
 
@@ -282,7 +291,13 @@ class InfoImage {
     const property image
     const property position
 
-    method isText() = false
+    method textLines() = []
+    method barImages() = []
     method description() = image
     method hide() { game.removeVisual(self) }
+}
+
+// La barra de progreso de un objetivo
+class ProgressBarImage inherits InfoImage {
+    override method barImages() = [image]
 }

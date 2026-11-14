@@ -25,6 +25,8 @@ object right {
 	method move(position) = position.right(1)		// Es metodo esta pensado para dirigir los ingredientes hacia algun lugar
 	method invert() = left
 	method output(startPoint, width, height) = startPoint.right(width)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida: corre la celda de salida a lo largo de ese borde
+	method outputEdgeShift(position) = position.up(1)
 }
 object down {
 	method name() = "down"
@@ -33,6 +35,8 @@ object down {
 	method move(position) = position.down(1)
 	method invert() = up
 	method output(startPoint, width, height) = startPoint.down(1)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida: corre la celda de salida a lo largo de ese borde
+	method outputEdgeShift(position) = position.right(1)
 }
 object left {
 	method name() = "left"
@@ -41,6 +45,8 @@ object left {
 	method move(position) = position.left(1)
 	method invert() = right
 	method output(startPoint, width, height) = startPoint.left(1)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida: corre la celda de salida a lo largo de ese borde
+	method outputEdgeShift(position) = position.up(1)
 }
 object up {
 	method name() = "up"
@@ -49,4 +55,6 @@ object up {
 	method move(position) = position.up(1)
 	method invert() = down
 	method output(startPoint, width, height) = startPoint.up(height)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida: corre la celda de salida a lo largo de ese borde
+	method outputEdgeShift(position) = position
 }

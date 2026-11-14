@@ -29,8 +29,28 @@ import wollok.game.*
 // nueva en cada paso, que en Wollok es caro.
 class PosicionSuave inherits MutablePosition {
 	override method round() = self
+
+	// Un destino: algo que se está moviendo hacia él (ver noDestino)
+	method isMoving() = true
+	method orElse(posicionActual) = self
 	
 	override method createPosition(_x, _y) = new PosicionSuave(x = _x, y = _y)
+}
+
+// "No va a ningún lado": el destino de lo que está quieto
+object noDestino {
+	method isMoving() = false
+	method orElse(posicionActual) = posicionActual
+}
+
+// "No hay animación": lo que muestra una máquina que no se está animando
+object noAnimation {
+	method isRunning() = false
+}
+
+// "No hay nada que hacer": el bloque del final de una animación que no tiene ninguno
+object noAction {
+	method apply() {}
 }
 
 object animationEngine {
@@ -95,7 +115,7 @@ mixin Animado {
 	// Cada objeto animado tiene su propia posición, que es siempre el mismo objeto:
 	// al moverse se le modifican x e y. Nunca se comparte con otro objeto.
 	const position = new PosicionSuave()
-	var destino = null // a dónde va (null si está quieto)
+	var destino = noDestino // a dónde va (noDestino si está quieto)
 	var dx = 0
 	// cuánto avanza en x en cada paso del movimiento actual
 	var dy = 0
@@ -114,13 +134,13 @@ mixin Animado {
 		position.y(pos.y())
 	}
 	
-	method moviendose() = destino !== null
+	method moviendose() = destino.isMoving()
 	// Lo pregunta el animationEngine para saber si sigue en la lista de animados
 	
 	method animando() = self.moviendose()
 	
 	// Dónde va a terminar: el destino si se está moviendo, o donde está parado
-	method destinoFinal() = if (self.moviendose()) destino else position
+	method destinoFinal() = destino.orElse(position)
 	
 	// Empieza a moverse hacia esa posición. La cantidad de pasos depende de la distancia.
 	method move(pos) {
@@ -157,7 +177,7 @@ mixin Animado {
 		paso += 1
 		if (paso == totalPasos) {
 			self.position(destino)
-			destino = null
+			destino = noDestino
 			animationEngine.avisarLlegada()
 		} else {
 			// RENDIMIENTO: goRight/goUp (de MutablePosition) suman directo sobre x e y.
@@ -171,7 +191,7 @@ mixin Animado {
 	// Corta el movimiento donde esté (se usa al borrar el item)
 	method detener() {
 		if (self.moviendose()) animationEngine.terminar(self)
-		destino = null
+		destino = noDestino
 	}
 }
 // Una animación cuadro por cuadro: la lista de imágenes que se muestran, una por paso.
@@ -180,6 +200,8 @@ mixin Animado {
 // y se generan desde un GIF con assets/machines/gifToFrames.py.
 // Las rutas se arman una sola vez al crearla, no en cada paso.
 class FrameAnimation {
+	method isRunning() = true
+
 	const path
 	// carpeta de los frames, por ejemplo "machines/AutomaticArm/down_to_up_catch"
 	const frameCount // cantidad de PNG que hay en la carpeta
@@ -199,6 +221,8 @@ class FrameAnimation {
 // Con más imágenes que pasos, saltea (una vuelta rápida); con menos, repite.
 
 class TimedAnimation {
+	method isRunning() = true
+
 
 	const images    // rutas de los PNG, por ejemplo las frames() de una FrameAnimation
 

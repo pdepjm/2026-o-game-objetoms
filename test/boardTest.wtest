@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import wollok.game.*
+import src.machines.machineClasses.*
 import src.board.*
 import src.machines.types.belt.*
 import src.machines.types.oven.*
@@ -55,8 +56,7 @@ describe "tests de board" {
     assert.notThat(board.isThereAMachine(game.at(10, 5)))
   }
 
-  // Por un bug de Wollok, una casilla creada sin machine = null explícito devolvía
-  // un "null" que no era == null, y todas las casillas parecían ocupadas
+  // Una casilla vacía guarda noMachine: ninguna parece ocupada
   test "ninguna casilla del tablero vacio esta ocupada" {
     const hayAlgunaOcupada = (5..19).any({ x =>
       (1..13).any({ y => board.isThereAMachine(game.at(x, y)) })
@@ -85,9 +85,9 @@ describe "tests de board" {
 
   // por ejemplo, una cinta del borde que apunta hacia afuera busca a su vecina ahí
   test "fuera del tablero no hay maquina y no da error" {
-    assert.equals(null, board.machineAt(game.at(20, 5)))
-    assert.equals(null, board.machineAt(game.at(10, 14)))
-    assert.equals(null, board.machineAt(game.at(-1, -1)))
+    assert.equals(noMachine, board.machineAt(game.at(20, 5)))
+    assert.equals(noMachine, board.machineAt(game.at(10, 14)))
+    assert.equals(noMachine, board.machineAt(game.at(-1, -1)))
   }
 
   test "no se puede colocar una maquina fuera del tablero" {
@@ -179,7 +179,7 @@ describe "tests de reiniciar todo" {
     assert.that(board.machines().isEmpty())
     assert.notThat(simulationEngine.running())
     assert.equals(1, simulationEngine.speed())
-    assert.equals(null, toolsManager.selectedTool())
+    assert.equals(noTool, toolsManager.selectedTool())
     assert.equals(right, toolsManager.currentDirection())
     assert.equals(0, placeMenu.currentPage())
   }

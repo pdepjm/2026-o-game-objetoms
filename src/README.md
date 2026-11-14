@@ -32,7 +32,7 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 - `clear()`: saca todas las máquinas (hace `pop` de cada una), con los ingredientes que tengan encima. Sirve para empezar de cero, por ejemplo al cargar un nivel.
 - **Puntos de entrega:** los dos platitos del fondo, en (16, 14) y (17, 14), están **fuera** del tablero, pero las cintas y los brazos les entregan como a cualquier máquina (ver `DeliverySlot` en [`machines/README.md`](machines/README.md#types-las-máquinas)).
   - `addDeliverySlot(platito)`: lo anota en `deliverySlots` y lo registra en el `simulationEngine`, para que al apagar la simulación se borre el plato que estaba viajando hacia él y el platito quede vacío. Lo llama `deliveryPoints.setUp()`.
-  - `machineAt(posición)`: dentro del tablero busca en la grilla; afuera, entre los `deliverySlots` (y si no hay ninguno ahí, `null`).
+  - `machineAt(posición)`: dentro del tablero busca en la grilla; afuera, entre los `deliverySlots` (y si no hay ninguno ahí, `noMachine`: nunca devuelve `null`).
   - Como `inBoard` no los incluye, no se puede colocar nada encima ni hacerles click. Tampoco están en la grilla, así que `machines()` y `clear()` no los ven: son parte del escenario, no del nivel.
 - **Zonas donde se puede construir:** el tablero es el que sabe dónde se puede construir. El nivel le dice en qué celdas puede colocar máquinas el jugador (`buildZones(zonas)`, lo llama `levelManager.load`), como una lista de `Zone` (rectángulos de celdas, definidos en este mismo archivo). Por defecto, todo el tablero (`wholeBoard`).
   - `isBuildable(posición)`: está en el tablero y en alguna de las zonas.
@@ -66,3 +66,26 @@ teclas y clicks ─▶ input/userController
 - **Imports relativos a `src/`**, sin el prefijo `src.` (por ejemplo `import machines.machineClasses.*`). Los tests sí lo llevan (`import src.machines.machineClasses.*`).
 - **Rendimiento:** lo que Wollok Game le pide a un objeto en cada frame (`image()` y `position()`) tiene que ser un dato ya guardado, no algo que se calcule. Los comentarios marcados `RENDIMIENTO` explican los casos que importaron.
 - Las imágenes las busca el código por nombre: ver [`assets/README.md`](../assets/README.md).
+
+## Null objects: nada de `null`
+
+El código no usa `null` ni lo compara. Donde "no hay nada" se usa un objeto que entiende los mismos mensajes y no hace nada, así nadie tiene que preguntar antes si hay algo:
+
+| Objeto | Es "no hay…" | Dónde se usa |
+|---|---|---|
+| `noMachine` | máquina | celdas vacías (`board.machineAt`), destino de una máquina sin vecina (`next`), la máquina elegida en edit |
+| `noItem` | item | una máquina sin nada para entregar (`itemToPush`) o para que un brazo agarre (`grabbableItem`) |
+| `noTool` | herramienta | la herramienta elegida al arrancar o al deseleccionar |
+| `noAnimation` / `noAction` | animación / bloque final | `MachineAnimator` |
+| `noDestino` | destino | lo que está quieto (`Animado`) |
+| `noSlot` | opción clickeada | un click afuera de las opciones (`editMenu`) |
+| `noSkipButton` | botón de saltear | niveles sin tutorial (`levelInfoMenu`) |
+| `noSound` | sonido | `musicManager` antes de arrancar la música |
+| `unlimitedEnergy`, `noGoal`, `noRecipe`, `noTutorial` | límite / objetivo / receta / tutorial | los niveles que no los tienen. `noTutorial` también sabe saltearse (`skip`) y devolver `noSkipButton` |
+
+Para no preguntar qué es algo, se le pide lo que se necesita (polimorfismo) en vez de comparar:
+- **Qué hace cada nivel con L y al cargarse:** `level.toggleFreePlay(manager)` y `level.showHints(menu)`; el modo libre las sobrescribe (no se compara con `freePlay`).
+- **Qué máquina pide un paso del tutorial:** `MachineStep.allowedMachines` guarda las fábricas del catálogo (`machineManager.beltFactory()`), y `tool.allowsMachine(...)` mira si está seleccionada. Ya no se compara `machine.name()`.
+- **Qué herramienta se usa:** `tool.canUseAnywhere()` (edit) en lugar de `tool == edit`.
+- **Cómo entrega el ensamblador:** `direction.outputEdgeShift(celda)`: cada dirección sabe por qué celda de su borde sale el plato.
+- **Qué visual es un texto o una barra:** los visuales de la info del nivel responden `textLines()` y `barImages()` (listas, vacías si no corresponde).

@@ -35,16 +35,17 @@ import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import machines.inventory.*
 import machines.settings.*
+import food.foodClasses.*
 import cellPosition.*
 
 // Reproduce animaciones frame a frame (carpetas de PNG, ver FrameAnimation) con el animationEngine.
 class MachineAnimator {
 	// ----------- ATRIBUTOS -----------
-	var animation = null
-	// la animación que se está mostrando (null si no hay ninguna)
+	var animation = noAnimation
+	// la animación que se está mostrando (noAnimation si no hay ninguna)
 	var frame = 0
 	// frame que se está mostrando
-	var onFinish = null // bloque que se ejecuta al terminar (null si no hay)
+	var onFinish = noAction // bloque que se ejecuta al terminar (noAction si no hay)
 
 	// ----------- METODOS ABSTRACTOS -----------
 	method showFrame(path)
@@ -70,8 +71,8 @@ class MachineAnimator {
 	// (se usa al apagar la simulación).
 	method stopAnimation() {
 		if (self.animando()) animationEngine.terminar(self)
-		animation = null
-		onFinish = null
+		animation = noAnimation
+		onFinish = noAction
 	}
 	
 
@@ -83,7 +84,7 @@ class MachineAnimator {
 
 	}
 	// ----------- CONTRATO CON EL ANIMATION ENGINE -----------
-	method animando() = animation !== null
+	method animando() = animation.isRunning()
 	
 	// Un paso de animación: muestra el frame siguiente.
 	// El último frame se ve un paso entero, y recién en el paso siguiente termina.
@@ -95,10 +96,10 @@ class MachineAnimator {
 			self.showFrame(animation.frames().get(frame))
 		} else {
 			const afterBlock = onFinish
-			onFinish = null
-			animation = null
+			onFinish = noAction
+			animation = noAnimation
 			animationEngine.avisarLlegada()
-			if (afterBlock !== null) animationEngine.alTerminar(afterBlock)
+			animationEngine.alTerminar(afterBlock)
 		}
 	}
 }
@@ -108,7 +109,7 @@ class MachineAnimator {
 class MachineSprite inherits MachineAnimator {
 	// ----------- ATRIBUTOS -----------
 	var property position = game.origin()
-	var image = null // Se establece al inicializar
+	var image = "no_texture.png" // Se establece al inicializar
 	
 	// ----------- METODOS ABSTRACTOS -----------
 	method name()
@@ -241,11 +242,11 @@ class Machine inherits MachineSprite {
 	// El inventario se encarga de despertar a las que esperan al liberar un item.
 	const inventory = new Inventory(capacity = self.capacity())
 
-	// La máquina a la que entrega (null si no hay ninguna): la que está en outputTarget().
+	// La máquina a la que entrega (noMachine si no hay ninguna): la que está en outputTarget().
 	// Se calcula al prender la simulación: con la simulación prendida no se puede editar
 	// el tablero, así que no cambia. Si una máquina cambia de dirección mientras corre
 	// (el brazo), la vuelve a calcular con nextMachine().
-	var next = null
+	var next = noMachine
 
 	// Los brazos que miran a esta máquina como su entrada: se les avisa cuando llega un item,
 	// por si pueden agarrarlo (ver grabbableItem). Se anotan al prender la simulación.
@@ -293,12 +294,12 @@ class Machine inherits MachineSprite {
 	// borde de adelante. Sobrescribirlo si el dibujo marca la salida en otra celda.
 	method outputTarget() = direction.output(self.cell(), self.width(), self.height())
 
-	// Busca en el tablero la máquina que está en outputTarget() (null si no hay ninguna).
+	// Busca en el tablero la máquina que está en outputTarget() (noMachine si no hay ninguna).
 	// Durante la simulación se usa next, que la guarda.
 	// Una máquina que sólo trabaja con el brazo (armOnly) no entrega a otra cosa que no sea un brazo.
 	method nextMachine() {
 		const machine = board.machineAt(self.outputTarget())
-		return if (self.armOnly() && machine != null && !machine.isArm()) null else machine
+		return if (self.armOnly() && !machine.isArm()) noMachine else machine
 	}
 	
 	// Simboliza la cantidad de celdas que ocupa
@@ -340,6 +341,17 @@ class Machine inherits MachineSprite {
 
 	method isArm() = false
 
+	// ----------- PREGUNTAS DE LAS VECINAS -----------
+	// Lo que le preguntan el tablero, las cintas y los tutoriales a "la máquina de esa celda" (que puede ser noMachine)
+	method asList() = [self]
+	// ¿Le entrega a esa celda?
+	method feeds(aCell) = self.outputTarget() == aCell
+	// ¿Cumple la condición? (un bloque que recibe la máquina)
+	method satisfies(condition) = condition.apply(self)
+	// Dónde se dibuja la flecha del tutorial que la señala: arriba de ella, centrada sobre ella. Con una de 2x2,
+	// arriba de su fila de arriba y entre sus dos columnas. Con decimales: tiene que ser CellPosition (game.at se redondea).
+	method arrowPosition(aCell) = new CellPosition(x = self.cell().x() + (self.width() - 1) / 2, y = self.cell().y() + self.height())
+
 	// Otra máquina le entrega un item. No se sobrescribe: guarda el item
 	// y llama a onReceive, donde cada máquina define qué le pasa.
 	method receive(item) {
@@ -367,9 +379,9 @@ class Machine inherits MachineSprite {
 		if (inventory.items().contains(item)) self.tryPush()
 	}
 
-	// El item que un brazo puede agarrar sin que esta máquina se lo entregue (null si no hay ninguno).
+	// El item que un brazo puede agarrar sin que esta máquina se lo entregue (noItem si no hay ninguno).
 	// Sólo la cinta lo ofrece: a una máquina que está procesando no se le saca el item.
-	method grabbableItem() = null
+	method grabbableItem() = noItem
 
 	// Un brazo se llevó el item: deja de ser de esta máquina y despierta a las que esperaban lugar
 	method surrender(item) {
@@ -383,7 +395,7 @@ class Machine inherits MachineSprite {
 	//----------- ITEMS: SALIDA -----------
 
 	// Qué item se entrega (por defecto, el primero del inventario)
-	method itemToPush() = if (inventory.isEmpty()) null else inventory.first()
+	method itemToPush() = if (inventory.isEmpty()) noItem else inventory.first()
 
 	// Se entera de que entregó un item (por defecto, no hace nada).
 	// Lo sobrescribe el que tiene que enterarse, como el Dispenser para agendar el próximo.
@@ -393,16 +405,17 @@ class Machine inherits MachineSprite {
 	// se anota para reintentar cuando se libere. SIEMPRE revisa el estado antes de
 	// actuar: entre el intento y la entrega pueden pasar cosas.
 	method tryPush() {
-		const item = self.itemToPush()
-		const target = next
-		if (item != null && target != null) {
-			if (target.canReceiveFrom(self, item)) {
-				inventory.release(item)
-				target.receive(item)
-				self.onPushed(item)
-			} else {
-				target.whenFree({ self.tryPush() })
-			}
+		self.itemToPush().deliverFrom(self, next)
+	}
+
+	// Entrega ese item a ese destino (lo llama el item, ver Item.deliverFrom)
+	method deliver(item, target) {
+		if (target.canReceiveFrom(self, item)) {
+			inventory.release(item)
+			target.receive(item)
+			self.onPushed(item)
+		} else {
+			target.whenFree({ self.tryPush() })
 		}
 	}
 
@@ -462,4 +475,23 @@ class ProcessingMachine inherits Machine {
 
 	}
 
+}
+
+// "No hay máquina": lo que el tablero devuelve para una celda vacía, y lo que guarda una máquina que no tiene
+// a quién entregarle. Responde lo que se le pregunta a una máquina vecina sin hacer nada, así nadie tiene que
+// preguntar antes si hay algo (en vez de null).
+object noMachine {
+	method asList() = []
+	method isArm() = false
+	method locked() = false
+	method settings() = []
+	method feeds(aCell) = false
+	method satisfies(condition) = false
+	method arrowPosition(aCell) = new CellPosition(x = aCell.x(), y = aCell.y() + 1)
+	method onNeighbourChanged() {}
+	method canReceiveFrom(source, item) = false
+	method whenFree(action) {}
+	method grabbableItem() = noItem
+	method surrender(item) {}
+	method addGrabber(arm) {}
 }

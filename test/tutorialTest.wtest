@@ -391,7 +391,7 @@ describe "tests de los tipos de paso" {
     const arm = new SmartRoboticArm(direction = left)
     assert.equals(right, arm.exitSideFor(eggFryed))
     arm.settings().first().value([friedPotato])
-    assert.equals(null, arm.exitSideFor(eggFryed))
+    assert.notThat(arm.takes(eggFryed))
     assert.equals(right, arm.exitSideFor(friedPotato))
   }
 }
@@ -427,9 +427,10 @@ describe "tests del tutorial de panchos" {
   method chooseOption(machinePos, settingName, value) {
     levelManager.continueTutorial()
     self.useTool(edit, machinePos)
+    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == settingName })
     const pos = (20 .. 24).flatMap({ x => (0 .. 15).map({ y => game.at(x, y) }) }).find({ pos =>
       const slot = editMenu.slotAt(pos)
-      return slot != null && slot.setting().name() == settingName && slot.option().value() == value
+      return slot.matches(setting, value)
     })
     toolsManager.onClick(pos)
   }
@@ -549,13 +550,11 @@ describe "tests de saltear el tutorial" {
   }
 
   test "en un tutorial se ve el boton, y clickearlo lo saltea" {
-    assert.that(levelInfoMenu.showsSkipButton())
     assert.that(levelInfoMenu.isSkipButton(game.at(1, 12)))
   }
 
   test "en un nivel sin tutorial no hay boton" {
     levelManager.load(level1)
-    assert.notThat(levelInfoMenu.showsSkipButton())
     assert.notThat(levelInfoMenu.isSkipButton(game.at(1, 12)))
   }
 }

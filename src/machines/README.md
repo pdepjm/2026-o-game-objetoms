@@ -67,7 +67,7 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 |---|---|---|
 | `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (el Assembler: `super(item) && recipe.stillNeeds(item, inventory.items())`) o ninguno (`false`). Las que procesan ya lo tienen resuelto en `ProcessingMachine` |
 | `acceptsSource(source)` | de cualquiera, salvo que sea `armOnly()` (entonces sólo de un brazo) | acepta items sólo de ciertas máquinas (el brazo: sólo de la que está en su entrada). Quien entrega pregunta `canReceiveFrom(source, item)`, que junta `acceptsSource` y `canReceive`: no se sobrescribe |
-| `grabbableItem()` | `null` | un brazo puede agarrar el item que tiene, aunque no le apunte (la cinta: `itemToPush()`). Para sacárselo, el brazo usa `surrender(item)` |
+| `grabbableItem()` | `noItem` | un brazo puede agarrar el item que tiene, aunque no le apunte (la cinta: `itemToPush()`). Para sacárselo, el brazo usa `surrender(item)` |
 | `armOnly()` | `false` | sólo trabaja con un brazo: sólo recibe de un brazo y sólo entrega a un brazo (la freidora) |
 | `onReceive(item)` | anima el item hasta su celda y, al llegar, llama a `onArrived(item)` | el item no viaja a su celda (el brazo) |
 | `onArrived(item)` | si el item sigue en el inventario (un brazo pudo habérselo llevado en camino), `self.tryPush()`: lo pasa a la siguiente, como una cinta | la máquina hace algo con el item: procesarlo, juntarlo con otros… Si un brazo puede agarrarle items (`grabbableItem`), revisar también que el item siga ahí |
@@ -203,16 +203,14 @@ class Dispenser inherits Machine {
 	// Pregunta ANTES de crear el item: si la de adelante está llena, reintenta cuando se libere
 	method tryDispense() {
 		const target = next
-		if (target != null) {
-			const item = new Item(kind = productSetting.value())
-			if (target.canReceiveFrom(self, item)) {
-				item.position(self.position())
-				simulationEngine.addItem(item)
-				inventory.add(item)
-				self.tryPush()
-			} else {
-				target.whenFree({ self.tryDispense() })
-			}
+		const item = new Item(kind = productSetting.value())
+		if (target.canReceiveFrom(self, item)) {
+			item.position(self.position())
+			simulationEngine.addItem(item)
+			inventory.add(item)
+			self.tryPush()
+		} else {
+			target.whenFree({ self.tryDispense() })
 		}
 	}
 

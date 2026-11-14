@@ -25,8 +25,8 @@ import levels.levelManager.*
 
 object toolsManager{
 	// Manejar las herramientas Place, Delete, Edit y Rotate
-	// Arranca sin ninguna herramienta elegida (null): hay que elegir una con P, Z, X o R
-	var selectedTool = null
+	// Arranca sin ninguna herramienta elegida (noTool): hay que elegir una con P, Z, X o R
+	var selectedTool = noTool
 
 	method selectedTool() = selectedTool
 
@@ -36,7 +36,7 @@ object toolsManager{
 		if (tool != selectedTool)
 			selectedTool = tool
 		else
-			selectedTool = null
+			selectedTool = noTool
 		menuManager.toolChanged(selectedTool)
 		levelManager.toolSelected(selectedTool)
 	}
@@ -58,16 +58,16 @@ object toolsManager{
 	// El tutorial del nivel puede no dejar usar la herramienta en esa celda.
 	method onClick(pos) {
 		if (board.inBoard(pos)) {
-			if (selectedTool != null && !simulationEngine.running() && levelManager.allowsTool(selectedTool, pos)) selectedTool.onClick(pos)
+			if (!simulationEngine.running() && levelManager.allowsTool(selectedTool, pos)) selectedTool.onClick(pos)
 		}
 		else if (menuManager.inInteractiveMenu(pos))
 			menuManager.onClick(pos)
 	}
 
 	method reset() {
-		selectedTool = null
+		selectedTool = noTool
 		currentDirection = right
-		menuManager.toolChanged(null)
+		menuManager.toolChanged(noTool)
 		menuManager.directionChanged()
 	}
 }
