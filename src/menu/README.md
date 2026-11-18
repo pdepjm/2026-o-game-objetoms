@@ -135,7 +135,7 @@ El libro de recetas: una tapa y una página por plato. Se abre con **F** (tambi�
 
 La portada (`startScreen`), los controles (`menuControlsOverlay`, con I: `assets/menu/menu_controls.png`, que genera `makeKeyHints.py` sobre `menu_controls_base.png`) y el fondo del menú. **Enter** empieza a jugar: la primera vez arma el juego (las teclas, los menús, los platitos y el primer nivel). **M** vuelve a la portada y pausa la simulación; **S** en la portada cierra el juego.
 
-- `isPlaying()`: si se está jugando. En la portada y en las instrucciones, las teclas y los clicks del juego no hacen nada (`userController.whenPlaying`); el libro de recetas sí se puede abrir.
+- `onClick(pos)` y `whenPlaying(acción)`: los resuelve la pantalla activa (`recipeBook.screenOver(screen)`: la del libro si está abierto, si no la del menú). Sólo `playingScreen` hace algo (clickea con la herramienta, ejecuta la tecla); la portada, las instrucciones y el libro (`bookScreen`) no hacen nada. `userController` sólo se los manda. El libro de recetas, en cambio, se puede abrir siempre. El recetario también es una máquina de estados: `closedBook` y `openBook`.
 - Antes de que `main.wpgm` llame a `show()`, se considera que se está jugando: así los tests, que no pasan por la portada, pueden usar las teclas y los clicks.
 
 CÓMO JUGAR

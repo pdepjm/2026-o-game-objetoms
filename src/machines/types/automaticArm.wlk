@@ -82,7 +82,7 @@ class AutomaticArm inherits Machine {
 	// Sólo recibe de la máquina que está en su entrada
 	override method acceptsSource(source) = source === self.inputMachine()
 
-	override method isArm() = true
+	override method worksWithArmOnlyMachines() = true
 
 	override method settings() = [outputSetting]
 

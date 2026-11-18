@@ -223,7 +223,8 @@ El primer nivel. Trae armada la línea de la fila 7 salvo cuatro máquinas (las 
 3. Explica el brazo común fijo de (9, 7); la freidora en (10, 7), donde él deja las papas.
 4. Explica la freidora; el brazo inteligente en (11, 7).
 5. Rotarlo (C) hasta que agarre de la freidora.
-6. Prender la simulación (5) y esperar 2 papas fritas en el platito. El brazo inteligente sólo agarra ingredientes ya procesados, así que espera a que la papa se fría: no hace falta editarlo.
+6. Editarlo (X) para que la salida Recto deje salir la papa frita. Por defecto el brazo inteligente no deja salir nada, así que hay que elegir qué ingredientes salen por cuál salida.
+7. Prender la simulación (5) y esperar 2 papas fritas en el platito. Como sólo agarra lo que dejó salir, espera a que la papa se fría.
 
 Para cambiarlo, los tests de `test/tutorialTest.wtest` lo juegan entero ("armado como dice el tutorial, entrega las papas fritas y se gana").
 
@@ -273,5 +274,5 @@ Van de menos a más difícil. Todos tienen los Dispensers fijos a la izquierda, 
 | `level1` | 3 ensaladas | Dos ingredientes que sólo hay que cortar. Los Dispensers ya largan lechuga y tomate. Hay que elegir la receta (también ofrece la sopa de tomate) |
 | `level2` | 3 hamburguesas | Cuatro ingredientes y dos procesos (cortar y cocinar). Los cuatro Dispensers ofrecen todo: hay que elegir qué larga cada uno, y que cada ingrediente llegue al ensamblador por su lado (el que sobra traba a los demás) |
 | `level3` | 2 desayunos y 2 pizzas | Dos platos a la vez, con dos ensambladores y los dos platitos. El huevo se fríe: la freidora necesita un brazo común que se lo lleve y uno inteligente que lo saque frito. El queso de la pizza se corta una sola vez. **El tablero está limitado**: la pizza se arma arriba (filas 7 a 10) y el desayuno abajo (filas 2 a 5), separados por la fila 6, cada uno con un pasillo angosto hasta su platito |
-| `level4` | 3 hamburguesas, con energía limitada | El mismo plato que el nivel 2, pero con `energyLimit = 50`: armado desparramado y a velocidad normal se gasta de más y no se puede prender la simulación. Hay que armar compacto (cada cinta gasta 1) y bajar velocidades donde convenga (x0.5 gasta 1 menos, pero tarda el doble). Los 4 Dispensers fijos también gastan. Una forma de ganarlo: las cuatro líneas llegando a un ensamblador en (9, 8), con los Dispensers a x0.5 (49 de 50); a velocidad normal esa misma forma gasta 53 |
+| `level4` | 3 hamburguesas, con energía limitada | El mismo plato que el nivel 2, pero con `energyLimit = 45`: armado desparramado y a velocidad normal se gasta de más y no se puede prender la simulación. Hay que armar compacto (cada cinta gasta 1) y bajar velocidades donde convenga (x0.5 gasta 1 menos, pero tarda el doble). Los 4 Dispensers fijos también gastan. Una forma de ganarlo: las cuatro líneas llegando a un ensamblador en (9, 8), con los Dispensers a x0.5 (49 de 50); a velocidad normal esa misma forma gasta 53 |
 

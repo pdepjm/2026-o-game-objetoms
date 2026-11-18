@@ -81,15 +81,8 @@ object userController {
 		keyboard.m().onPressDo({ => self.whenPlaying({ startMenu.backToCover() }) })
 	}
 
-	method onClick(pos) {
-		if (recipeBook.isOpen()) {
-			// Si querés que la X del libro funcione por click, iría acá
-		} else if (startMenu.isPlaying()) {
-			toolsManager.onClick(pos) // (o levelInfoMenu.isSkipButton como tenía tu amigo)
-		}
-	}
+	// Qué hace cada click o tecla lo decide la pantalla activa del menú (ver startMenu)
+	method onClick(pos) { startMenu.onClick(pos) }
 
-	method whenPlaying(action) {
-		if (!recipeBook.isOpen() && startMenu.isPlaying()) action.apply()
-	}
+	method whenPlaying(action) { startMenu.whenPlaying(action) }
 }

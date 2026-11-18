@@ -130,11 +130,12 @@ object levelInfoMenu {
     method updateEnergy(level, total) {
         self.remove(energyTexts)
         energyTexts = []
-        const limit = level.energyLimit()
-        if (limit.isLimited()) {
-            const color = if (limit.allows(total)) white else red
-            energyTexts.add(self.addText(limit.text(total), column, goalTitleRow - level.shownGoals().size() - 1, color))
-        }
+        level.energyLimit().showIn(self, total, goalTitleRow - level.shownGoals().size() - 1)
+    }
+
+    // Lo llama el límite de energía del nivel: escribe el contador, en rojo si no alcanza la energía
+    method showEnergy(text, row, enough) {
+        energyTexts.add(self.addText(text, column, row, if (enough) white else red))
     }
 
     // Lo que dice el contador de energía (para los tests)

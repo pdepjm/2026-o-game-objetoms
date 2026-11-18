@@ -52,14 +52,19 @@ object noGoal{
 class EnergyLimit {
 	const property max
 
-	method isLimited() = true
 	method allows(total) = total <= max
+
+	// Muestra el contador en el menú de info del nivel (rojo si se pasó del límite)
+	method showIn(menu, total, row) {
+		menu.showEnergy(self.text(total), row, self.allows(total))
+	}
 	method text(total) = if (self.allows(total)) "Energía: " + total + "/" + max else "SIN ENERGÍA: " + total + "/" + max
 }
 
 // El nivel sin límite de energía
 object unlimitedEnergy {
-	method isLimited() = false
+	// Sin límite no hay contador que mostrar
+	method showIn(menu, total, row) {}
 	method allows(total) = true
 	method text(total) = ""
 }

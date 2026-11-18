@@ -21,7 +21,7 @@ import simulation.simulationEngine.*
 import food.foodClasses.*
 
 // Freidora: fríe lo que le entrega un brazo y se lo devuelve a un brazo.
-// Es armOnly: no recibe de cintas ni entrega a cintas, sólo trabaja con un brazo.
+// Sólo trabaja con brazos (worksWith): no recibe de cintas ni entrega a cintas, sólo trabaja con un brazo.
 // Un brazo puede sacarle el item apenas entra, esté listo o no (grabbableItem): el brazo común lo
 // saca al toque, y el inteligente puede esperar al ingrediente que quiere con sus filtros.
 // Si el item ya frito se queda demasiado tiempo, se quema.
@@ -39,7 +39,7 @@ class Fryer inherits ProcessingMachine {
 		self.holdImage(self.gifImage(), steps, afterBlock)
 	}
 
-	override method armOnly() = true
+	override method worksWith(neighbour) = neighbour.worksWithArmOnlyMachines()
 
 	override method grabbableItem() = self.itemToPush()
 

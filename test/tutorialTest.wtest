@@ -184,6 +184,15 @@ describe "tests del tutorial de papas fritas" {
     self.placeMachine(3, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
+    self.chooseRecto(game.at(11, 7), friedPotato)
+  }
+
+  // Elige un ingrediente en la salida Recto del brazo inteligente, clickeando su opción en el panel de edit
+  method chooseRecto(machinePos, kind) {
+    self.useTool(edit, machinePos)
+    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == "Recto" })
+    const pos = (20 .. 24).flatMap({ x => (0 .. 15).map({ y => game.at(x, y) }) }).find({ pos => editMenu.slotAt(pos).matches(setting, kind) })
+    toolsManager.onClick(pos)
   }
 
   test "se juegan los tres tutoriales y despues los niveles 1, 2, 3 y 4" {
@@ -195,9 +204,9 @@ describe "tests del tutorial de papas fritas" {
   }
 
   test "arriba del mensaje muestra en que paso va" {
-    assert.equals("PASO 1 DE 11", levelInfoMenu.tutorialStepLabel())
+    assert.equals("PASO 1 DE 12", levelInfoMenu.tutorialStepLabel())
     levelManager.continueTutorial()
-    assert.equals("PASO 2 DE 11", levelInfoMenu.tutorialStepLabel())
+    assert.equals("PASO 2 DE 12", levelInfoMenu.tutorialStepLabel())
   }
 
   test "al explicar muestra la tecla para seguir" {
@@ -295,6 +304,17 @@ describe "tests del tutorial de papas fritas" {
     assert.equals("Un brazo agarra", self.message().first())
     self.useTool(rotate, game.at(11, 7))
     self.useTool(rotate, game.at(11, 7))
+    assert.equals("Tocá el brazo y", self.message().first())
+  }
+
+  test "el brazo inteligente hay que editarlo para que deje salir la papa frita" {
+    self.placeMachine(0, game.at(6, 7))
+    self.placeMachine(1, game.at(7, 7))
+    self.placeMachine(2, game.at(10, 7))
+    self.placeMachine(3, game.at(11, 7))
+    self.useTool(rotate, game.at(11, 7))
+    self.useTool(rotate, game.at(11, 7))
+    self.chooseRecto(game.at(11, 7), friedPotato)
     assert.equals("¡Listo! Ya se", self.message().first())
   }
 
@@ -389,6 +409,7 @@ describe "tests de los tipos de paso" {
 
   test "el brazo inteligente dice por donde sacaria cada ingrediente" {
     const arm = new SmartRoboticArm(direction = left)
+    arm.settings().first().value([eggFryed])
     assert.equals(right, arm.exitSideFor(eggFryed))
     arm.settings().first().value([friedPotato])
     assert.notThat(arm.takes(eggFryed))

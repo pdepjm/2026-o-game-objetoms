@@ -35,7 +35,9 @@ class ArmRoute {
 // Una salida sin ingredientes no usa: por ahí no sale nada.
 // Entrega cada item por la primera salida que lo acepta, en el orden recta, izquierda, derecha.
 // Si ninguna lo acepta, no lo toma: se queda donde está.
-// Por defecto sólo sale por la recta, y deja pasar todo (como el automático).
+// Por defecto no deja salir nada por ninguna salida: hay que elegir qué ingredientes salen por cuál.
+// (Si arrancara dejando pasar todo, dos brazos sobre la misma máquina se pelearían los items
+// y uno le sacaría al otro lo que tiene que sacar.)
 class SmartRoboticArm inherits AutomaticArm {
 	// Los ingredientes que se pueden elegir en cada salida (hasta 13 para no salirse de la pantalla)
 	const kinds = [
@@ -47,7 +49,7 @@ class SmartRoboticArm inherits AutomaticArm {
 
 	// En el orden de prioridad: recta, izquierda, derecha
 	const routes = [
-		new ArmRoute(output = straightOut, filter = new ItemSetSetting(outputName = "Recto", columnIndex = 1, kinds = kinds, value = kinds)),
+		new ArmRoute(output = straightOut, filter = new ItemSetSetting(outputName = "Recto", columnIndex = 1, kinds = kinds, value = [])),
 		new ArmRoute(output = leftOut, filter = new ItemSetSetting(outputName = "Izq.", columnIndex = 0, kinds = kinds, value = [])),
 		new ArmRoute(output = rightOut, filter = new ItemSetSetting(outputName = "Der.", columnIndex = 2, kinds = kinds, value = []))
 	]

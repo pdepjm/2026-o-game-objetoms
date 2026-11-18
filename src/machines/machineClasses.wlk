@@ -296,10 +296,10 @@ class Machine inherits MachineSprite {
 
 	// Busca en el tablero la máquina que está en outputTarget() (noMachine si no hay ninguna).
 	// Durante la simulación se usa next, que la guarda.
-	// Una máquina que sólo trabaja con el brazo (armOnly) no entrega a otra cosa que no sea un brazo.
+	// Sólo entrega a una máquina con la que trabaja (ver worksWith).
 	method nextMachine() {
 		const machine = board.machineAt(self.outputTarget())
-		return if (self.armOnly() && !machine.isArm()) noMachine else machine
+		return if (self.worksWith(machine)) machine else noMachine
 	}
 	
 	// Simboliza la cantidad de celdas que ocupa
@@ -329,17 +329,19 @@ class Machine inherits MachineSprite {
 	// y las que no aceptan ninguno, con false.
 	method canReceive(item) = inventory.hasRoom()
 
-	// ¿Acepta items que le entrega `source`? Por defecto de cualquiera, salvo que sea armOnly.
-	method acceptsSource(source) = !self.armOnly() || source.isArm()
+	// ¿Acepta items que le entrega `source`? Por defecto de cualquiera con la que trabaje (ver worksWith).
+	method acceptsSource(source) = self.worksWith(source)
 
 	// Lo que se pregunta antes de entregar: quién lo entrega y qué item es.
 	// Las máquinas sobrescriben canReceive (qué items) y acceptsSource (de quién), no éste.
 	method canReceiveFrom(source, item) = self.acceptsSource(source) && self.canReceive(item)
 
-	// Una máquina armOnly sólo recibe de un brazo y sólo entrega a un brazo (la freidora)
-	method armOnly() = false
+	// ¿Trabaja con esa máquina vecina, de la que recibe o a la que entrega? Por defecto con cualquiera.
+	// La freidora sólo trabaja con las que le responden que sí a worksWithArmOnlyMachines (los brazos).
+	method worksWith(neighbour) = true
 
-	method isArm() = false
+	// ¿Trabaja con una máquina que sólo trabaja con brazos (como la freidora)? Por defecto no: los brazos lo sobrescriben
+	method worksWithArmOnlyMachines() = false
 
 	// ----------- PREGUNTAS DE LAS VECINAS -----------
 	// Lo que le preguntan el tablero, las cintas y los tutoriales a "la máquina de esa celda" (que puede ser noMachine)
@@ -482,7 +484,7 @@ class ProcessingMachine inherits Machine {
 // preguntar antes si hay algo (en vez de null).
 object noMachine {
 	method asList() = []
-	method isArm() = false
+	method worksWithArmOnlyMachines() = false
 	method locked() = false
 	method settings() = []
 	method feeds(aCell) = false
