@@ -19,7 +19,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`Plan-Implementacion-Niveles.md`](docs/Plan-Implementacion-Niveles.md) | **El plan para implementar los niveles**, por fases y con checklist |
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |
-| [`Diagrama de clase`](https://lucid.app/lucidchart/a3679667-4ca6-4fa7-b44c-518a1db91a84/edit?invitationId=inv_417f2848-4415-43b1-b901-ad3450eb3ba1) |
+| [`Diagrama de clase`](https://lucid.app/lucidchart/73e1e665-1499-433a-8e3c-673fd6abf20d/edit?viewport_loc=-3069%2C-819%2C9673%2C4313%2C0_0&invitationId=inv_c213aa95-14f5-447c-8f6c-0aef0ace13d3) |
 
 ## Participantes
 - Mateo Bustos
