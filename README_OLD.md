@@ -20,6 +20,7 @@ Es tu tarea automatizar todos los procesos del buffet.
 | [`assets/README.md`](assets/README.md) | Cómo nombrar y ubicar las imágenes |
 | [`assets/machines/AutomaticArm/README.md`](assets/machines/AutomaticArm/README.md) | Las imágenes del brazo automático (caso especial) |
 | [`Diagrama de clase`](https://lucid.app/lucidchart/73e1e665-1499-433a-8e3c-673fd6abf20d/edit?viewport_loc=-3069%2C-819%2C9673%2C4313%2C0_0&invitationId=inv_c213aa95-14f5-447c-8f6c-0aef0ace13d3) |
+| [`Presentacion`](https://docs.google.com/presentation/d/11mmRou2LqGywaOOxr34wIfjh2wcRDAsT_gjegxx0ZPc/edit?usp=sharing)
 
 ## Participantes
 - Mateo Bustos
