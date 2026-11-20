@@ -78,9 +78,9 @@ describe "tests del SmartRoboticArm" {
     assert.equals([0, 1, 2], arm.settings().map({ setting => setting.column() }).sortedBy({ a, b => a < b }))
   }
 
-  test "por defecto deja pasar todo por la recta y nada por los costados" {
-    assert.that(arm.canReceive(new Item(kind = friedPotato)))
-    assert.equals(straightOut, arm.routeFor(new Item(kind = cookedMeat)).output())
+  test "por defecto no deja salir nada por ninguna salida" {
+    assert.notThat(arm.canReceive(new Item(kind = friedPotato)))
+    assert.that(self.straight().value().isEmpty())
     assert.that(self.leftFilter().value().isEmpty())
     assert.that(self.rightFilter().value().isEmpty())
   }
@@ -118,6 +118,7 @@ describe "tests del SmartRoboticArm" {
   }
 
   test "si dos salidas aceptan el item, gana la primera: recta, izquierda, derecha" {
+    self.straight().value([friedPotato])
     self.leftFilter().value([friedPotato])
     self.rightFilter().value([friedPotato])
     assert.equals(straightOut, arm.routeFor(new Item(kind = friedPotato)).output())
@@ -140,7 +141,7 @@ describe "tests del SmartRoboticArm" {
     const option = self.leftFilter().options().first()
     self.leftFilter().select(option)
     assert.that(self.rightFilter().value().isEmpty())
-    assert.that(self.straight().value().contains(option.value()))
+    assert.that(self.straight().value().isEmpty())
   }
 }
 
@@ -155,7 +156,6 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
 
   test "la freidora sólo recibe de un brazo" {
     const belt = new Belt()
-    assert.that(fryer.armOnly())
     assert.that(fryer.canReceiveFrom(arm, new Item(kind = cutPotato)))
     assert.notThat(fryer.canReceiveFrom(belt, new Item(kind = cutPotato)))
   }
@@ -218,6 +218,7 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = self.fryerAtInput()
     const item = self.put(cutPotato, aFryer)
     // lo frita y después agota la espera (no hay brazo que lo saque porque el brazo está ocupado)
+    arm.settings().first().value([friedPotato])
     arm.receive(new Item(kind = friedPotato))
     60.times({ _ => simulationEngine.step() })
     assert.equals(burntPotato, item.kind())
@@ -233,7 +234,7 @@ describe "tests de las máquinas que sólo trabajan con el brazo" {
     const aFryer = new Fryer()
     board.push(game.at(6, 6), aFryer)
     board.push(game.at(7, 6), new Belt())
-    assert.that(aFryer.nextMachine() == null)
+    assert.that(aFryer.nextMachine().asList().isEmpty())
   }
 
   test "la freidora entrega a un brazo" {

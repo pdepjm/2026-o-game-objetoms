@@ -28,6 +28,8 @@
 
 import directions.*
 import food.recipes.*
+import menu.editMenu.*
+import menu.menuText.*
 // ----------- CATEGORIAS -----------
 // Sólo sirven para agrupar los settings en el menú
 
@@ -40,15 +42,26 @@ object movement {
 }
 
 // ----------- OPCIONES -----------
-// Una opción de un setting. Se dibuja con su image si tiene; si no, con su label.
+// Una opción de un setting. Se dibuja con su imagen (ImageOption) o con su texto (LabelOption).
 class SettingOption {
 	const property value
-	const property image = null
-	const property label = ""
 	// energía que suma a la máquina mientras esta opción esté elegida
 	const property energyCost = 0
 
-	method hasImage() = image != null
+	// El visual que la dibuja en esa posición del panel de edit
+	method visualAt(position)
+}
+
+class ImageOption inherits SettingOption {
+	const property image
+
+	override method visualAt(position) = new OptionImage(image = image, position = position)
+}
+
+class LabelOption inherits SettingOption {
+	const property label
+
+	override method visualAt(position) = new MenuText(text = label, position = position)
 }
 
 // ----------- SETTINGS -----------
@@ -60,9 +73,9 @@ class Setting {
 	method category()
 	method options()
 
-	// null: el panel lo dibuja con los demás, de a 4 opciones por fila. Un número: el panel lo dibuja
-	// en esa columna, con sus opciones una debajo de la otra (ver editMenu).
-	method column() = null
+	// ¿Va en una columna del panel (con sus opciones una debajo de la otra, ver column() y editMenu) o se dibuja
+	// con los demás, de a 4 opciones por fila?
+	method isColumned() = false
 
 	// ----------- ELECCION -----------
 	method select(option) {
@@ -73,10 +86,7 @@ class Setting {
 
 	// ----------- ENERGIA -----------
 	// La de la opción elegida (0 si el valor no es una de las opciones)
-	method energyCost() {
-		const chosen = self.options().findOrDefault({ option => self.isSelected(option) }, null)
-		return if (chosen == null) 0 else chosen.energyCost()
-	}
+	method energyCost() = self.options().filter({ option => self.isSelected(option) }).sum({ option => option.energyCost() })
 }
 
 // Qué ingrediente produce una máquina. kinds son los que se ofrecen en el menú.
@@ -85,7 +95,7 @@ class ProductSetting inherits Setting {
 
 	override method name() = "Ingrediente"
 	override method category() = production
-	override method options() = kinds.map({ kind => new SettingOption(value = kind, image = kind.image()) })
+	override method options() = kinds.map({ kind => new ImageOption(value = kind, image = kind.image()) })
 }
 
 // Qué tan rápido trabaja una máquina, como multiplicador de su ritmo normal.
@@ -96,9 +106,9 @@ class SpeedSetting inherits Setting {
 	override method name() = "Velocidad"
 	override method category() = production
 	override method options() = [
-		new SettingOption(value = 0.5, label = "x0.5", energyCost = 1),
-		new SettingOption(value = 1, label = "x1", energyCost = 2),
-		new SettingOption(value = 2, label = "x2", energyCost = 4)
+		new LabelOption(value = 0.5, label = "x0.5", energyCost = 1),
+		new LabelOption(value = 1, label = "x1", energyCost = 2),
+		new LabelOption(value = 2, label = "x2", energyCost = 4)
 	]
 }
 
@@ -110,9 +120,9 @@ class OutputSideSetting inherits Setting {
 	override method name() = "Salida"
 	override method category() = movement
 	override method options() = [
-		new SettingOption(value = straightOut, label = "Recto"),
-		new SettingOption(value = leftOut, label = "Izq."),
-		new SettingOption(value = rightOut, label = "Der.")
+		new LabelOption(value = straightOut, label = "Recto"),
+		new LabelOption(value = leftOut, label = "Izq."),
+		new LabelOption(value = rightOut, label = "Der.")
 	]
 }
 
@@ -122,7 +132,7 @@ class RecipeSetting inherits Setting {
 	override method name() = "Receta"
 	override method category() = production
 	override method options() = recipeBook.available().map({ recipe =>
-		new SettingOption(value = recipe, image = recipe.result().image())
+		new ImageOption(value = recipe, image = recipe.result().image())
 	})
 }
 
@@ -151,10 +161,11 @@ class ItemSetSetting inherits Setting {
 
 	override method name() = outputName
 	override method category() = movement
-	override method column() = columnIndex
+	override method isColumned() = true
+	method column() = columnIndex
 
 	override method options() = kinds.map({ 
-		kind => new SettingOption(value = kind, image = kind.image()) })
+		kind => new ImageOption(value = kind, image = kind.image()) })
 
 	// Prende o apaga ese kind. Arma una lista nueva: la inicial puede estar compartida con otra salida.
 	override method select(option) {

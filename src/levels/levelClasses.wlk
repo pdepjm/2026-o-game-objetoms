@@ -28,6 +28,9 @@ class DeliveryGoal {
 	method delivered(item) { if (kind.accepts(item)) delivered += 1 }
 	method isMet() = delivered >= amount
 	method progressText() = label + ": " + delivered.min(amount) + "/" + amount
+
+	// Los objetivos que se muestran en la info del nivel: éste, y noGoal ninguno
+	method displayed() = [self]
 	method reset() { delivered = 0 }
 
 	// Para la info del nivel: la imagen del plato y cuánto falta, en décimos (0 a 10) para la barra
@@ -39,6 +42,7 @@ class DeliveryGoal {
 object noGoal{
     method isMet() = false
     method progressText() = ""
+    method displayed() = []
     method delivered(_) {}
     method reset() {}
 }
@@ -48,14 +52,19 @@ object noGoal{
 class EnergyLimit {
 	const property max
 
-	method isLimited() = true
 	method allows(total) = total <= max
+
+	// Muestra el contador en el menú de info del nivel (rojo si se pasó del límite)
+	method showIn(menu, total, row) {
+		menu.showEnergy(self.text(total), row, self.allows(total))
+	}
 	method text(total) = if (self.allows(total)) "Energía: " + total + "/" + max else "SIN ENERGÍA: " + total + "/" + max
 }
 
 // El nivel sin límite de energía
 object unlimitedEnergy {
-	method isLimited() = false
+	// Sin límite no hay contador que mostrar
+	method showIn(menu, total, row) {}
 	method allows(total) = true
 	method text(total) = ""
 }
@@ -67,11 +76,17 @@ class Level {
 	const property fixedMachines = []         // Maquinas colocadas desde el comienzo (No se pueden mover)
 	const property goals                      // Lo que hay que cumplir para ganar: TODOS los objetivos
 	const property buildZones = [wholeBoard]  // Dónde puede construir el jugador: Zones (ver board.wlk). Por defecto, todo el tablero
+	const property blockedLayer = noBlockedLayer  // La capa que oscurece esas celdas (ver BlockedLayer). La del nivel, hecha con makeBlockedOverlays.py
 	const property tutorial = noTutorial      // El que acompaña al nivel (ver tutorial.wlk). Por defecto, ninguno
 	const property energyLimit = unlimitedEnergy  // Cuánta energía puede gastar el jugador: un EnergyLimit. Por defecto, sin límite
 
-	// ¿Es un tutorial? (los que se pueden saltear)
-	method hasTutorial() = tutorial != noTutorial
+	// Lo que la info del nivel muestra al cargarlo, además de lo de siempre (el modo libre explica cómo volver)
+	method showHints(menu) {}
+
+	// La tecla L en este nivel: ir al modo libre (el modo libre la sobrescribe para volver al nivel que toca jugar)
+	method toggleFreePlay(manager) {
+		manager.loadFreePlay()
+	}
 
 	// Coloca las máquinas que trae el nivel. Con fixedMachines vacío no hace nada.
 	method placeFixedMachines() {
@@ -93,7 +108,7 @@ class Level {
 	}
 
 	// Los objetivos que se muestran en la info del nivel: noGoal no tiene texto, así que no se muestra
-	method shownGoals() = goals.filter({ goal => goal.progressText() != "" })
+	method shownGoals() = goals.flatMap({ goal => goal.displayed() })
 
 	// Una línea por objetivo que se muestra
 	method progressLines() = self.shownGoals().map({ goal => goal.progressText() })

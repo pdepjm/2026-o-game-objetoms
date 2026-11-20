@@ -2,7 +2,8 @@ name: Deploy Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +17,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: uqbar-project/wollok-web-tools@main
+
+      # wollok-web-tools toma el nombre del programa de la ruta del .wpgm ("src/main"), pero Wollok
+      # nombra los paquetes con puntos ("src.main"). Como el juego está dentro de src/, se corrige acá.
+      - name: Arreglar el nombre del programa principal
+        run: sed -i "s|\.slice(0, -5)|.slice(0, -5).split('/').join('.')|" game-runner.js
+
+      # El runtime carga cada imagen y cada sonido DOS veces (con "assets/x.png" y con "x.png") y sin caché:
+      # con ~1000 imágenes el navegador se queda sin recursos (ERR_INSUFFICIENT_RESOURCES) y algunas no cargan.
+      # El juego las pide sin el "assets/", así que se deja sólo esa ruta. Y se sacan de la lista las que
+      # no son del juego (docs/ y test/).
+      - name: Cargar cada asset una sola vez
+        run: |
+          sed -i 's|possiblePaths: \[path, path.split("/").slice(1).join("/")\]|possiblePaths: [path.split("/").slice(1).join("/")]|' game-runner.js
+          test "$(grep -c 'possiblePaths: \[path.split("/").slice(1).join("/")\]' game-runner.js)" = 2
+          sed -i -e '/^docs\//d' -e '/^test\//d' paths.txt
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

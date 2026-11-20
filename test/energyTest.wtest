@@ -144,12 +144,13 @@ describe "tests del limite de energia" {
   }
 
   test "sin limite siempre alcanza y no hay contador" {
-    assert.notThat(unlimitedEnergy.isLimited())
     assert.that(unlimitedEnergy.allows(1000))
+    levelInfoMenu.updateEnergy(freePlay, 1000)
+    assert.equals([], levelInfoMenu.energyMessage())
   }
 
   test "los niveles de siempre no tienen limite, y el modo libre tampoco" {
-    assert.that(([freePlay, tutorialLevel, hotDogTutorialLevel, level1, level2, level3]).all({ level => !level.energyLimit().isLimited() }))
+    assert.that(([freePlay, tutorialLevel, hotDogTutorialLevel, level1, level2, level3]).all({ level => level.energyLimit().allows(1000) }))
   }
 
   test "el contador muestra lo gastado y el limite, con las maquinas fijas" {
@@ -260,9 +261,10 @@ describe "tests del tutorial de energia" {
   // Con edit, toca la máquina y elige en el panel esa opción de ese setting
   method chooseOption(machinePos, settingName, value) {
     self.useTool(edit, machinePos)
+    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == settingName })
     const pos = (20 .. 24).flatMap({ x => (0 .. 15).map({ y => game.at(x, y) }) }).find({ pos =>
       const slot = editMenu.slotAt(pos)
-      return slot != null && slot.setting().name() == settingName && slot.option().value() == value
+      return slot.matches(setting, value)
     })
     toolsManager.onClick(pos)
   }

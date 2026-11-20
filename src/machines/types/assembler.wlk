@@ -22,6 +22,7 @@ import simulation.simulationEngine.*
 import food.recipes.*
 import cellPosition.*
 import machines.settings.*
+import food.foodClasses.*
 
 // Ensamblador: junta los ingredientes que pide su receta y entrega el plato armado.
 // Sólo acepta lo que la receta todavía necesita, así que nunca tiene items de más:
@@ -32,7 +33,7 @@ class Assembler inherits Machine {
 
 	var recipe = recipeSetting.value()
 
-	var dish = null
+	var dish = noItem
 	
 
 	// Qué tan rápido arma el plato (se cambia con la herramienta edit)
@@ -63,15 +64,10 @@ class Assembler inherits Machine {
 
 	// Acepta lo que la receta todavía necesita, y sólo si no tiene un plato esperando salir
 	override method canReceive(item) =
-		super(item) && dish == null && recipe.stillNeeds(item, inventory.items())
+		super(item) && dish.asList().isEmpty() && recipe.stillNeeds(item, inventory.items())
 
-	// Hay que ver si hay una forma de implementar polymorfismo
-	override method outputTarget() = 
-		if(direction == left || direction == right)
-			super().up(1)
-		else if (direction == down)
-			super().right(1)
-		else super()
+	// Entrega por la segunda celda de su borde de salida (cada dirección sabe cuál es)
+	override method outputTarget() = direction.outputEdgeShift(super())
 
 	// Cuando el ingrediente llegó: si ya está todo, arma el plato y lo entrega
 	override method onArrived(item) {
@@ -100,15 +96,15 @@ class Assembler inherits Machine {
 
 	// Cuando se entregó el plato, queda libre para armar otro
 	override method onPushed(item) {
-		dish = null
+		dish = noItem
 	}
 
 	// El plato también cuenta como item de la máquina: así el engine lo saca al apagar la simulación
-	override method heldItems() = if (dish == null) inventory.items() else inventory.items() + [dish]
+	override method heldItems() = inventory.items() + dish.asList()
 
 	// Su estado propio se reinicia ANTES de llamar a super()
 	override method reset() {
-		dish = null
+		dish = noItem
 		super()
 	}
 }

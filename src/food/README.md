@@ -5,7 +5,6 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 | Archivo | Qué tiene |
 |---|---|
 | `foodClasses.wlk` | Los procesos (`cutting`, `frying`, `burning`, `cooking`) y las clases `IngredientKind`, `DishKind` e `Item` |
-| `foodPaths.wlk` | Las familias de ingredientes (`potatoFamily`, `meatFamily`...), que arman la ruta de sus imágenes |
 | `foodTypes.wlk` | Los kinds concretos: ingredientes (`potato`, `meat`...) y platos (`burger`) |
 | `recipesClasses.wlk` | Las clases `Requirement` y `Recipe` |
 | `recipes.wlk` | Las recetas concretas (`burgerRecipe`, ...), `recipeBook` y `noRecipe` |
@@ -31,11 +30,9 @@ Lo que las máquinas y las recetas le pueden pedir a un item:
 | `image()` | La imagen de su kind | Wollok Game |
 | `processTime()` | Cuántos pasos de simulación tarda en procesarse (por defecto 5) | `ProcessingMachine` |
 
-## `foodPaths.wlk`
-
-Una familia por ingrediente con más de un estado. `image(estado)` arma la ruta siguiendo la convención de [`assets/README.md`](../../assets/README.md#food): `potatoFamily.image("cut")` → `food/Ingredients/potatoes/potato_cut.png`. Los platos de un solo estado escriben su ruta directamente.
-
 ## `foodTypes.wlk`
+
+Cada kind sabe cuál es su imagen y devuelve la ruta completa en `image()` (por ejemplo, `cutPotato` → `food/Ingredients/potatoes/potato_cut.png`, siguiendo la convención de [`assets/README.md`](../../assets/README.md#food)). No hay un objeto aparte que arme la ruta a partir de un texto de estado.
 
 | Ingrediente | Transiciones |
 |---|---|

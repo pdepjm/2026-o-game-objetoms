@@ -19,6 +19,7 @@
 import board.*
 import simulation.simulationEngine.*
 import tools.userTools.*
+import menu.levelInfoMenu.*
 
 // Lo que el juego le avisa a un tutorial. Lo entienden los tutoriales y también sus pasos
 // (StepTutorial le reenvía cada evento a su paso actual). Así como está no hace nada.
@@ -45,6 +46,16 @@ class Tutorial inherits TutorialEvents {
 	// ¿Deja prender o apagar la simulación?
 	method allowsSimulationToggle() = true
 
+	// ----------- SALTEAR -----------
+	// El botón de saltear que dibuja la info del nivel (noSkipButton si no hay tutorial)
+	method skipButton(menu) = menu.addSkipButton()
+	// Saltearlo da por hechos todos los tutoriales (ver levelManager.skipTutorials)
+	method skip(manager) { manager.skipTutorials() }
+	// Se da por hecho: se anota como completado ese nivel, si no lo estaba
+	method completeIn(completedLevels, level) {
+		if (!completedLevels.contains(level)) completedLevels.add(level)
+	}
+
 	// ----------- MENSAJE -----------
 	// Las líneas que muestra levelInfoMenu debajo de la info del nivel
 	// (como máximo levelInfoMenu.tutorialMaxLines(), de levelInfoMenu.tutorialMaxLength() caracteres)
@@ -55,7 +66,7 @@ class Tutorial inherits TutorialEvents {
 	method messageKeys() = []
 
 	// Dónde va el jugador, arriba del mensaje (por ejemplo "PASO 2 DE 8"). Vacío: no se muestra.
-	method stepLabel() = ""
+	method stepLabels() = []
 
 	// Todos los mensajes que puede llegar a mostrar, cada uno con sus líneas (lines()) y sus teclas (keys()):
 	// los tests revisan que entren en el panel
@@ -69,7 +80,11 @@ class Tutorial inherits TutorialEvents {
 }
 
 // El tutorial de los niveles que no tienen tutorial
-object noTutorial inherits Tutorial {}
+object noTutorial inherits Tutorial {
+	override method skipButton(menu) = noSkipButton
+	override method skip(manager) {}
+	override method completeIn(completedLevels, level) {}
+}
 
 // Un tutorial hecho de pasos, en orden. El paso actual es el primero que todavía no se cumplió.
 // La mayoría de los pasos miran cómo está el juego (no qué evento llegó), así no importa en qué
@@ -110,7 +125,7 @@ class StepTutorial inherits Tutorial {
 
 	override method messageLines() = if (won) finishedLines else self.currentStep().lines()
 	override method messageKeys() = if (won) [] else self.currentStep().keys()
-	override method stepLabel() = if (won) "" else "PASO " + self.stepNumber() + " DE " + steps.size()
+	override method stepLabels() = if (won) [] else ["PASO " + self.stepNumber() + " DE " + steps.size()]
 
 	// El número del paso actual, empezando en 1
 	method stepNumber() = (1 .. steps.size()).find({ n => steps.get(n - 1) == self.currentStep() })
@@ -145,7 +160,7 @@ class TutorialStep inherits TutorialEvents {
 
 	// En sus celdas deja hacer todo. Fuera de ellas, sólo editar: también las máquinas fijas, que el
 	// jugador tiene que poder configurar (por ejemplo, qué larga un Dispenser)
-	method allowsTool(tool, pos) = tool == edit || self.isCell(pos)
+	method allowsTool(tool, pos) = tool.canUseAnywhere() || self.isCell(pos)
 
 	method isCell(pos) = cells.any({ cell => pos.x() == cell.x() && pos.y() == cell.y() })
 
@@ -159,12 +174,15 @@ class TutorialStep inherits TutorialEvents {
 // Se cumple cuando en todas sus celdas hay una máquina que cumple la condición: { machine => ... }
 // (si son las cuatro celdas de una máquina de 2x2, la misma máquina en todas)
 class MachineStep inherits TutorialStep {
-	const condition
+	// Qué tiene que cumplir la máquina de cada celda (por ejemplo, mirar hacia la derecha)
+	const condition = { machine => true }
+	// Las máquinas del catálogo (las fábricas de machineManager) que deja construir: así no hace falta
+	// preguntarle a la máquina qué es. Vacía: no restringe cuál (por ejemplo, en los pasos de editar o rotar).
+	const allowedMachines = []
 
-	override method isDone() = cells.all({ cell =>
-		const machine = board.machineAt(cell)
-		return machine != null && condition.apply(machine)
-	})
+	override method allowsTool(tool, pos) = super(tool, pos) && tool.allowsMachine(allowedMachines)
+
+	override method isDone() = cells.all({ cell => board.machineAt(cell).satisfies(condition) })
 }
 
 // Se cumple mientras la simulación está prendida (si se apaga, vuelve a este paso)

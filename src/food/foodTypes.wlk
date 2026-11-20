@@ -18,13 +18,12 @@
 
 // Los kinds concretos. Cada uno hereda de IngredientKind (si se puede procesar)
 // o de DishKind (si es un plato) y siempre define image().
-// Las imágenes de los ingredientes las arman sus familias (foodPaths.wlk)
+// Cada kind sabe cuál es su imagen (la ruta dentro de assets/, ver la convención en assets/README.md)
 import food.foodClasses.*
-import food.foodPaths.*
 
 // --------------------------------- POTATOES --------------------------------------------
 object potato inherits IngredientKind {
-    override method image() = potatoFamily.image("raw")
+    override method image() = "food/Ingredients/potatoes/potato_raw.png"
     
     // Dentro de initialize, se definen los procesos aceptados y su objeto transformado
     override method initialize() {
@@ -32,14 +31,14 @@ object potato inherits IngredientKind {
     }
 }
 object cutPotato inherits IngredientKind {
-    override method image() = potatoFamily.image("cut")
+    override method image() = "food/Ingredients/potatoes/potato_cut.png"
     
     override method initialize() {
         self.turnsInto(frying, friedPotato)
     }
 }
 object friedPotato inherits IngredientKind {
-    override method image() = potatoFamily.image("cooked")
+    override method image() = "food/Ingredients/potatoes/potato_cooked.png"
 
     // Si se queda en la freidora, se quema
     override method initialize() {
@@ -47,154 +46,154 @@ object friedPotato inherits IngredientKind {
     }
 }
 object burntPotato inherits IngredientKind {
-    override method image() = potatoFamily.image("burnt")
+    override method image() = "food/Ingredients/potatoes/potato_burnt.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- LETTUCES --------------------------------------------
 object lettuce inherits IngredientKind {
-    override method image() = lettuceFamily.image("whole")
+    override method image() = "food/Ingredients/lettuces/lettuce_whole.png"
     override method initialize() {
         self.turnsInto(cutting, cutLettuce)
     }
 }
 object cutLettuce inherits IngredientKind {
-    override method image() = lettuceFamily.image("cut")
+    override method image() = "food/Ingredients/lettuces/lettuce_cut.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- TOMATOES --------------------------------------------
 object tomato inherits IngredientKind {
-    override method image() = tomatoFamily.image("whole")
+    override method image() = "food/Ingredients/tomatoes/tomato_whole.png"
     override method processTime() = 4
     override method initialize() {
         self.turnsInto(cutting, cutTomato)
     }
 }
 object cutTomato inherits IngredientKind {
-    override method image() = tomatoFamily.image("cut")
+    override method image() = "food/Ingredients/tomatoes/tomato_cut.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- BUNS --------------------------------------------
 object bun inherits IngredientKind {
-    override method image() = bunFamily.image("whole")
+    override method image() = "food/Ingredients/buns/bun_whole.png"
     override method initialize() {
         self.turnsInto(cutting, cutBun)
     }
 }
 object cutBun inherits IngredientKind {
-    override method image() = bunFamily.image("cut")
+    override method image() = "food/Ingredients/buns/bun_cut.png"
     override method initialize() {
         self.turnsInto(cooking, toastedBun)
     }
 }
 
 object toastedBun inherits IngredientKind {
-    override method image() = bunFamily.image("cooked")
+    override method image() = "food/Ingredients/buns/bun_cooked.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- MEATS --------------------------------------------
 object meat inherits IngredientKind {
-    override method image() = meatFamily.image("raw")
+    override method image() = "food/Ingredients/meats/meat_raw.png"
     override method processTime() = 8
     override method initialize() {
         self.turnsInto(cooking, cookedMeat)
     }
 }
 object cookedMeat inherits IngredientKind {
-    override method image() = meatFamily.image("cooked")
+    override method image() = "food/Ingredients/meats/meat_cooked.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- CHEESES --------------------------------------------
 object cheese inherits IngredientKind {
-    override method image() = cheeseFamily.image("raw")
+    override method image() = "food/Ingredients/cheeses/cheese_raw.png"
     override method initialize() {
         self.turnsInto(cutting, cheeseCutted)
     }
 }   
 object cheeseCutted inherits IngredientKind {
-    override method image() = cheeseFamily.image("cutted")
+    override method image() = "food/Ingredients/cheeses/cheese_cutted.png"
     override method initialize() {
         self.turnsInto(cutting, cheeseFeta)
     }
 }
 object cheeseFeta inherits IngredientKind {
-    override method image() = cheeseFamily.image("feta")
+    override method image() = "food/Ingredients/cheeses/cheese_feta.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- SALAMIS --------------------------------------------
 object salami inherits IngredientKind {
-    override method image() = salamiFamily.image("raw")
+    override method image() = "food/Ingredients/salamis/salami_raw.png"
     override method initialize() {
         self.turnsInto(cutting, salamiCutted)
     }
 }
 object salamiCutted inherits IngredientKind {
-    override method image() = salamiFamily.image("cutted")
+    override method image() = "food/Ingredients/salamis/salami_cutted.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- PIZZA-DOUGH --------------------------------------------
 object pizzaDough inherits IngredientKind {
-    override method image() = pizzaDoughFamily.image("raw")
+    override method image() = "food/Ingredients/pizza-doughs/pizza-dough_raw.png"
     override method initialize() {
         self.turnsInto(cooking, pizzaDoughCooked)
     }
 }
 object pizzaDoughCooked inherits IngredientKind {
-    override method image() = pizzaDoughFamily.image("cooked")
+    override method image() = "food/Ingredients/pizza-doughs/pizza-dough_cooked.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- EGGS --------------------------------------------
 object egg inherits IngredientKind {
-    override method image() = eggFamily.image("raw")
+    override method image() = "food/Ingredients/eggs/egg_raw.png"
     override method initialize() {
         self.turnsInto(frying, eggFryed)
     }
 }
 object eggFryed inherits IngredientKind {
-    override method image() = eggFamily.image("fryed")
+    override method image() = "food/Ingredients/eggs/egg_fryed.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- SAUSAGES --------------------------------------------
 object sausage inherits IngredientKind {
-    override method image() = sausageFamily.image("raw")
+    override method image() = "food/Ingredients/sausages/sausage_raw.png"
     override method initialize() {
         self.turnsInto(cooking, sausageCooked)
     }
 }
 object sausageCooked inherits IngredientKind {
-    override method image() = sausageFamily.image("cooked")
+    override method image() = "food/Ingredients/sausages/sausage_cooked.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- BACONS --------------------------------------------
 object bacon inherits IngredientKind {
-    override method image() = baconFamily.image("raw")
+    override method image() = "food/Ingredients/bacons/bacon_raw.png"
     override method initialize() {
         self.turnsInto(cooking, baconCooked)
     }
 }
 object baconCooked inherits IngredientKind {
-    override method image() = baconFamily.image("cooked")
+    override method image() = "food/Ingredients/bacons/bacon_cooked.png"
 }
 // ---------------------------------------------------------------------------------------
 
 // -------------------------------- HAM --------------------------------------------
 object ham inherits IngredientKind {
-  override method image() = hamFamily.image("raw")
+  override method image() = "food/Ingredients/Ham/ham_raw.png"
   override method initialize(){
     self.turnsInto(cutting, hamCutted)
   }
 }
 object hamCutted inherits IngredientKind {
-    override method image() = hamFamily.image("cutted")
+    override method image() = "food/Ingredients/Ham/ham_cutted.png"
 }
 
 // ---------------------------------------------------------------------------------------

@@ -32,6 +32,9 @@ import src.levels.levelClasses.*
 import src.levels.levelsTypes.*
 import src.levels.levelManager.*
 
+// La capa de celdas bloqueadas de ese nivel (la imagen no hace falta que sea la de verdad)
+const zonedLayer = new BlockedLayer(image = "blocked_cell.png")
+
 // Un nivel sólo para estos tests: se puede construir en dos franjas, x 5 a 8 y x 9 a 10 (pegadas),
 // todo el alto; y trae un Dispenser fijo FUERA de esas zonas, en (15, 7)
 object zonedLevel inherits Level(
@@ -39,6 +42,7 @@ object zonedLevel inherits Level(
   availableMachines = [{ => new Belt() }, { => new Assembler() }],
   availableRecipes = [],
   buildZones = [new Zone(minX = 5, maxX = 8, minY = 1, maxY = 13), new Zone(minX = 9, maxX = 10, minY = 1, maxY = 13)],
+  blockedLayer = zonedLayer,
   fixedMachines = [new Placement(position = game.at(15, 7), factory = { => new Dispenser(direction = left) })],
   goals = [noGoal]
 ) {}
@@ -56,12 +60,12 @@ describe "tests de las zonas donde se puede construir" {
     toolsManager.onClick(pos)
   }
 
-  // Cuántas marcas de celda bloqueada hay en pantalla
-  method marksOnScreen() = board.boardCells().count({ pos => game.getObjectsIn(pos).any({ visual => visual.className().endsWith("BlockedCell") }) })
+  // ¿Se está dibujando la capa de celdas bloqueadas?
+  method layerOnScreen(layer) = game.hasVisual(layer)
 
-  test "por defecto se puede construir en todo el tablero, y no hay celdas marcadas" {
+  test "por defecto se puede construir en todo el tablero, y no hay capa de celdas bloqueadas" {
     assert.that(board.boardCells().all({ pos => board.isBuildable(pos) }))
-    assert.equals(0, self.marksOnScreen())
+    assert.equals(noBlockedLayer, board.blockedLayer())
   }
 
   test "fuera del tablero no se puede construir" {
@@ -77,17 +81,17 @@ describe "tests de las zonas donde se puede construir" {
     assert.notThat(board.isBuildable(game.at(5, 5)))
   }
 
-  test "las celdas donde no se puede construir quedan marcadas, una marca por celda" {
-    self.useSmallZone()
-    // el tablero tiene 15 x 13 celdas, y la zona 4 x 4
-    assert.equals(15 * 13 - 4 * 4, self.marksOnScreen())
-    assert.equals(15 * 13 - 4 * 4, board.blockedMarks().size())
+  test "cambiar las zonas con una capa la dibuja, una sola vez" {
+    board.buildZones([new Zone(minX = 5, maxX = 8, minY = 1, maxY = 4)], zonedLayer)
+    assert.that(self.layerOnScreen(zonedLayer))
+    board.buildZones([new Zone(minX = 5, maxX = 8, minY = 1, maxY = 4)], zonedLayer)
+    assert.equals(1, game.allVisuals().count({ visual => visual == zonedLayer }))
   }
 
-  test "cambiar las zonas reemplaza las marcas, sin dejar las anteriores" {
-    self.useSmallZone()
+  test "cambiar las zonas saca la capa anterior" {
+    board.buildZones([new Zone(minX = 5, maxX = 8, minY = 1, maxY = 4)], zonedLayer)
     board.buildZones([wholeBoard])
-    assert.equals(0, self.marksOnScreen())
+    assert.notThat(self.layerOnScreen(zonedLayer))
   }
 
   test "la herramienta place no coloca fuera de las zonas" {
@@ -124,10 +128,16 @@ describe "tests de las zonas donde se puede construir" {
 
 describe "tests de las zonas de un nivel" {
 
+  method layerOnScreen(layer) = game.hasVisual(layer)
+
   method initialize() {
     menuManager.setUp()
     deliveryPoints.setUp()
     levelManager.load(zonedLevel)
+  }
+
+  test "cargar un nivel dibuja su capa de celdas bloqueadas" {
+    assert.that(self.layerOnScreen(zonedLayer))
   }
 
   test "cargar un nivel aplica sus zonas" {
@@ -140,16 +150,15 @@ describe "tests de las zonas de un nivel" {
   }
 
   test "reiniciar el nivel mantiene sus zonas y no duplica las marcas" {
-    const marksBefore = board.blockedMarks().size()
     levelManager.restart()
-    assert.equals(marksBefore, board.blockedMarks().size())
+    assert.equals(1, game.allVisuals().count({ visual => visual == zonedLayer }))
     assert.notThat(board.isBuildable(game.at(11, 7)))
   }
 
   test "el modo libre vuelve a dejar construir en todo el tablero" {
     levelManager.loadFreePlay()
     assert.that(board.isBuildable(game.at(11, 7)))
-    assert.that(board.blockedMarks().isEmpty())
+    assert.notThat(self.layerOnScreen(zonedLayer))
   }
 
   test "un nivel sin buildZones deja construir en todo el tablero" {

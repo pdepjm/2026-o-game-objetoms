@@ -33,15 +33,19 @@ import machines.types.fryer.*
 object machineManager{
 	// El orden de la lista define el orden en el menú.
 	// Cada elemento es una lambda que crea una máquina nueva.
+	// Las fábricas tienen nombre para que los niveles y los tutoriales usen LA MISMA (ver selects)
+	const property beltFactory = { => new Belt() }
+	const property assemblerFactory = { => new Assembler() }
+	const property cuttingMachineFactory = { => new CuttingMachine() }
+	const property ovenFactory = { => new Oven() }
+	const property dispenserFactory = { => new Dispenser() }
+	const property automaticArmFactory = { => new AutomaticArm() }
+	const property smartRoboticArmFactory = { => new SmartRoboticArm() }
+	const property fryerFactory = { => new Fryer() }
+
 	const allMachines = [
-		{ => new Belt() },
-		{ => new Assembler() },
-		{ => new CuttingMachine() },
-		{ => new Oven() },
-		{ => new Dispenser()},
-		{ => new AutomaticArm()},
-		{ => new SmartRoboticArm()},
-		{ => new Fryer() }
+		beltFactory, assemblerFactory, cuttingMachineFactory, ovenFactory,
+		dispenserFactory, automaticArmFactory, smartRoboticArmFactory, fryerFactory
 	]
 	var machines = allMachines
 
@@ -67,6 +71,9 @@ object machineManager{
 
 	// Cuántas páginas ocupa el catálogo en el menú
 	method pageCount() = (machines.size() / 4).roundUp()
+
+	// ¿Es ésta la máquina seleccionada? (se compara la fábrica, no el nombre de la máquina)
+	method selects(factory) = selectedMachine == factory
 
 	// Selecciona una máquina del catálogo (una de las lambdas de machines)
 	method select(factory) {

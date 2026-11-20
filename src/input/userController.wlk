@@ -29,6 +29,7 @@ import directions.*
 import simulation.simulationEngine.*
 import levels.levelManager.*
 import menu.levelInfoMenu.*
+import sound.sfx.*
 
 object userController {
 	method setUp() {
@@ -42,9 +43,18 @@ object userController {
 		keyboard.left().onPressDo({ => recipeBook.prevPage() })
 
 		// --- TECLAS DEL JUEGO (Protegidas) ---
-		keyboard.num1().onPressDo({ => self.whenPlaying({ simulationEngine.speed(1) }) })
-		keyboard.num2().onPressDo({ => self.whenPlaying({ simulationEngine.speed(2) }) })
-		keyboard.num3().onPressDo({ => self.whenPlaying({ simulationEngine.speed(3) }) })
+		keyboard.num1().onPressDo({ => self.whenPlaying({
+			simulationEngine.speed(1)
+			sfx.speedChange()
+		}) })
+		keyboard.num2().onPressDo({ => self.whenPlaying({
+			simulationEngine.speed(2)
+			sfx.speedChange()
+		}) })
+		keyboard.num3().onPressDo({ => self.whenPlaying({
+			simulationEngine.speed(3)
+			sfx.speedChange()
+		}) })
 		keyboard.space().onPressDo({ => self.whenPlaying({ levelManager.toggleSimulation() }) })
 		keyboard.num5().onPressDo({ => self.whenPlaying({ levelManager.toggleSimulation() }) })
 
@@ -71,15 +81,8 @@ object userController {
 		keyboard.m().onPressDo({ => self.whenPlaying({ startMenu.backToCover() }) })
 	}
 
-	method onClick(pos) {
-		if (recipeBook.isOpen()) {
-			// Si querés que la X del libro funcione por click, iría acá
-		} else if (startMenu.isPlaying()) {
-			toolsManager.onClick(pos) // (o levelInfoMenu.isSkipButton como tenía tu amigo)
-		}
-	}
+	// Qué hace cada click o tecla lo decide la pantalla activa del menú (ver startMenu)
+	method onClick(pos) { startMenu.onClick(pos) }
 
-	method whenPlaying(action) {
-		if (!recipeBook.isOpen() && startMenu.isPlaying()) action.apply()
-	}
+	method whenPlaying(action) { startMenu.whenPlaying(action) }
 }

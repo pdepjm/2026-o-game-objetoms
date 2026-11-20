@@ -22,6 +22,7 @@ import menu.editMenu.*
 import menu.toolBar.*
 import tools.toolsManager.*
 import tools.userTools.*
+import sound.sfx.*
 import wollok.game.*
 import board.*
 
@@ -93,10 +94,12 @@ object menuManager {
     // Pasar de página (teclas Q y E). Sólo el panel de place tiene páginas.
     method prevPage() {
         placeMenu.prev()
+        sfx.pageChange()
     }
 
     method nextPage() {
         placeMenu.next()
+        sfx.pageChange()
     }
 
     // Click dentro de la zona interactiva (toolsManager.onClick)
@@ -104,8 +107,8 @@ object menuManager {
         activePanel.onClick(pos)
     }
 
-    // Sin herramienta (null) o sin panel propio (delete y rotate), la zona queda vacía
-    method panelFor(tool) = if (tool == null) emptyMenu else panels.getOrElse(tool, { => emptyMenu })
+    // Sin herramienta (noTool) o sin panel propio (delete y rotate), la zona queda vacía
+    method panelFor(tool) = panels.getOrElse(tool, { => emptyMenu })
 
     // Metodo para saber si se clickeo en la zona interactiva
     method inInteractiveMenu(pos) = interactiveZone.contains(pos)

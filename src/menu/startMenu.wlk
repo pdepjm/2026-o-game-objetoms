@@ -25,6 +25,7 @@ import simulation.simulationEngine.*
 import machines.types.deliverySlot.*
 import levels.levelManager.*
 import directions.*
+import sound.sfx.*
 
 object startScreen {
 	method position() = game.origin()
@@ -45,7 +46,10 @@ object startMenu {
 	var screen = coverScreen
 	var initialized = false
 
-	method isPlaying() = screen.isPlaying()
+	// Los clicks y las teclas del juego los resuelve la pantalla activa: la del libro si está abierto, y si no, la del menú
+	method onClick(pos) { recipeBook.screenOver(screen).onClick(pos) }
+
+	method whenPlaying(action) { recipeBook.screenOver(screen).whenPlaying(action) }
 
 	method show() {
 		screen = coverScreen
@@ -68,6 +72,7 @@ object startMenu {
 
 	// Las pantallas le piden al menú que cambie de estado
 	method play() {
+		sfx.simulationStart()
 		recipeBook.close()
 		screen = playingScreen
 		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
@@ -82,13 +87,15 @@ object startMenu {
 	}
 
 	method openInstructions() {
+		sfx.menuSelect()
 		screen = instructionsScreen
 		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
 		game.addVisual(menuControlsOverlay) 
 	}
 
 	method backToCover() {
-		if (recipeBook.isOpen()) recipeBook.close()
+		sfx.menuSelect()
+		recipeBook.close()
 		screen = coverScreen
 		simulationEngine.pause()
 		if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
@@ -96,19 +103,8 @@ object startMenu {
 		if (!game.hasVisual(startScreen)) game.addVisual(startScreen)
 	}
 
-	method toggleRecipeBook() {
-		if (!recipeBook.isOpen()) {
-			// --- ABRIR EL LIBRO ---
-			// Si estamos en el menú, la pantalla le deja lugar al libro (si se está jugando, no hace nada)
-			screen.hideForRecipeBook()
-			recipeBook.open()
-		} else {
-			// --- CERRAR EL LIBRO ---
-			recipeBook.close()
-			// Si estábamos en el menú, volvemos a mostrar la pantalla que correspondía
-			screen.showAfterRecipeBook()
-		}
-	}
+	// El libro se abre sobre la pantalla actual: ella se oculta al abrirlo y se vuelve a mostrar al cerrarlo
+	method toggleRecipeBook() { recipeBook.toggleOver(screen) }
 
 }
 
@@ -123,7 +119,8 @@ object menuScreenSupport {
 }
 
 object coverScreen {
-	method isPlaying() = false
+	method onClick(pos) {}
+	method whenPlaying(action) {}
 	method start() { startMenu.play() }
 	method pressI() { startMenu.openInstructions() }
 	method pressS() { game.stop() }
@@ -137,7 +134,8 @@ object coverScreen {
 }
 
 object instructionsScreen {
-	method isPlaying() = false
+	method onClick(pos) {}
+	method whenPlaying(action) {}
 	method start() {}
 	method pressI() { startMenu.backToCover() }
 	method pressS() {}
@@ -151,7 +149,8 @@ object instructionsScreen {
 }
 
 object playingScreen {
-	method isPlaying() = true
+	method onClick(pos) { toolsManager.onClick(pos) }
+	method whenPlaying(action) { action.apply() }
 	method start() {}
 	method pressI() {}
 	method pressS() {}

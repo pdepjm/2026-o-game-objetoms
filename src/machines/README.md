@@ -66,9 +66,9 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 | Método | Por defecto | Sobrescribirlo cuando… |
 |---|---|---|
 | `canReceive(item)` | `inventory.hasRoom()` | acepta sólo ciertos items (el Assembler: `super(item) && recipe.stillNeeds(item, inventory.items())`) o ninguno (`false`). Las que procesan ya lo tienen resuelto en `ProcessingMachine` |
-| `acceptsSource(source)` | de cualquiera, salvo que sea `armOnly()` (entonces sólo de un brazo) | acepta items sólo de ciertas máquinas (el brazo: sólo de la que está en su entrada). Quien entrega pregunta `canReceiveFrom(source, item)`, que junta `acceptsSource` y `canReceive`: no se sobrescribe |
-| `grabbableItem()` | `null` | un brazo puede agarrar el item que tiene, aunque no le apunte (la cinta: `itemToPush()`). Para sacárselo, el brazo usa `surrender(item)` |
-| `armOnly()` | `false` | sólo trabaja con un brazo: sólo recibe de un brazo y sólo entrega a un brazo (la freidora) |
+| `acceptsSource(source)` | de cualquiera con la que `worksWith` (la freidora: sólo de brazos) | acepta items sólo de ciertas máquinas (el brazo: sólo de la que está en su entrada). Quien entrega pregunta `canReceiveFrom(source, item)`, que junta `acceptsSource` y `canReceive`: no se sobrescribe |
+| `grabbableItem()` | `noItem` | un brazo puede agarrar el item que tiene, aunque no le apunte (la cinta: `itemToPush()`). Para sacárselo, el brazo usa `surrender(item)` |
+| `worksWith(vecina)` | `true` | ¿trabaja con esa máquina vecina, de la que recibe o a la que entrega? La freidora sólo con las que responden `true` a `worksWithArmOnlyMachines()` (los brazos) |
 | `onReceive(item)` | anima el item hasta su celda y, al llegar, llama a `onArrived(item)` | el item no viaja a su celda (el brazo) |
 | `onArrived(item)` | si el item sigue en el inventario (un brazo pudo habérselo llevado en camino), `self.tryPush()`: lo pasa a la siguiente, como una cinta | la máquina hace algo con el item: procesarlo, juntarlo con otros… Si un brazo puede agarrarle items (`grabbableItem`), revisar también que el item siga ahí |
 
@@ -203,16 +203,14 @@ class Dispenser inherits Machine {
 	// Pregunta ANTES de crear el item: si la de adelante está llena, reintenta cuando se libere
 	method tryDispense() {
 		const target = next
-		if (target != null) {
-			const item = new Item(kind = productSetting.value())
-			if (target.canReceiveFrom(self, item)) {
-				item.position(self.position())
-				simulationEngine.addItem(item)
-				inventory.add(item)
-				self.tryPush()
-			} else {
-				target.whenFree({ self.tryDispense() })
-			}
+		const item = new Item(kind = productSetting.value())
+		if (target.canReceiveFrom(self, item)) {
+			item.position(self.position())
+			simulationEngine.addItem(item)
+			inventory.add(item)
+			self.tryPush()
+		} else {
+			target.whenFree({ self.tryDispense() })
 		}
 	}
 
@@ -273,7 +271,7 @@ Una máquina nueva que no sobrescriba `baseEnergy()` no gasta nada. Los números
 | `CuttingMachine` | Corta lo que le llega, tardando lo que dice el ingrediente | Frame a frame (corte) | `name`, `baseEnergy`, `foodProcess`, `workImages` |
 | `Assembler` | Junta los ingredientes que pide su receta, los consume y entrega el plato. La receta se elige en el panel de edit (`RecipeSetting`) entre las del nivel; arranca con la primera, o con `noRecipe` si el nivel no tiene. **La toma al prender la simulación** (`start`), y ahí ajusta el inventario a lo que pide: si se cambia con la simulación prendida, se usa desde la próxima vez que se prende | Frame a frame (al armar) | `name`, `baseEnergy`, `settings`, `start`, `canReceive`, `onArrived`, `itemToPush`, `onPushed`, `heldItems`, `reset` y el tamaño (`width`, `height`, `outputTarget`) |
 | `Oven` | Cocina lo que le llega, tardando lo que dice el ingrediente | GIF, sólo mientras cocina | `name`, `baseEnergy`, `foodProcess`, `animateWork` |
-| `Fryer` | Fríe lo que le entrega un brazo: es `armOnly`, no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | GIF, sólo mientras fríe | `name`, `baseEnergy`, `foodProcess`, `animateWork`, `armOnly`, `grabbableItem`, `onProcessed` |
+| `Fryer` | Fríe lo que le entrega un brazo: sólo trabaja con brazos (`worksWith`): no recibe de cintas ni entrega a cintas. Un brazo puede sacarle el item apenas entra (el común lo saca al toque; el inteligente puede filtrar para esperar al frito). Si el item frito se queda 4 segundos, se quema (`burntPotato`) | GIF, sólo mientras fríe | `name`, `baseEnergy`, `foodProcess`, `animateWork`, `worksWith`, `grabbableItem`, `onProcessed` |
 | `DeliverySlot` | Un platito del fondo, donde se entrega la comida. El item viaja hasta él y, al llegar, sale del juego y se le avisa a `levelManager.delivered(item)`, que lo cuenta para el objetivo del nivel. No entrega a nadie. **No lo coloca el jugador ni está en el menú**: los crea `deliveryPoints` (en el mismo archivo), que tiene sus dos posiciones, (16, 14) y (17, 14), y en `setUp()` se los pasa al `board` (lo llama `main.wpgm`) | No se dibuja: el fondo ya muestra los platitos | `name`, `nextMachine`, `onArrived` |
 
 Por defecto una máquina es **frame a frame**: con la simulación prendida se ve quieta y se anima cuando hace algo. Las imágenes de cada tipo se explican en [`assets/README.md`](../../assets/README.md), y el brazo tiene su propia guía en [`assets/machines/AutomaticArm/README.md`](../../assets/machines/AutomaticArm/README.md).

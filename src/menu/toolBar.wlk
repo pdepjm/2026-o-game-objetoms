@@ -27,10 +27,7 @@ object toolBar {
     method position() = zone.origin()
     method image() = image
     method refresh() {
-        if (toolsManager.selectedTool() != null)
-            image = "tools/" + toolsManager.selectedTool().name() + "_selected.png"
-        else
-            image = "tools/default.png"
+        image = toolsManager.selectedTool().barImage()
     }
     method show() {game.addVisual(self)}
 }

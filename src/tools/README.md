@@ -9,7 +9,7 @@ Las herramientas con las que el jugador construye, y la dirección con la que se
 
 ## `toolsManager.wlk`
 
-- **Herramienta elegida:** `select(herramienta)` la elige. Volver a elegir la misma la deselecciona (queda `null`). El juego arranca sin ninguna. Cada cambio se le avisa a `menuManager`.
+- **Herramienta elegida:** `select(herramienta)` la elige. Volver a elegir la misma la deselecciona (queda `noTool`, que no hace nada al clickear). El juego arranca sin ninguna. Cada cambio se le avisa a `menuManager`.
 - **Dirección para colocar:** `currentDirection` (W/A/S/D). Las máquinas nuevas nacen mirando hacia ahí. Cada cambio se le avisa a `menuManager`, para actualizar las imágenes del menú.
 - **Clicks (`onClick`):**
   - en el tablero, se lo pasa a la herramienta elegida, **sólo si la simulación está apagada** (así no se edita el tablero mientras corre);

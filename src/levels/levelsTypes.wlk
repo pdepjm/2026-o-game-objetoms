@@ -40,7 +40,17 @@ object freePlay inherits Level(
     availableMachines = machineManager.allMachines(),
     availableRecipes = recipeBook.all(),
     goals = [noGoal]
-) {}
+) {
+    // En el modo libre, la info del nivel muestra cómo volver
+    override method showHints(menu) {
+        menu.showHint("L: volver")
+    }
+
+    // La tecla L en el modo libre vuelve al nivel que toca jugar
+    override method toggleFreePlay(manager) {
+        manager.load(manager.levelToPlay())
+    }
+}
 
 // Las celdas del tutorial de papas fritas. Las usan sus máquinas fijas, su zona de construcción y
 // sus pasos: para mover el armado, alcanza con cambiarlas acá.
@@ -71,17 +81,17 @@ object friesTutorialCells {
 //   Dispenser  cinta    cortadora  cinta  brazo común  freidora  brazo inteligente  cintas hasta el platito
 //   fijo       JUGADOR  JUGADOR    fija   fijo         JUGADOR   JUGADOR            fijas
 //
-// El brazo inteligente hay que rotarlo para que agarre de la freidora. No hace falta editarlo: sólo
-// agarra ingredientes ya procesados, así que espera a que la papa se fría. Antes de cada máquina que pone el jugador, un ExplainStep señala con la
+// El brazo inteligente hay que rotarlo para que agarre de la freidora, y editarlo para que deje salir la
+// papa frita por Recto (por defecto no deja salir nada). Como sólo agarra lo que dejó salir, espera a que la papa se fría. Antes de cada máquina que pone el jugador, un ExplainStep señala con la
 // flecha la máquina de la que viene (pointsAt) y se sigue con Enter. Después, el paso que la pide
 // marca con el recuadro dónde va (cells), y deja colocar, borrar y rotar sólo ahí.
 object tutorialLevel inherits Level(
 	name = "Tutorial 1",
 	availableMachines = [
-        { => new Belt() },
-        { => new CuttingMachine() },
-        { => new Fryer() },
-        { => new SmartRoboticArm() }
+        machineManager.beltFactory(),
+        machineManager.cuttingMachineFactory(),
+        machineManager.fryerFactory(),
+        machineManager.smartRoboticArmFactory()
     ],
     availableRecipes = [],
 	goals = [
@@ -91,6 +101,7 @@ object tutorialLevel inherits Level(
             label = "Papas Fritas"
         )
     ],
+    blockedLayer = new BlockedLayer(image = "levels/blocked_tutorial.png"),
     buildZones = [
         new Zone(
             minX = friesTutorialCells.firstBelt().x(),
@@ -126,7 +137,8 @@ object tutorialLevel inherits Level(
                 lines = ["Elegí la cinta", "y ponela en el", "recuadro para", "llevar las papas"],
                 keys = ["place"],
                 cells = [friesTutorialCells.firstBelt()],
-                condition = { machine => machine.name() == "Belt" && machine.direction() == right }
+                allowedMachines = [machineManager.beltFactory()],
+                condition = { machine => machine.direction() == right }
             ),
             new ExplainStep(
                 lines = ["La cinta lleva", "las papas hacia", "donde apunta."],
@@ -136,7 +148,8 @@ object tutorialLevel inherits Level(
             new MachineStep(
                 lines = ["Poné la", "cortadora en el", "recuadro: corta", "las papas que", "le trae la", "cinta"],
                 cells = [friesTutorialCells.cutter()],
-                condition = { machine => machine.name() == "CuttingMachine" && machine.direction() == right }
+                allowedMachines = [machineManager.cuttingMachineFactory()],
+                condition = { machine => machine.direction() == right }
             ),
             new ExplainStep(
                 lines = ["Este brazo toma", "las papas de la", "cinta y las deja", "del otro lado."],
@@ -146,7 +159,7 @@ object tutorialLevel inherits Level(
             new MachineStep(
                 lines = ["Poné la", "freidora en el", "recuadro, donde", "el brazo deja", "las papas"],
                 cells = [friesTutorialCells.fryer()],
-                condition = { machine => machine.name() == "Fryer" }
+                allowedMachines = [machineManager.fryerFactory()]
             ),
             new ExplainStep(
                 lines = ["La freidora no", "larga las papas:", "hay que sacarlas", "con un brazo."],
@@ -156,13 +169,19 @@ object tutorialLevel inherits Level(
             new MachineStep(
                 lines = ["Poné el brazo", "inteligente en", "el recuadro"],
                 cells = [friesTutorialCells.smartArm()],
-                condition = { machine => machine.name() == "AutomaticArm" }
+                allowedMachines = [machineManager.smartRoboticArmFactory()]
             ),
             new MachineStep(
                 lines = ["Un brazo agarra", "de donde mira.", "Rotalo hasta", "que mire a la", "freidora"],
                 keys = ["rotate"],
                 cells = [friesTutorialCells.smartArm()],
                 condition = { machine => machine.inputSide() == left }
+            ),
+            new MachineStep(
+                lines = ["Tocá el brazo y", "elegí la papa", "frita en Recto:", "sólo deja salir", "lo que elegís"],
+                keys = ["edit"],
+                cells = [friesTutorialCells.smartArm()],
+                condition = { machine => machine.takes(friedPotato) }
             ),
             new RunStep(
                 lines = ["¡Listo! Ya se", "puede cocinar"],
@@ -224,10 +243,10 @@ object hotDogTutorialCells {
 object hotDogTutorialLevel inherits Level(
 	name = "Tutorial 2",
 	availableMachines = [
-        { => new Belt() },
-        { => new Oven() },
-        { => new Assembler() },
-        { => new AutomaticArm() }
+        machineManager.beltFactory(),
+        machineManager.ovenFactory(),
+        machineManager.assemblerFactory(),
+        machineManager.automaticArmFactory()
     ],
     availableRecipes = [tomatoSoupRecipe, hotDogRecipe],
 	goals = [
@@ -237,6 +256,7 @@ object hotDogTutorialLevel inherits Level(
             label = "Panchos"
         )
     ],
+    blockedLayer = new BlockedLayer(image = "levels/blocked_hotdog.png"),
     buildZones = [
         new Zone(
             minX = hotDogTutorialCells.oven().x(),
@@ -303,7 +323,8 @@ object hotDogTutorialLevel inherits Level(
                 lines = ["Poné el horno", "en el recuadro:", "cocina lo que", "le llega"],
                 keys = ["place"],
                 cells = [hotDogTutorialCells.oven()],
-                condition = { machine => machine.name() == "Oven" && machine.direction() == right }
+                allowedMachines = [machineManager.ovenFactory()],
+                condition = { machine => machine.direction() == right }
             ),
             new ExplainStep(
                 lines = ["Esta cinta sube", "los panes", "cortados al", "ensamblador,", "que junta todo."],
@@ -314,7 +335,8 @@ object hotDogTutorialLevel inherits Level(
                 lines = ["Que apunte", "arriba, y poné", "el ensamblador", "en el recuadro"],
                 keys = ["up"],
                 cells = hotDogTutorialCells.assemblerCells(),
-                condition = { machine => machine.name() == "Assembler" && machine.direction() == up }
+                allowedMachines = [machineManager.assemblerFactory()],
+                condition = { machine => machine.direction() == up }
             ),
             new MachineStep(
                 lines = ["Arma la receta", "elegida. Tocá", "el ensamblador", "y elegí el", "pancho"],
@@ -336,7 +358,8 @@ object hotDogTutorialLevel inherits Level(
                 lines = ["Que mire a la", "izquierda, y", "poné el brazo", "entre el horno", "y el ensamblador"],
                 keys = ["left"],
                 cells = [hotDogTutorialCells.arm()],
-                condition = { machine => machine.name() == "AutomaticArm" && machine.inputSide() == left }
+                allowedMachines = [machineManager.automaticArmFactory()],
+                condition = { machine => machine.inputSide() == left }
             ),
             new RunStep(
                 lines = ["¡Listo! Ya se", "puede cocinar"],
@@ -378,8 +401,8 @@ object energyTutorialCells {
 object energyTutorialLevel inherits Level(
 	name = "Tutorial 3",
 	availableMachines = [
-        { => new Belt() },
-        { => new CuttingMachine() }
+        machineManager.beltFactory(),
+        machineManager.cuttingMachineFactory()
     ],
     availableRecipes = [],
 	goals = [
@@ -390,6 +413,7 @@ object energyTutorialLevel inherits Level(
         )
     ],
     energyLimit = new EnergyLimit(max = 9),
+    blockedLayer = new BlockedLayer(image = "levels/blocked_energy.png"),
     buildZones = [
         new Zone(
             minX = energyTutorialCells.belt().x(),
@@ -420,12 +444,14 @@ object energyTutorialLevel inherits Level(
                 lines = ["Poné la cinta", "en el recuadro"],
                 keys = ["place"],
                 cells = [energyTutorialCells.belt()],
-                condition = { machine => machine.name() == "Belt" && machine.direction() == right }
+                allowedMachines = [machineManager.beltFactory()],
+                condition = { machine => machine.direction() == right }
             ),
             new MachineStep(
                 lines = ["Ahora la", "cortadora: gasta", "más que la", "cinta"],
                 cells = [energyTutorialCells.cutter()],
-                condition = { machine => machine.name() == "CuttingMachine" && machine.direction() == right }
+                allowedMachines = [machineManager.cuttingMachineFactory()],
+                condition = { machine => machine.direction() == right }
             ),
             new MachineStep(
                 lines = ["¡Te pasaste del", "límite! Tocá el", "dispenser y", "bajá su", "velocidad a x0.5"],
@@ -454,9 +480,9 @@ object energyTutorialLevel inherits Level(
 object level1 inherits Level(
 	name = "Nivel 1",
 	availableMachines = [
-        { => new Belt() },
-        { => new CuttingMachine() },
-        { => new Assembler() }
+        machineManager.beltFactory(),
+        machineManager.cuttingMachineFactory(),
+        machineManager.assemblerFactory()
     ],
     availableRecipes = [saladRecipe, tomatoSoupRecipe],
 	goals = [
@@ -484,10 +510,10 @@ object level1 inherits Level(
 object level2 inherits Level(
 	name = "Nivel 2",
 	availableMachines = [
-        { => new Belt() },
-        { => new CuttingMachine() },
-        { => new Oven() },
-        { => new Assembler() }
+        machineManager.beltFactory(),
+        machineManager.cuttingMachineFactory(),
+        machineManager.ovenFactory(),
+        machineManager.assemblerFactory()
     ],
     availableRecipes = [cheeseBurgerRecipe, burgerRecipe, doubleBurgerRecipe],
 	goals = [
@@ -526,15 +552,16 @@ object level2 inherits Level(
 object level3 inherits Level(
 	name = "Nivel 3",
 	availableMachines = [
-        { => new Belt() },
-        { => new CuttingMachine() },
-        { => new Oven() },
-        { => new Fryer() },
-        { => new AutomaticArm() },
-        { => new SmartRoboticArm() },
-        { => new Assembler() }
+        machineManager.beltFactory(),
+        machineManager.cuttingMachineFactory(),
+        machineManager.ovenFactory(),
+        machineManager.fryerFactory(),
+        machineManager.automaticArmFactory(),
+        machineManager.smartRoboticArmFactory(),
+        machineManager.assemblerFactory()
     ],
     availableRecipes = [toastRecipe, pizzaPepperoniRecipe, breakfastRecipe],
+    blockedLayer = new BlockedLayer(image = "levels/blocked_level3.png"),
     buildZones = [
         new Zone(minX = 6, maxX = 12, minY = 7, maxY = 10),
         new Zone(minX = 13, maxX = 15, minY = 7, maxY = 12),
@@ -587,10 +614,10 @@ object level3 inherits Level(
 object level4 inherits Level(
 	name = "Nivel 4",
 	availableMachines = [
-        { => new Belt() },
-        { => new CuttingMachine() },
-        { => new Oven() },
-        { => new Assembler() }
+        machineManager.beltFactory(),
+        machineManager.cuttingMachineFactory(),
+        machineManager.ovenFactory(),
+        machineManager.assemblerFactory()
     ],
     availableRecipes = [burgerRecipe, cheeseBurgerRecipe],
 	goals = [
@@ -600,7 +627,7 @@ object level4 inherits Level(
             label = "Hamburguesas"
         )
     ],
-    energyLimit = new EnergyLimit(max = 50),
+    energyLimit = new EnergyLimit(max = 45),
     fixedMachines = [
         new Placement(
             position = new CellPosition(x=5, y=9),

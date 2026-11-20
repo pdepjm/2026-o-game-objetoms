@@ -76,16 +76,14 @@ class Dispenser inherits Machine {
 	// para reintentar apenas se libere: no espera al próximo intervalo.
 	method tryDispense() {
 		const target = next
-		if (target != null) {
-			const item = new Item(kind = self.product())
-			if (target.canReceiveFrom(self, item)) {
-				item.position(self.position())
-				simulationEngine.addItem(item)
-				inventory.add(item)
-				self.tryPush()
-			} else {
-				target.whenFree({ self.tryDispense() })
-			}
+		const item = new Item(kind = self.product())
+		if (target.canReceiveFrom(self, item)) {
+			item.position(self.position())
+			simulationEngine.addItem(item)
+			inventory.add(item)
+			self.tryPush()
+		} else {
+			target.whenFree({ self.tryDispense() })
 		}
 	}
 

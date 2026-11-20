@@ -36,6 +36,7 @@
 
 import wollok.game.*
 import simulation.animationEngine.*
+import sound.sfx.*
 
 object simulationEngine {
 	// todas las máquinas que están en el tablero
@@ -129,6 +130,7 @@ object simulationEngine {
 	method run() {
 		running = true
 		simulatedObjects.forEach({ machine => machine.start() })
+		sfx.simulationStart()
 	}
 
 	// Apaga la simulación y limpia el tablero de items, para construir tranquilo.
@@ -143,6 +145,7 @@ object simulationEngine {
 			game.removeVisual(item)
 		})
 		simulatedObjects.forEach({ machine => machine.reset() })
+		sfx.simulationStop()
 	}
 
 	// Un item nuevo entra al tablero (lo crea, por ejemplo, un Dispenser).

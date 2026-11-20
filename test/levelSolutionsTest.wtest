@@ -162,7 +162,9 @@ describe "tests de que los niveles se pueden ganar" {
     self.put(6, 5, new Belt(direction = right))
     self.put(7, 5, new AutomaticArm(direction = left))
     self.put(8, 5, new Fryer(direction = right))
-    self.put(9, 5, new SmartRoboticArm(direction = left))
+    const smartArm = new SmartRoboticArm(direction = left)
+    smartArm.settings().first().value([eggFryed])
+    self.put(9, 5, smartArm)
     self.beltsRow(5, 10, 16, right)
     // la panceta (fila 3) al horno, y entra por abajo
     self.put(6, 3, new Belt(direction = right))
@@ -206,9 +208,16 @@ describe "tests de que los niveles se pueden ganar" {
     assert.notThat(simulationEngine.running())
   }
 
-  test "nivel 4: armado compacto y con los dispensers a x0.5 entra en el limite y se gana" {
+  // Baja a x0.5 la velocidad de todas las máquinas que tienen ese setting (dispensers, cortadoras, horno, ensamblador)
+  method slowDownEverything() {
+    board.machines().forEach({ machine =>
+      machine.settings().filter({ setting => setting.name() == "Velocidad" }).forEach({ setting => setting.value(0.5) })
+    })
+  }
+
+  test "nivel 4: armado compacto y con todo a x0.5 entra en el limite y se gana" {
     self.buildLevel4()
-    [9, 8, 6, 5].forEach({ y => self.dispenserAt(5, y).settings().last().value(0.5) })
+    self.slowDownEverything()
     assert.that(level4.energyLimit().allows(board.totalEnergy()))
     assert.that(self.runUntilWon())
   }

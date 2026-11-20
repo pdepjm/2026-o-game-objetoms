@@ -35,7 +35,9 @@ class ArmRoute {
 // Una salida sin ingredientes no usa: por ahí no sale nada.
 // Entrega cada item por la primera salida que lo acepta, en el orden recta, izquierda, derecha.
 // Si ninguna lo acepta, no lo toma: se queda donde está.
-// Por defecto sólo sale por la recta, y deja pasar todo (como el automático).
+// Por defecto no deja salir nada por ninguna salida: hay que elegir qué ingredientes salen por cuál.
+// (Si arrancara dejando pasar todo, dos brazos sobre la misma máquina se pelearían los items
+// y uno le sacaría al otro lo que tiene que sacar.)
 class SmartRoboticArm inherits AutomaticArm {
 	// Los ingredientes que se pueden elegir en cada salida (hasta 13 para no salirse de la pantalla)
 	const kinds = [
@@ -47,7 +49,7 @@ class SmartRoboticArm inherits AutomaticArm {
 
 	// En el orden de prioridad: recta, izquierda, derecha
 	const routes = [
-		new ArmRoute(output = straightOut, filter = new ItemSetSetting(outputName = "Recto", columnIndex = 1, kinds = kinds, value = kinds)),
+		new ArmRoute(output = straightOut, filter = new ItemSetSetting(outputName = "Recto", columnIndex = 1, kinds = kinds, value = [])),
 		new ArmRoute(output = leftOut, filter = new ItemSetSetting(outputName = "Izq.", columnIndex = 0, kinds = kinds, value = [])),
 		new ArmRoute(output = rightOut, filter = new ItemSetSetting(outputName = "Der.", columnIndex = 2, kinds = kinds, value = []))
 	]
@@ -60,18 +62,20 @@ class SmartRoboticArm inherits AutomaticArm {
 
 	override method settings() = routes.map({ route => route.filter() })
 
-	// La salida que deja pasar a ese item (null si ninguna)
-	method routeFor(item) = routes.findOrDefault({ route => route.accepts(item) }, null)
+	// La salida que deja pasar a ese item (sólo se pregunta por los que alguna deja pasar: ver canTake)
+	method routeFor(item) = routes.find({ route => route.accepts(item) })
+
+	// ¿Alguna de sus salidas deja pasar a ese item?
+	method canTake(item) = routes.any({ route => route.accepts(item) })
 
 	override method outputSideFor(item) = self.routeFor(item).output().sideFor(inputSide)
 
-	// El lado por el que saldría un item de ese kind (null si no lo toma). Sirve para preguntarle
-	// cómo está configurado sin saber cómo guarda sus salidas (lo usa el tutorial).
-	method exitSideFor(kind) {
-		const route = self.routeFor(new Item(kind = kind))
-		return if (route == null) null else route.output().sideFor(inputSide)
-	}
+	// ¿Toma un item de ese kind? Sirve para preguntarle cómo está configurado sin saber cómo guarda sus salidas
+	method takes(kind) = self.canTake(new Item(kind = kind))
+
+	// El lado por el que saldría un item de ese kind (sólo se pregunta por los que toma: ver takes)
+	method exitSideFor(kind) = self.routeFor(new Item(kind = kind)).output().sideFor(inputSide)
 
 	// No toma lo que no tiene por dónde salir
-	override method canReceive(item) = super(item) && self.routeFor(item) != null
+	override method canReceive(item) = super(item) && self.canTake(item)
 }

@@ -24,7 +24,7 @@ import board.*
 
 class DeliverySlot inherits Machine {
     override method name() = "DeliverySlot"
-	override method nextMachine() = null
+	override method nextMachine() = noMachine
 
 	// El plato llegó al platito: sale del juego y cuenta para el nivel
 	override method onArrived(item) {

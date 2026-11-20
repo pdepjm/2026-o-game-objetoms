@@ -26,19 +26,23 @@ import wollok.game.*
 //
 
 object musicManager {
-    var backgroundSound = null
+    var backgroundSound = noSound
 
     method playBackground() {
         self.stopBackground()
         backgroundSound = game.sound("sound/music/background.mp3")
         backgroundSound.shouldLoop(true)
+        backgroundSound.volume(0.6) // más bajita, para que los efectos no queden tapados
         backgroundSound.play()
     }
 
     method stopBackground() {
-        if (backgroundSound != null) {
-            backgroundSound.stop()
-            backgroundSound = null
-        }
+        backgroundSound.stop()
+        backgroundSound = noSound
     }
+}
+
+// "No hay música sonando": detenerla no hace nada
+object noSound {
+    method stop() {}
 }
