@@ -31,7 +31,11 @@ Por ejemplo, con la salida en *Recto*, una cinta a la izquierda y otra a la dere
 (entrada `left`) `left_to_right_catch` → `right_game.png`, y el ingrediente sigue por la cinta de la derecha. El siguiente ingrediente arranca desde esa pose: `right_to_left_rotate` → `left_to_right_catch`.
 
 > [!NOTE]
-> `SmartRoboticArm` comparte estas imágenes en el tablero (en el menú usa la suya, de `machines/SmartRoboticArm/`). Es el mismo brazo con tres salidas, cada una con su filtro de items (ver [`machines/README.md`](../../../src/machines/README.md)).
+> `SmartRoboticArm` usa una **copia recoloreada en naranja** de estas imágenes, en `machines/SmartRoboticArm/` (misma estructura y nombres). Es el mismo brazo con tres salidas, cada una con su filtro de items (ver [`machines/README.md`](../../../src/machines/README.md)). Si se cambia una imagen de acá, hay que regenerar la copia. Parado en `assets/machines/`:
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File recolor.ps1 -Source AutomaticArm -Dest SmartRoboticArm
+> ```
+> El script intercambia los canales rojo y azul (el azul pasa a dorado) y gira el tono 20° hacia el rojo (`-HueShift`, por defecto `-20`) para que quede naranja. No necesita Python.
 
 > [!NOTE]
 > Configurar hacia dónde entrega no se pierde al apagar la simulación: es configuración, no estado (`reset()` sólo vuelve a mirar hacia la entrada).

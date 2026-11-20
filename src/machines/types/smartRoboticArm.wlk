@@ -55,9 +55,8 @@ class SmartRoboticArm inherits AutomaticArm {
 	override method name() = "AutomaticArm"
 	override method baseEnergy() = 3
 
-	override method staticImage() = "machines/AutomaticArm/" + direction.name() + "_game.png"
-	
-	override method menuImage(aDirection) = "machines/AutomaticArm/down_menu.png"
+	// Las mismas imágenes del automático, recoloreadas en naranja (assets/machines/recolor.ps1)
+	override method assetFolder() = "machines/SmartRoboticArm/"
 
 	override method settings() = routes.map({ route => route.filter() })
 
