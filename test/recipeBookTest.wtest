@@ -62,12 +62,28 @@ describe "tests del libro de recetas" {
     assert.equals(0, recipeBook.currentPage())
   }
 
-  test "un click fuera de la cruz no cierra el libro ni cambia de pagina" {
+  test "un clic en la mitad izquierda del libro vuelve una pagina, y en la derecha avanza" {
     recipeBook.open()
     recipeBook.nextPage()
     userController.onClick(game.at(10, 6))
     assert.that(recipeBook.isOpen())
-    assert.equals(1, recipeBook.currentPage())
+    assert.equals(0, recipeBook.currentPage())
+    userController.onClick(game.at(11, 6))
+    userController.onClick(game.at(21, 6))
+    assert.equals(2, recipeBook.currentPage())
+  }
+
+  test "un clic en la cruz cierra el libro" {
+    recipeBook.open()
+    userController.onClick(game.at(20, 11))
+    assert.notThat(recipeBook.isOpen())
+  }
+
+  test "las flechas de los costados se apagan en la primera y en la ultima pagina" {
+    recipeBook.open()
+    assert.that(recipeBook.isFirstPage())
+    11.times({ _ => recipeBook.nextPage() })
+    assert.that(recipeBook.isLastPage())
   }
 
   test "F abre y cierra el libro" {
@@ -166,10 +182,9 @@ describe "tests del libro de recetas" {
   // BLOQUEO
 
   test "con el libro abierto, un click en el tablero no coloca nada" {
-    toolsManager.select(place)
     recipeBook.open()
-    userController.onClick(game.at(8, 12))
-    assert.notThat(board.isThereAMachine(game.at(8, 12)))
+    userController.onClick(game.at(8, 9))
+    assert.notThat(board.isThereAMachine(game.at(8, 9)))
   }
 
   test "con el libro abierto, las acciones de las teclas no corren" {

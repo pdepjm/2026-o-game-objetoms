@@ -30,6 +30,7 @@ class Fryer inherits ProcessingMachine {
 	const burnSteps = 40
 
 	override method name() = "Fryer"
+	override method label() = "Freidora"
 	override method baseEnergy() = 2
 
 	override method foodProcess() = frying

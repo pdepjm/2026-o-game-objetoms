@@ -19,6 +19,7 @@
 import wollok.game.*
 import simulation.simulationEngine.*
 import sound.sfx.*
+import cellPosition.*
 
 class RecipeBookVisual {
 	method position() = game.origin()
@@ -39,8 +40,20 @@ object recipeBook {
 	// Sólo para consultar (los tests): nadie decide nada con esto, los estados resuelven solos
 	method isOpen() = state.isOpen()
 
+	method currentPageNumber() = currentPage
+	method isFirstPage() = currentPage == 0
+	method isLastPage() = currentPage == maxPages
+
 	// La pantalla que recibe los clicks y las teclas: la de abajo si el libro está cerrado, la del libro si está abierto
 	method screenOver(screen) = state.screenOver(screen)
+
+	// Un clic con el libro abierto: la cruz lo cierra (y vuelve a mostrar la pantalla de abajo), las flechas
+	// y las mitades del libro pasan de página (ver bookButtons)
+	method clickAt(pos, screen) {
+		if (bookButtons.isClose(pos)) self.toggleOver(screen)
+		else if (pos.x().between(0, 10)) self.prevPage()
+		else if (pos.x().between(11, 21)) self.nextPage()
+	}
 
 	// La tecla F: abre o cierra el libro, y la pantalla de abajo se oculta o se vuelve a mostrar
 	method toggleOver(screen) { state.toggleOver(self, screen) }
@@ -61,12 +74,14 @@ object recipeBook {
 		pausedByBook = simulationEngine.running() && !simulationEngine.paused()
 		if (pausedByBook) simulationEngine.pause()
 		if (!game.hasVisual(recipeBookVisual)) game.addVisual(recipeBookVisual)
+		bookButtons.show()
 		sfx.pageChange()
 	}
 
 	method closed() {
 		state = closedBook
 		if (game.hasVisual(recipeBookVisual)) game.removeVisual(recipeBookVisual)
+		bookButtons.hide()
 		if (pausedByBook) simulationEngine.resume()
 		pausedByBook = false
 		sfx.pageChange()
@@ -86,9 +101,11 @@ object recipeBook {
 		sfx.pageChange()
 	}
 
+	// La página nueva, y los botones arriba de ella
 	method updateVisual() {
 		game.removeVisual(recipeBookVisual)
 		game.addVisual(recipeBookVisual)
+		bookButtons.show()
 	}
 }
 
@@ -108,7 +125,7 @@ object closedBook {
 
 object openBook {
 	method isOpen() = true
-	method screenOver(screen) = bookScreen
+	method screenOver(screen) = new BookScreen(under = screen)
 	method toggleOver(book, screen) {
 		book.close()
 		screen.showAfterRecipeBook()
@@ -120,8 +137,49 @@ object openBook {
 	method prevPage(book) { book.turnBack() }
 }
 
-// Con el libro abierto no se juega: se tapa todo, así que no hace nada con los clicks ni con las teclas del juego
-object bookScreen {
-	method onClick(pos) {}
+// Con el libro abierto no se juega: se tapa todo. Las teclas del juego no hacen nada; los clics y las
+// flechas pasan de página, y Retroceso, F o la cruz lo cierran (y vuelve a mostrarse la pantalla de abajo: under).
+class BookScreen {
+	const under
+
+	method onClick(pos) { recipeBook.clickAt(pos, under) }
 	method whenPlaying(action) {}
+	method start() {}
+	method arrow(direction) { direction.turnPage(recipeBook) }
+	method back() { recipeBook.toggleOver(under) }
+}
+
+// Los botones del libro abierto (assets/menu/book_*.png, ver makeBoardUi.py): las flechas a los costados
+// (con su tecla abajo) y la cruz arriba a la derecha, encima de la que traen dibujada las recetas.
+// Sólo cambian al pasar de página (las flechas se apagan en la primera y en la última).
+object bookButtons {
+	const prev = new BookButton(position = new CellPosition(x = 0, y = 5.4), name = "book_prev")
+	const next = new BookButton(position = new CellPosition(x = 21, y = 5.4), name = "book_next")
+	const close = new BookButton(position = new CellPosition(x = 18.82, y = 10.46), name = "book_close")
+
+	// La cruz ocupa x 19 y 20, filas 10 y 11
+	method isClose(pos) = pos.x().between(19, 20) && pos.y().between(10, 11)
+
+	method show() {
+		prev.update(recipeBook.isFirstPage())
+		next.update(recipeBook.isLastPage())
+		[prev, next, close].forEach({ button =>
+			if (game.hasVisual(button)) game.removeVisual(button)
+			game.addVisual(button)
+		})
+	}
+
+	method hide() {
+		[prev, next, close].forEach({ button => if (game.hasVisual(button)) game.removeVisual(button) })
+	}
+}
+
+class BookButton {
+	const property position
+	const name
+	var image = "menu/" + name + ".png"
+
+	method image() = image
+	// Apagado en la primera página (la flecha de volver) o en la última (la de avanzar)
+	method update(off) { image = "menu/" + name + (if (off) "_off" else "") + ".png" }
 }

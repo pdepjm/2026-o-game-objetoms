@@ -36,7 +36,7 @@ class Assembler inherits Machine {
 	var dish = noItem
 	
 
-	// Qué tan rápido arma el plato (se cambia con la herramienta edit)
+	// Qué tan rápido arma el plato (se cambia con X, editando la máquina)
 	const speedSetting = new SpeedSetting(value = 1)
 
 	override method settings() = [recipeSetting, speedSetting]
@@ -46,10 +46,12 @@ class Assembler inherits Machine {
 	// La receta elegida en el panel de edit (la que va a usar al prender la simulación)
 	method selectedRecipe() = recipeSetting.value()
 	override method name() = "Assembler"
+	override method label() = "Ensamblador"
+	override method article() = "el"
 	override method baseEnergy() = 1
 
 	// Imagenes que va a utilizar para animar
-	override method workImages() = self.actionAnimation("assemble", 22).frames()
+	override method workImages() = self.actionAnimation("assemble", 11).frames()
 
 	// Ocupa 2x2 celdas, desde la celda donde se colocó (abajo a la izquierda)
 	override method width() = 2

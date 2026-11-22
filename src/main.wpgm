@@ -25,8 +25,8 @@ import sound.sfx.*
 
 program BuffetAlbertEinstein {
 	game.title("Buffet Albert Einstein")
-	game.height(16)
-	game.width(25)
+	game.height(13)
+	game.width(22)
 	game.cellSize(50)
 	game.boardGround("background.gif")
 

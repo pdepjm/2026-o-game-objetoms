@@ -7,9 +7,8 @@
     - [Capturas](#capturas)
     - [Controles](#controles)
       - [Cómo se construye, paso a paso](#cómo-se-construye-paso-a-paso)
-      - [Herramientas](#herramientas)
-      - [Dirección de la máquina a construir](#dirección-de-la-máquina-a-construir)
-      - [Menú de máquinas](#menú-de-máquinas)
+      - [Sobre la máquina elegida](#sobre-la-máquina-elegida)
+      - [El menú de máquinas y el panel de editar](#el-menú-de-máquinas-y-el-panel-de-editar)
       - [Simulación](#simulación)
       - [Niveles](#niveles)
       - [Libro de recetas y portada](#libro-de-recetas-y-portada)
@@ -38,46 +37,36 @@ En este juego de puzles y automatización, tu misión es diseñar la línea de p
 
 ### Controles
 
-El juego se maneja con el mouse y el teclado. La idea básica: **elegís una herramienta con el teclado y la usás con un click sobre el tablero**.
+El juego se maneja **con el mouse, con el teclado, o mezclando los dos**: cada cosa se puede hacer con un clic o con una tecla. No hay herramientas para elegir: **un clic en una celda vacía coloca, un clic en una máquina la elige, y C, X o V la rotan, editan o borran**. Arriba a la derecha, un cartel dice si estás **COLOCANDO** o **EDITANDO**.
 
 #### Cómo se construye, paso a paso
-1. Elegí una **máquina** en el menú de la derecha con un click.
-2. Elegí la **dirección** hacia donde va a mirar (<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>).
-3. Apretá <kbd>Z</kbd> (herramienta Construir) y hacé click en el tablero, en la celda donde la querés.
-4. Para cambiarle algo a una máquina ya puesta, usá las otras herramientas (abajo).
-5. Cuando esté todo armado, apretá <kbd>Espacio</kbd> para **prender la simulación** y mirá cómo trabaja sola.
+1. Elegí una **máquina** en el menú de la derecha (clic, o <kbd>Q</kbd> / <kbd>E</kbd>).
+2. Elegí hacia dónde va a mirar (los botones ← ↑ ↓ → del menú, o <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>).
+3. Hacé **clic en la celda** donde la querés: las máquinas se colocan sólo con el clic.
+4. Para cambiarle algo a una máquina ya puesta, **elegila** con un clic y usá <kbd>C</kbd>, <kbd>X</kbd> o <kbd>V</kbd>, o su menú, que aparece debajo.
+5. Cuando esté todo armado, apretá <kbd>Espacio</kbd> (o el botón INICIAR / PAUSA de abajo a la izquierda) para **prender la simulación** y mirá cómo trabaja sola.
 
 > [!NOTE]
-> Volver a apretar la tecla de la herramienta elegida la deselecciona. El juego arranca sin ninguna herramienta elegida.
+> Wollok no le avisa al juego dónde está el mouse hasta que hacés clic. Por eso las teclas actúan sobre **la última máquina que clickeaste**. En el tablero se usa sólo el mouse: no hay cursor que se mueva con el teclado. En el tutorial, la máquina del recuadro de cada paso queda elegida sola.
 
 > [!IMPORTANT]
-> Con la simulación prendida **las herramientas no funcionan sobre el tablero** (no se puede construir, editar, rotar ni borrar): apagala con <kbd>Espacio</kbd> para seguir armando.
+> Con la simulación prendida **no se puede construir, editar, rotar ni borrar**: apagala con <kbd>Espacio</kbd> para seguir armando.
 
-#### Herramientas
-Se eligen con la tecla y se usan con un **click izquierdo** sobre la máquina o la celda.
-
-| Tecla | Herramienta | Qué hace al hacer click en el tablero |
+#### Sobre la máquina elegida
+| Tecla | Botón de su menú | Qué hace |
 |:---:|---|---|
-| <kbd>Z</kbd> | **Construir** | Coloca la máquina elegida en el menú, mirando hacia la dirección elegida |
-| <kbd>X</kbd> | **Editar** | Abre en el menú de la derecha los ajustes de la máquina clickeada (ingrediente, velocidad, receta, filtros) |
-| <kbd>C</kbd> | **Rotar** | Gira la máquina clickeada 90° en sentido horario |
-| <kbd>V</kbd> | **Borrar** | Quita la máquina clickeada (y los ingredientes que tenga adentro) |
+| <kbd>C</kbd> | ROTAR | Gira la máquina 90° en sentido horario |
+| <kbd>X</kbd> | EDITAR | Abre en el menú de la derecha sus ajustes (ingrediente, velocidad, receta, filtros): EDITANDO. Se eligen con un clic, o con las flechas y <kbd>Enter</kbd>. <kbd>X</kbd> otra vez o <kbd>Retroceso</kbd> lo cierran |
+| <kbd>V</kbd> | BORRAR | Quita la máquina (y los ingredientes que tenga adentro) |
 
-#### Dirección de la máquina a construir
-Define hacia dónde mira la **próxima** máquina que construyas.
-
-| Tecla | Dirección |
-|:---:|---|
-| <kbd>W</kbd> | Arriba |
-| <kbd>A</kbd> | Izquierda |
-| <kbd>S</kbd> | Abajo |
-| <kbd>D</kbd> | Derecha |
-
-#### Menú de máquinas
+#### El menú de máquinas y el panel de editar
 | Tecla | Acción |
 |:---:|---|
-| <kbd>Q</kbd> | Página anterior del menú de máquinas |
-| <kbd>E</kbd> | Página siguiente del menú de máquinas |
+| <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> | Editando, elegir una opción del panel |
+| <kbd>Enter</kbd> | Editando, aplicar la opción marcada |
+| <kbd>Q</kbd> / <kbd>E</kbd> | Máquina anterior / siguiente del menú (pasa de página sola) |
+| <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> | Hacia dónde mira la próxima máquina: arriba / izquierda / abajo / derecha |
+| <kbd>Retroceso</kbd> | Dejar de editar; cerrar el libro de recetas o los controles |
 
 #### Simulación
 | Tecla | Acción |
@@ -90,7 +79,7 @@ Define hacia dónde mira la **próxima** máquina que construyas.
 #### Niveles
 | Tecla | Acción |
 |:---:|---|
-| <kbd>Enter</kbd> | En un tutorial, seguir después de una explicación |
+| <kbd>Enter</kbd> | En un tutorial, seguir después de una explicación (también con un clic en el globo del cocinero) |
 | <kbd>T</kbd> | Saltear los tutoriales e ir al nivel 1 (también se puede con el botón SALTEAR TUTORIAL, haciendo click) |
 | <kbd>N</kbd> | Pasar al nivel siguiente (solo después de ganar el actual) |
 | <kbd>0</kbd> | Reiniciar el nivel (borra también lo que construiste) |
@@ -99,11 +88,11 @@ Define hacia dónde mira la **próxima** máquina que construyas.
 #### Libro de recetas y portada
 | Tecla | Acción |
 |:---:|---|
-| <kbd>F</kbd> | Abrir / cerrar el libro de recetas. Mientras está abierto, la simulación queda en pausa |
-| <kbd>←</kbd> <kbd>→</kbd> | Pasar las páginas del libro de recetas |
-| <kbd>M</kbd> | Volver a la portada |
+| <kbd>F</kbd> | Abrir / cerrar el libro de recetas (también con el botón RECETARIO o la cruz del libro). Mientras está abierto, la simulación queda en pausa |
+| <kbd>←</kbd> <kbd>→</kbd> | Pasar las páginas del libro de recetas (también con las flechas de los costados, o un clic en la mitad izquierda o derecha del libro) |
+| <kbd>M</kbd> | Volver a la portada (también con el botón MENÚ) |
 
-En la **portada**: <kbd>Enter</kbd> empieza a jugar, <kbd>I</kbd> muestra los controles dentro del juego y <kbd>S</kbd> cierra el juego.
+En la **portada**, cada opción se elige con un clic, o con <kbd>↑</kbd> <kbd>↓</kbd> y <kbd>Enter</kbd>. También sirven los atajos <kbd>I</kbd> (controles), <kbd>F</kbd> (recetario) y <kbd>S</kbd> (salir).
 
 
 ## Equipo de Desarrollo
@@ -138,7 +127,7 @@ El texto completo de la licencia se encuentra en el archivo [LICENSE](LICENSE) y
 
 **Amparado por la licencia:**
 - El código fuente en Wollok: `src/` (archivos `.wlk` y `.wpgm`) y `test/` (archivos `.wtest`). Es obra original del grupo objeTOMs y no incorpora código de terceros.
-- Los scripts de Python ubicados en `assets/` (`gifToFrames.py`, `assetRotate.py`, `svgToSprite.py`, `makeKeyHints.py`, `makeLevelInfo.py` y `makeFont.py`). No forman parte del juego: son herramientas auxiliares para crear sprites e imágenes, y no se utilizan al jugar. No incorporan código de terceros.
+- Los scripts de Python ubicados en `assets/` (`gifToFrames.py`, `assetRotate.py`, `svgToSprite.py`, `makeKeyHints.py`, `makeBoardUi.py`, `makeCover.py`, `makeLevelInfo.py` y `makeFont.py`). No forman parte del juego: son herramientas auxiliares para crear sprites e imágenes, y no se utilizan al jugar. No incorporan código de terceros.
 - Los recursos de `assets/` (imágenes, GIFs y música). Son obra original del grupo objeTOMs: la música fue compuesta por el grupo y las imágenes fueron creadas por el grupo.
 - La documentación del repositorio (archivos `README.md`).
 

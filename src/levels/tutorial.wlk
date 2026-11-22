@@ -25,7 +25,6 @@ import menu.levelInfoMenu.*
 // (StepTutorial le reenvía cada evento a su paso actual). Así como está no hace nada.
 class TutorialEvents {
 	method onLevelLoaded(level) {}
-	method onToolSelected(tool) {}
 	method onMachinePlaced(machine) {}
 	method onMachineRemoved(machine) {}
 	method onMachineRotated(machine) {}
@@ -41,10 +40,12 @@ class TutorialEvents {
 // Así como está no hace nada y deja hacer todo: los tutoriales sobrescriben lo que necesitan.
 class Tutorial inherits TutorialEvents {
 	// ----------- PERMISOS -----------
-	// ¿Deja usar esta herramienta (place, delete, edit, rotate) en esa celda?
+	// ¿Deja usar esta acción (place, delete, edit, rotate) en esa celda?
 	method allowsTool(tool, pos) = true
 	// ¿Deja prender o apagar la simulación?
 	method allowsSimulationToggle() = true
+	// ¿Está esperando que el jugador apriete Enter (o toque el globo) para seguir?
+	method waitsForContinue() = false
 
 	// ----------- SALTEAR -----------
 	// El botón de saltear que dibuja la info del nivel (noSkipButton si no hay tutorial)
@@ -57,12 +58,13 @@ class Tutorial inherits TutorialEvents {
 	}
 
 	// ----------- MENSAJE -----------
-	// Las líneas que muestra levelInfoMenu debajo de la info del nivel
-	// (como máximo levelInfoMenu.tutorialMaxLines(), de levelInfoMenu.tutorialMaxLength() caracteres)
+	// Las líneas que dice el cocinero en su globo (ver chefGuide)
+	// (como máximo chefGuide.maxLines() contando las teclas, de chefGuide.maxLength() caracteres)
 	method messageLines() = []
 
-	// Las teclas que acompañan al mensaje (por ejemplo "place": Z COLOCAR). Se dibujan debajo de él, con el
-	// estilo de las teclas del fondo (assets/menu/key_<nombre>.png), y se van cuando cambia el mensaje.
+	// Las teclas que acompañan al mensaje (por ejemplo "place": [Z] para colocar). El cocinero las dice en
+	// su globo, debajo del mensaje, una por fila (assets/tutorial/key_<nombre>.png): cada una ocupa el lugar
+	// de una línea.
 	method messageKeys() = []
 
 	// Dónde va el jugador, arriba del mensaje (por ejemplo "PASO 2 DE 8"). Vacío: no se muestra.
@@ -77,6 +79,15 @@ class Tutorial inherits TutorialEvents {
 	method targetCells() = []
 	// Las celdas de las máquinas que explica el mensaje: se señalan con una flecha arriba
 	method pointedCells() = []
+
+	// ----------- LO QUE DICE EL COCINERO SI ALGO NO VA -----------
+	// (ver chefGuide). [] es que no dice nada.
+	// Usó esa acción (place, rotate, edit, delete) en esa celda, y el tutorial no lo deja (allowsTool dio false)
+	method complaintFor(tool, pos) = []
+	// Eligió en el menú de colocar una máquina (su fábrica) que el paso no pide
+	method complaintForMachine(factory) = []
+	// Las máquinas (fábricas) que pide el paso: el menú de colocar las resalta
+	method wantedMachines() = []
 }
 
 // El tutorial de los niveles que no tienen tutorial
@@ -102,7 +113,6 @@ class StepTutorial inherits Tutorial {
 		steps.forEach({ step => step.reset() })
 		self.currentStep().onLevelLoaded(level)
 	}
-	override method onToolSelected(tool) { self.currentStep().onToolSelected(tool) }
 	override method onMachinePlaced(machine) { self.currentStep().onMachinePlaced(machine) }
 	override method onMachineRemoved(machine) { self.currentStep().onMachineRemoved(machine) }
 	override method onMachineRotated(machine) { self.currentStep().onMachineRotated(machine) }
@@ -122,6 +132,7 @@ class StepTutorial inherits Tutorial {
 	// Después de ganar deja hacer todo
 	override method allowsTool(tool, pos) = won || self.currentStep().allowsTool(tool, pos)
 	override method allowsSimulationToggle() = won || self.currentStep().allowsSimulationToggle()
+	override method waitsForContinue() = !won && self.currentStep().waitsForContinue()
 
 	override method messageLines() = if (won) finishedLines else self.currentStep().lines()
 	override method messageKeys() = if (won) [] else self.currentStep().keys()
@@ -135,6 +146,11 @@ class StepTutorial inherits Tutorial {
 	// Después de ganar no marca nada
 	override method targetCells() = if (won) [] else self.currentStep().targetCells()
 	override method pointedCells() = if (won) [] else self.currentStep().pointedCells()
+
+	// Después de ganar no se queja de nada
+	override method complaintFor(tool, pos) = if (won) [] else tool.complaintIn(self.currentStep(), pos)
+	override method complaintForMachine(factory) = if (won) [] else self.currentStep().complaintForMachine(factory)
+	override method wantedMachines() = if (won) [] else self.currentStep().wantedMachines()
 }
 
 // Un paso del tutorial: qué dice y qué deja hacer. Éste nunca se cumple: sirve de último paso
@@ -144,7 +160,7 @@ class StepTutorial inherits Tutorial {
 // después pedir, dos pasos: un ExplainStep y el que pide.
 class TutorialStep inherits TutorialEvents {
 	const property lines
-	// Las teclas que se explican en este paso (ver Tutorial.messageKeys): así el texto no tiene que decir "Z:"
+	// Las teclas que se explican en este paso (ver Tutorial.messageKeys): así el texto no tiene que decir "C:"
 	const property keys = []
 	// Las celdas donde deja colocar, borrar y rotar. Se marcan con un recuadro.
 	// Para una máquina de 2x2, sus cuatro celdas.
@@ -165,10 +181,22 @@ class TutorialStep inherits TutorialEvents {
 	method isCell(pos) = cells.any({ cell => pos.x() == cell.x() && pos.y() == cell.y() })
 
 	method allowsSimulationToggle() = allowsSimulation
+	method waitsForContinue() = false
 
 	method targetCells() = cells
 	// Si pide hacer algo, sólo el recuadro (ver arriba)
 	method pointedCells() = if (cells.isEmpty()) pointsAt else []
+
+	// Lo que dice el cocinero (ver Tutorial). Fuera del recuadro: que es en el recuadro. Si el paso no
+	// tiene recuadro, lo que espera (ver waitingComplaint).
+	method complaintFor(tool, pos) =
+		if (cells.isEmpty()) self.waitingComplaint()
+		else if (!self.isCell(pos)) ["Ahí no: es en", "el recuadro."]
+		else []
+	// Lo que dice si se hace algo en un paso que no pide hacer nada en el tablero
+	method waitingComplaint() = []
+	method complaintForMachine(factory) = []
+	method wantedMachines() = []
 }
 
 // Se cumple cuando en todas sus celdas hay una máquina que cumple la condición: { machine => ... }
@@ -183,11 +211,21 @@ class MachineStep inherits TutorialStep {
 	override method allowsTool(tool, pos) = super(tool, pos) && tool.allowsMachine(allowedMachines)
 
 	override method isDone() = cells.all({ cell => board.machineAt(cell).satisfies(condition) })
+
+	// En el recuadro, pero con otra máquina elegida: cuál es la que va
+	override method complaintFor(tool, pos) =
+		if (self.isCell(pos) && !tool.allowsMachine(allowedMachines)) self.wrongMachineComplaint()
+		else super(tool, pos)
+	override method complaintForMachine(factory) =
+		if (allowedMachines.isEmpty() || allowedMachines.contains(factory)) [] else self.wrongMachineComplaint()
+	method wrongMachineComplaint() = ["¡Esa no! Buscá", allowedMachines.first().apply().nameWithArticle() + "."]
+	override method wantedMachines() = allowedMachines
 }
 
 // Se cumple mientras la simulación está prendida (si se apaga, vuelve a este paso)
 class RunStep inherits TutorialStep(allowsSimulation = true) {
 	override method isDone() = simulationEngine.running()
+	override method waitingComplaint() = ["Ahora no: apretá", "Espacio para", "cocinar."]
 }
 
 // Un paso que se cumple con un evento y se queda cumplido (aunque después el jugador haga otra cosa),
@@ -205,11 +243,6 @@ class EventStep inherits TutorialStep {
 // Explica algo (señalado con pointsAt) y se cumple cuando el jugador aprieta Enter para seguir
 class ExplainStep inherits EventStep {
 	override method onContinue() { self.happened() }
-}
-
-// Se cumple al elegir esa herramienta (Z, X, C o V)
-class ToolStep inherits EventStep {
-	const tool
-
-	override method onToolSelected(selected) { if (selected == tool) self.happened() }
+	override method waitsForContinue() = !self.isDone()
+	override method waitingComplaint() = ["Primero leé y", "apretá Enter", "para seguir."]
 }

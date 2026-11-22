@@ -26,6 +26,7 @@ import src.machines.types.deliverySlot.*
 import src.menu.menuManager.*
 import src.menu.placeMenu.*
 import src.menu.levelInfoMenu.*
+import src.menu.chefGuide.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
@@ -88,7 +89,7 @@ describe "tests de levelManager" {
     levelManager.load(testLevel)
     assert.notThat(simulationEngine.running())
     assert.that(board.machines().isEmpty())
-    assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
+    assert.equals("DeliverySlot", board.machineAt(game.at(13, 11)).name())
   }
 
   // ENTREGAR
@@ -207,7 +208,7 @@ describe "tests de levelInfoMenu" {
   }
 
   test "al cargar un nivel muestra su nombre, el titulo y el progreso de su objetivo" {
-    assert.equals(["PRUEBA"], self.textsAt(13))
+    assert.equals(["PRUEBA"], self.textsAt(10))
     assert.that(levelInfoMenu.levelMessage().contains("OBJETIVO"))
     assert.equals(["Papas Fritas: 0/3"], levelInfoMenu.progressMessage())
   }
@@ -241,7 +242,7 @@ describe "tests de levelInfoMenu" {
 
   test "el modo libre muestra solo su nombre" {
     levelManager.loadFreePlay()
-    assert.equals(["LIBRE"], self.textsAt(13))
+    assert.equals(["LIBRE"], self.textsAt(10))
     assert.notThat(levelInfoMenu.levelMessage().contains("OBJETIVO"))
     assert.that(levelInfoMenu.progressMessage().isEmpty())
   }
@@ -284,12 +285,12 @@ describe "tests de todos los niveles" {
     assert.equals([], self.namesOf(self.allLevels().filter({ level => !self.fixedMachinesInPlace(level) })))
   }
 
-  // Wollok no corta las líneas: una muy larga se sale del panel. Las líneas y las teclas comparten el
-  // lugar: entre las dos no pueden pasar del máximo, o se pisan
-  test "los mensajes de los tutoriales entran en el panel" {
+  // Wollok no corta las líneas: una muy larga se sale del globo del cocinero, y hay globos de hasta
+  // chefGuide.maxLines() filas, contando las de las teclas (cada tecla ocupa el lugar de una línea)
+  test "los mensajes de los tutoriales entran en el globo del cocinero" {
     const wrong = self.allLevels().filter({ level =>
       level.tutorial().allMessages().any({ message =>
-        message.lines().size() + message.keys().size() > levelInfoMenu.tutorialMaxLines() || message.lines().any({ line => line.size() > levelInfoMenu.tutorialMaxLength() })
+        message.lines().size() + message.keys().size() > chefGuide.maxLines() || message.lines().any({ line => line.size() > chefGuide.maxLength() })
       })
     })
     assert.equals([], self.namesOf(wrong))
@@ -321,8 +322,8 @@ describe "tests del progreso y la tecla L" {
     simulationEngine.step()
   }
 
-  // La info del nivel en la fila de la ayuda (12)
-  method hintTexts() = game.getObjectsIn(levelInfoMenu.positionOfRow(12)).map({ visual => visual.text() })
+  // La info del nivel en la fila de la ayuda (9)
+  method hintTexts() = game.getObjectsIn(levelInfoMenu.positionOfRow(9)).map({ visual => visual.text() })
 
   test "al arrancar, sin nada completado, se juega el primer nivel" {
     assert.equals(levelA, levelManager.currentLevel())

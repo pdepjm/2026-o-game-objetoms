@@ -19,9 +19,9 @@
 import src.cellPosition.CellPosition
 import menu.placeMenu.*
 import menu.editMenu.*
-import menu.toolBar.*
+import menu.modeBanner.*
+import menu.sideButtons.*
 import tools.toolsManager.*
-import tools.userTools.*
 import sound.sfx.*
 import wollok.game.*
 import board.*
@@ -40,45 +40,48 @@ object menuManager {
         minX = 0,
         maxX = 4,
         minY = 1,
-        maxY = 14
+        maxY = 11
     )
-    const toolBarZone = new Zone(
-        minX = 21,
-        maxX = 24,
-        minY = 15,
-        maxY = 15
+    // El cartel COLOCANDO / EDITANDO
+    const bannerZone = new Zone(
+        minX = 18,
+        maxX = 21,
+        minY = 12,
+        maxY = 12
     )
     const interactiveZone = new Zone(
-        minX = 21,
-        maxX = 24,
+        minX = 18,
+        maxX = 21,
         minY = 0,
-        maxY = 14
+        maxY = 11
     )
 
     // Panel que se ve en la zona interactiva
     var activePanel = emptyMenu
 
-    // Qué panel le toca a cada herramienta (delete y rotate no muestran nada, ver panelFor)
+    // Qué panel le toca a cada modo: colocando, el de colocar; editando, el de editar
     const panels = new Dictionary()
 
     method initialize() {
-        panels.put(place, placeMenu)
-        panels.put(edit, editMenu)
+        panels.put(placingMode, placeMenu)
+        panels.put(editingMode, editMenu)
     }
 
-    // Lo llama main al arrancar: muestra la barra y el panel de la herramienta elegida
+    // Lo llama startMenu al empezar a jugar: el cartel, los botones de abajo a la izquierda y el panel
+    // del modo
     method setUp() {
-        toolBar.show()
-        self.toolChanged(toolsManager.selectedTool())
+        modeBanner.show()
+        sideButtons.show()
+        self.modeChanged(toolsManager.mode())
     }
 
     // EVENTOS
 
-    // Cambió la herramienta (toolsManager.select)
-    method toolChanged(tool) {
-        toolBar.refresh()
+    // Cambió el modo (toolsManager.changeMode): el cartel y el panel de la derecha
+    method modeChanged(mode) {
+        modeBanner.change(mode)
 
-        const newPanel = self.panelFor(tool)
+        const newPanel = self.panelFor(mode)
         if (newPanel != activePanel) {
             activePanel.hide()
             activePanel = newPanel
@@ -91,15 +94,10 @@ object menuManager {
         placeMenu.updateImages()
     }
 
-    // Pasar de página (teclas Q y E). Sólo el panel de place tiene páginas.
-    method prevPage() {
-        placeMenu.prev()
-        sfx.pageChange()
-    }
-
-    method nextPage() {
-        placeMenu.next()
-        sfx.pageChange()
+    // Q y E: la máquina anterior o la siguiente del menú de colocar (si estaba editando, vuelve a colocar)
+    method chooseMachine(step) {
+        toolsManager.stopEditing()
+        placeMenu.chooseNext(step)
     }
 
     // Click dentro de la zona interactiva (toolsManager.onClick)
@@ -107,19 +105,18 @@ object menuManager {
         activePanel.onClick(pos)
     }
 
-    // Sin herramienta (noTool) o sin panel propio (delete y rotate), la zona queda vacía
-    method panelFor(tool) = panels.getOrElse(tool, { => emptyMenu })
+    method panelFor(mode) = panels.getOrElse(mode, { => emptyMenu })
 
     // Metodo para saber si se clickeo en la zona interactiva
     method inInteractiveMenu(pos) = interactiveZone.contains(pos)
 
     // Getters
     method levelInfoZone() = levelInfoZone
-    method toolBarZone() = toolBarZone
+    method bannerZone() = bannerZone
     method interactiveZone() = interactiveZone
 }
 
-// Panel sin contenido: lo usan las herramientas que todavía no muestran nada
+// Panel sin contenido: el que se ve antes de empezar a jugar
 object emptyMenu {
     method show() {}
     method hide() {}

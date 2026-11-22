@@ -174,7 +174,6 @@ describe "tests de Assembler sin recetas disponibles" {
   test "un catalogo con Assembler y sin recetas se puede mostrar en el menu" {
     machineManager.changeCatalog([{ => new Assembler() }])
     menuManager.setUp()
-    toolsManager.select(place)
     assert.equals("Assembler", machineManager.selectedName())
   }
 }

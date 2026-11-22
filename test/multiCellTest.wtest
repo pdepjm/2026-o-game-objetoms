@@ -72,9 +72,9 @@ describe "tests de colocar y quitar una maquina de 2x2" {
   }
 
   test "no se puede colocar pegada al borde si una parte queda fuera del tablero" {
-    assert.notThat(board.canPlace(game.at(19, 5), assembler))
-    assert.notThat(board.canPlace(game.at(10, 13), assembler))
-    assert.that(board.canPlace(game.at(18, 12), assembler))
+    assert.notThat(board.canPlace(game.at(16, 5), assembler))
+    assert.notThat(board.canPlace(game.at(10, 10), assembler))
+    assert.that(board.canPlace(game.at(15, 9), assembler))
   }
 
   test "quitarla desde la celda de arriba a la derecha libera las 4" {
@@ -105,15 +105,14 @@ describe "tests de la herramienta de colocar" {
   test "colocar sobre una celda ocupada no hace nada ni da error" {
     const belt = new Belt()
     board.push(game.at(10, 5), belt)
-    toolsManager.select(place)
     place.onClick(game.at(10, 5))
     assert.equals(belt, board.machineAt(game.at(10, 5)))
   }
 
   test "colocar una de 2x2 pegada al borde no coloca nada ni da error" {
     machineManager.select({ => new Assembler() })
-    place.onClick(game.at(19, 5))
-    assert.notThat(board.isThereAMachine(game.at(19, 5)))
+    place.onClick(game.at(16, 5))
+    assert.notThat(board.isThereAMachine(game.at(16, 5)))
   }
 
   test "colocar una de 2x2 donde entra ocupa sus 4 celdas" {

@@ -51,27 +51,27 @@ describe "tests de los puntos de entrega" {
     machine.receive(item)
   }
 
-  // Una cinta en (16, 13) que apunta al platito de (16, 14), con la simulacion prendida
+  // Una cinta en (13, 10) que apunta al platito de (13, 11), con la simulacion prendida
   method beltToSlot() {
     const belt = new Belt(direction = up)
-    board.push(game.at(16, 13), belt)
+    board.push(game.at(13, 10), belt)
     simulationEngine.run()
     return belt
   }
 
   test "el board encuentra los platitos fuera del tablero" {
-    assert.that(board.isThereAMachine(game.at(16, 14)))
-    assert.that(board.isThereAMachine(game.at(17, 14)))
-    assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
+    assert.that(board.isThereAMachine(game.at(13, 11)))
+    assert.that(board.isThereAMachine(game.at(14, 11)))
+    assert.equals("DeliverySlot", board.machineAt(game.at(13, 11)).name())
   }
 
   test "fuera del tablero, donde no hay platito, sigue sin haber maquina" {
-    assert.equals(noMachine, board.machineAt(game.at(15, 14)))
+    assert.equals(noMachine, board.machineAt(game.at(12, 11)))
   }
 
   test "una cinta que apunta al platito le entrega a el" {
     const belt = self.beltToSlot()
-    assert.equals(board.machineAt(game.at(16, 14)), belt.nextMachine())
+    assert.equals(board.machineAt(game.at(13, 11)), belt.nextMachine())
   }
 
   test "lo que llega al platito desaparece del juego" {
@@ -81,7 +81,7 @@ describe "tests de los puntos de entrega" {
     self.stepsUntil({ !game.hasVisual(item) })
     assert.notThat(game.hasVisual(item))
     assert.that(belt.heldItems().isEmpty())
-    assert.that(board.machineAt(game.at(16, 14)).heldItems().isEmpty())
+    assert.that(board.machineAt(game.at(13, 11)).heldItems().isEmpty())
   }
 
   test "el platito recibe un item detras de otro" {
@@ -95,12 +95,12 @@ describe "tests de los puntos de entrega" {
     assert.notThat(game.hasVisual(second))
   }
 
-  // El brazo en (17, 13) recibe desde abajo (una cinta en (17, 12)) y entrega recto, hacia arriba
+  // El brazo en (14, 10) recibe desde abajo (una cinta en (14, 9)) y entrega recto, hacia arriba
   test "un brazo cuya salida da al platito tambien le entrega" {
     const feeder = new Belt(direction = up)
     const arm = new AutomaticArm(direction = down)
-    board.push(game.at(17, 12), feeder)
-    board.push(game.at(17, 13), arm)
+    board.push(game.at(14, 9), feeder)
+    board.push(game.at(14, 10), arm)
     simulationEngine.run()
     const item = new Item(kind = cutPotato)
     self.feed(feeder, item)
@@ -110,22 +110,22 @@ describe "tests de los puntos de entrega" {
   }
 
   test "no se puede colocar una maquina en un platito" {
-    assert.notThat(board.canPlace(game.at(16, 14), new Belt()))
-    assert.notThat(board.canPlace(game.at(17, 14), new Belt()))
+    assert.notThat(board.canPlace(game.at(13, 11), new Belt()))
+    assert.notThat(board.canPlace(game.at(14, 11), new Belt()))
   }
 
   test "clear no saca los platitos" {
-    board.push(game.at(16, 13), new Belt(direction = up))
+    board.push(game.at(13, 10), new Belt(direction = up))
     board.clear()
-    assert.equals("DeliverySlot", board.machineAt(game.at(16, 14)).name())
-    assert.equals("DeliverySlot", board.machineAt(game.at(17, 14)).name())
+    assert.equals("DeliverySlot", board.machineAt(game.at(13, 11)).name())
+    assert.equals("DeliverySlot", board.machineAt(game.at(14, 11)).name())
   }
 
   // Por esto los platitos se registran en el simulationEngine: si no, el plato quedaria dibujado
   // y el platito lleno para siempre
   test "apagar la simulacion con un plato viajando al platito lo borra y deja el platito libre" {
     const belt = self.beltToSlot()
-    const slot = board.machineAt(game.at(16, 14))
+    const slot = board.machineAt(game.at(13, 11))
     const item = new Item(kind = cutPotato)
     self.feed(belt, item)
     self.stepsUntil({ !slot.heldItems().isEmpty() })

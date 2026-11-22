@@ -20,6 +20,12 @@
 import wollok.game.*
 object right {
 	method name() = "right"		// Este metodo se utiliza para obtener las imagenes de las maquinas rotadas
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) {}
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) { book.nextPage() }
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven, abajo y derecha avanzan
+	method listStep() = 1
     method next() = down		// Este metodo se utiliza para rotar las maquinas que ya fueron colocadas
 	method previous() = up		// El giro contrario a next
 	method move(position) = position.right(1)		// Es metodo esta pensado para dirigir los ingredientes hacia algun lugar
@@ -30,6 +36,12 @@ object right {
 }
 object down {
 	method name() = "down"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) { menu.move(1) }
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) {}
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven, abajo y derecha avanzan
+	method listStep() = 1
     method next() = left
 	method previous() = right		// El giro contrario a next
 	method move(position) = position.down(1)
@@ -40,6 +52,12 @@ object down {
 }
 object left {
 	method name() = "left"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) {}
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) { book.prevPage() }
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven, abajo y derecha avanzan
+	method listStep() = -1
     method next() = up
 	method previous() = down		// El giro contrario a next
 	method move(position) = position.left(1)
@@ -50,6 +68,12 @@ object left {
 }
 object up {
 	method name() = "up"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) { menu.move(-1) }
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) {}
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven, abajo y derecha avanzan
+	method listStep() = -1
     method next() = right
 	method previous() = left		// El giro contrario a next
 	method move(position) = position.up(1)

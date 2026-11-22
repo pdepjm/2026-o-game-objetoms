@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - las herramientas del jugador: colocar, quitar, editar y rotar.
+// Buffet Albert Einstein - las acciones del jugador: colocar, quitar, editar y rotar.
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -21,18 +21,20 @@ import machines.machineManager.*
 import menu.editMenu.*
 import levels.levelManager.*
 import sound.sfx.*
+import tools.toolsManager.*
 
-// HERRAMIENTAS
-// Por el momento, todas las herramientas deben contener el metodo onClick
+// LAS ACCIONES (antes, herramientas que se elegían con una tecla)
+// place: clic en una celda vacía. rotate, edit y delete: C, X y V sobre la máquina elegida
+// (ver toolsManager). Todas entienden onClick(celda); el tutorial pregunta por ellas (allowsTool).
 
 object place {
 	method name() = "place"
-	// La imagen de la barra de herramientas cuando es la elegida
-	method barImage() = "tools/place_selected.png"
 	// ¿Cambia el circuito? Las que no (edit) se pueden usar en cualquier celda aunque un tutorial no las pida
 	method canUseAnywhere() = false
 	// ¿Le sirve esta máquina a un paso que sólo deja construir las de esa lista? (vacía: cualquiera)
 	method allowsMachine(allowedMachines) = allowedMachines.isEmpty() || allowedMachines.any({ factory => machineManager.selects(factory) })
+	// Lo que dice el cocinero si el paso del tutorial no la deja usar ahí (ver Tutorial.complaintFor)
+	method complaintIn(step, pos) = step.complaintFor(self, pos)
     // Si no entra (celda ocupada, parte fuera del tablero o fuera de las zonas donde el nivel deja construir),
     // no coloca nada
     method onClick(pos) {
@@ -48,8 +50,7 @@ object place {
 }
 object delete {
 	method name() = "delete"
-	// La imagen de la barra de herramientas cuando es la elegida
-	method barImage() = "tools/delete_selected.png"
+	method complaintIn(step, pos) = step.complaintFor(self, pos)
 	method canUseAnywhere() = false
 	method allowsMachine(allowedMachines) = true
 	// Las máquinas bloqueadas (las fijas de un nivel) no se pueden borrar.
@@ -67,18 +68,21 @@ object delete {
 }
 object edit {
 	method name() = "edit"
-	// La imagen de la barra de herramientas cuando es la elegida
-	method barImage() = "tools/edit_selected.png"
+	method complaintIn(step, pos) = step.complaintFor(self, pos)
 	method canUseAnywhere() = true
 	method allowsMachine(allowedMachines) = true
+	// Abre el panel de editar de esa máquina (EDITANDO). Si no tiene nada para ajustar, no hace nada.
 	method onClick(pos) {
-		editMenu.selectMachine(pos)
+		if (board.machineAt(pos).settings().isEmpty()) sfx.invalid()
+		else {
+			editMenu.selectMachine(pos)
+			toolsManager.startEditing()
+		}
 	}
 }
 object rotate {
 	method name() = "rotate"
-	// La imagen de la barra de herramientas cuando es la elegida
-	method barImage() = "tools/rotate_selected.png"
+	method complaintIn(step, pos) = step.complaintFor(self, pos)
 	method canUseAnywhere() = false
 	method allowsMachine(allowedMachines) = true
 
@@ -87,15 +91,8 @@ object rotate {
 			board.machineAt(pos).rotate()
 			levelManager.machineRotated(board.machineAt(pos))
 			sfx.rotate()
+		} else {
+			sfx.invalid()
 		}
 	}
-}
-
-// "No hay herramienta": la que está elegida al arrancar y al deseleccionar. No hace nada al clickear.
-object noTool {
-	method name() = "none"
-	method barImage() = "tools/default.png"
-	method canUseAnywhere() = false
-	method allowsMachine(allowedMachines) = true
-	method onClick(pos) {}
 }

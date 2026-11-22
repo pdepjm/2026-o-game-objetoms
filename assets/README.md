@@ -15,10 +15,9 @@ Guía de cómo nombrar y ubicar las imágenes. El código arma las rutas a parti
 
 ```
 assets/
-├── background.gif / background.png
-├── overlay.png
+├── background.gif
 ├── no_texture.png
-├── pepita.png
+├── overlay_cell.png
 ├── food/
 │   ├── Ingredients/
 │   │   └── <ingredients>/
@@ -37,15 +36,12 @@ assets/
 │   ├── font/                       (una imagen por letra, para escribir sin contorno; las genera makeFont.py)
 │   ├── info/                       (los fondos de la info del nivel: cinta, tarjetas, barras y globos; los genera makeLevelInfo.py)
 │   ├── key_<nombre>.png            (200x25: una tecla con su texto, como las del fondo)
-│   ├── menu_controls_base.png      (la pantalla de controles sin los controles)
 │   ├── menu_controls.png           (la pantalla de controles)
-│   └── makeKeyHints.py             (genera las key_*.png y menu_controls.png)
-├── recipes_book/
-│   ├── cover.png                   (800x500: la tapa)
-│   └── recipe_<plato>.png          (800x500: una página por plato)
-└── tools/
-    ├── default.png
-    └── <tool>_selected.png
+│   ├── makeKeyHints.py             (genera las key_*.png y redibuja el panel de menu_controls.png)
+│   └── makeBoardUi.py              (genera el menú de la máquina, el cartel del modo y los botones)
+└── recipes_book/
+    ├── cover.png                   (800x500: la tapa)
+    └── recipe_<plato>.png          (800x500: una página por plato)
 ```
 
 > [!NOTE]
@@ -53,7 +49,7 @@ assets/
 
 ## Tamaños
 
-Cada celda del juego mide **50x50 px** (`game.cellSize(50)`) y el tablero es de 25x16 celdas.
+Cada celda del juego mide **50x50 px** (`game.cellSize(50)`) y la pantalla es de 22x13 celdas (1100x650), con un tablero de 12x10.
 
 | Imagen | Formato | Tamaño | Qué ocupa |
 |---|---|---|---|
@@ -61,9 +57,9 @@ Cada celda del juego mide **50x50 px** (`game.cellSize(50)`) y el tablero es de 
 | Máquina en el tablero, andando | `.gif` o carpeta de frames `.png` | 50x50 | 1 celda |
 | Máquina en el menú | `_menu.png` | 100x100 | 2x2 celdas |
 | Ingrediente o plato | `.png` | 50x50, con el dibujo al 65% y centrado ([ver `food/`](#tamaño-del-dibujo)) | 1 celda |
-| Barra de herramientas | `.png` | 200x50 | 4x1 celdas |
+| Cartel COLOCANDO / EDITANDO | `.png` | 200x50 | 4x1 celdas |
 | Overlay | `.png` | 200x200 | 4x4 celdas |
-| Fondo | `.gif` / `.png` | 1250x800 | todo el juego |
+| Fondo | `.gif` / `.png` | 1100x650 | todo el juego (se adaptan con `makeSmallScreen.py`) |
 | `no_texture.png` | `.png` | 50x50 | imagen de reemplazo |
 
 ## `machines/`
@@ -79,7 +75,7 @@ Cada máquina tiene su propia carpeta dentro de `machines/`, y el **nombre de la
 | `Fryer` | `machines/Fryer/` |
 | `Dispenser` | `machines/Dispenser/` |
 | `AutomaticArm` | `machines/AutomaticArm/` (caso especial, ver abajo) |
-| `DeliverySlot` | Ninguna: no se dibuja, porque los platitos ya están en `background.png` |
+| `DeliverySlot` | Ninguna: no se dibuja, porque los platitos ya están en `background.gif` |
 | `SmartRoboticArm` | `machines/SmartRoboticArm/` sólo para el menú (`down_menu.png`). En el tablero usa las de `machines/AutomaticArm/` (`assetFolder()`): sus `_game.png` son de 50x50 y faltan sus animaciones, así que todavía no se usan |
 
 Hay **dos tipos de máquinas**, según cómo se animan. Todas tienen, para cada una de las 4 direcciones (`up`, `down`, `left`, `right`):
@@ -142,7 +138,7 @@ python3 machines/assetRotate.py machines/Assembler/up_assemble.gif    # crea rig
 python3 machines/gifToFrames.py machines/Assembler/up_assemble.gif    # convierte los 4
 ```
 
-Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assemble/0.png`, `1.png`, ...). `gifToFrames.py` **no rota**: si falta alguna dirección, avisa y la saltea. El juego muestra un frame por paso de simulación (100 ms a x1), así que el script remuestrea el GIF a ese intervalo para que la animación dure lo mismo. Si se cambia un GIF, hay que volver a correrlo (y actualizar la cantidad de frames en el código si cambió).
+Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assemble/0.png`, `1.png`, ...). **El GIF no se deja en `assets/`**: el juego usa sólo los frames, y cada archivo de más es una imagen más que el navegador carga al arrancar (ver más abajo). `gifToFrames.py` **no rota**: si falta alguna dirección, avisa y la saltea. El juego muestra un frame por paso de simulación (100 ms a x1), así que el script remuestrea el GIF a ese intervalo para que la animación dure lo mismo. Si se cambia un GIF, hay que volver a correrlo (y actualizar la cantidad de frames en el código si cambió).
 
 | Opción | Qué hace |
 |---|---|
@@ -156,19 +152,13 @@ Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assem
 1. Crear la carpeta `machines/<MachineName>/` con `_menu.png` y `_game.png` para cada dirección, y su animación: `.gif` o carpetas de frames, según el tipo.
 2. Crear la clase y agregarla al catálogo siguiendo [`src/machines/README.md`](../src/machines/README.md#agregar-una-máquina-nueva), que tiene el contrato de qué métodos sobrescribir.
 
-## `tools/`
+## La insignia del dispenser
 
-La barra de herramientas es **una sola imagen** de 200x50 que se cambia según la herramienta elegida. Hacen falta:
+El dispenser muestra en una esquina de arriba el ingrediente que larga: un círculo crema con el ingrediente centrado, **una sola imagen de 30x30 por ingrediente**. Las genera `machines/Dispenser/makeBadges.py` a partir de las imágenes de `food/Ingredients/` (recorta lo dibujado y lo centra), con la misma ruta adentro de `machines/Dispenser/badge/`. Si se agrega un ingrediente, hay que volver a correrlo.
 
-| Archivo | Cuándo se ve |
-|---|---|
-| `default.png` | no hay ninguna herramienta elegida (al iniciar el juego) |
-| `place_selected.png` | herramienta de colocar |
-| `edit_selected.png` | herramienta de edición |
-| `rotate_selected.png` | herramienta de rotar |
-| `delete_selected.png` | herramienta de borrar |
+## `menu/` (la interfaz sin herramientas)
 
-El nombre sale del `name()` de cada herramienta (ver `src/tools/userTools.wlk`): `<tool>_selected.png`. Si se agrega una herramienta nueva, hace falta su `<tool>_selected.png`.
+`assets/menu/makeBoardUi.py` genera las imágenes de la interfaz: el menú de la máquina elegida (`actions_*.png`, 150x50: ROTAR · EDITAR · BORRAR, una celda cada uno, con lo que no se puede apagado), el cartel COLOCANDO / EDITANDO (`mode_*.png`, 200x50), los botones de abajo a la izquierda (`side_buttons.png`, 200x200, y `speed_selected.png`), los botones de dirección (`dir_pad.png`, `dir_selected.png`), la marca de la portada (`cover_focus.png`) y del panel de editar (`option_focus.png`) y los botones del recetario (`book_*.png`). `assets/makeCover.py` borra las teclas de las opciones de `startScreen.png`.
 
 ## `food/`
 
@@ -241,9 +231,23 @@ El script necesita Edge, Chrome o Chromium instalado: lo usa sin abrir ventanas 
 
 | Archivo | Para qué sirve |
 |---|---|
-| `background.gif` | fondo del juego (se carga con `game.boardGround`). `background.png` es la versión sin animar |
-| `overlay.png` | marco que marca la máquina elegida en el menú |
-| `blocked_cell.png` | 50x50, semitransparente con rayas: la marca de una celda donde el nivel no deja construir. Sólo la usa `levels/makeBlockedOverlays.py` |
-| `levels/blocked_<nivel>.png` | 1250x800, transparente: la capa de celdas bloqueadas de cada nivel, con la marca en cada celda donde no se puede construir. Se genera con `levels/makeBlockedOverlays.py` (herramienta auxiliar, no forma parte del juego) |
+| `background.gif` | fondo del juego (se carga con `game.boardGround`) |
+| `levels/blocked_<nivel>.png` | 1100x650, transparente: la capa de celdas bloqueadas de cada nivel, con la marca en cada celda donde no se puede construir. Se genera con `levels/makeBlockedOverlays.py` (herramienta auxiliar, no forma parte del juego) |
 | `no_texture.png` | imagen de reemplazo cuando todavía no hay una definitiva |
-| `pepita.png` | imagen provisoria que usaban los ingredientes (ya no la usa el código) |
+
+## Cuántas imágenes hay en `assets/`
+
+Al arrancar, Wollok Game le pide al navegador **todas** las imágenes y sonidos de `assets/` a la vez (y las
+vuelve a pedir cada vez, sin caché). Si son demasiadas, el navegador corta las últimas con
+`ERR_INSUFFICIENT_RESOURCES` y en su lugar se ve el logo de Wollok, o nada. Como se piden en orden
+alfabético, las primeras en fallar son `menu/`, `recipes_book/`, `startScreen.png` y `tutorial/`:
+el juego arranca sin portada ni tutorial. Con unas 1470 ya fallaba; hoy son unas 950.
+
+Por eso:
+
+- **En `assets/` va sólo lo que usa el juego.** Capturas, GIF de origen, bocetos y versiones viejas van
+  afuera (por ejemplo, en `screenshots/`). Los scripts que necesitan una imagen de origen que ya no está
+  (`makeSmallScreen.py`, `menu/makePlaceSlots.py`, `levels/makeBlockedOverlays.py`) la sacan de git.
+- **Las animaciones cuadro por cuadro tienen uno de cada dos frames** (los brazos, el ensamblador y la
+  cortadora). `FrameAnimation` recibe cuántos pasos dura (`steps`) y repite cada frame, así duran lo
+  mismo que con todos.

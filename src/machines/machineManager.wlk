@@ -69,6 +69,12 @@ object machineManager{
 	// Máquinas que se muestran en una página del menú (4 por página)
 	method machinesOfPage(page) = machines.drop(page * 4).take(4)
 
+	// Las máquinas que se pueden colocar en el nivel, en el orden del menú
+	method catalog() = machines
+
+	// La página del menú en la que está esa máquina (fábrica)
+	method pageOf(factory) = (0 .. machines.size() - 1).find({ i => machines.get(i) == factory }).div(4)
+
 	// Cuántas páginas ocupa el catálogo en el menú
 	method pageCount() = (machines.size() / 4).roundUp()
 

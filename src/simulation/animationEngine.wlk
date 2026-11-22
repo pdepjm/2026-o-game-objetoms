@@ -205,11 +205,20 @@ class FrameAnimation {
 	const path
 	// carpeta de los frames, por ejemplo "machines/AutomaticArm/down_to_up_catch"
 	const frameCount // cantidad de PNG que hay en la carpeta
-	const property frames = (0 .. (frameCount - 1)).map(
-		{ i => ((path + "/") + i) + ".png" }
-	)
-	
-	method size() = frameCount
+	// Cuántos pasos dura (0, por defecto: uno por PNG). Con más pasos que PNG, cada uno se ve más de un
+	// paso: así una animación con la mitad de los cuadros dura lo mismo (el navegador carga todas las
+	// imágenes de assets/ al arrancar, y con demasiadas no llega a cargarlas: ver assets/README.md)
+	const steps = 0
+	var frames = []
+
+	method size() = if (steps > 0) steps else frameCount
+
+	// Las rutas se arman la primera vez que se piden, no en cada paso
+	method frames() {
+		if (frames.isEmpty())
+			frames = (0 .. (self.size() - 1)).map({ i => path + "/" + (i * frameCount).div(self.size()) + ".png" })
+		return frames
+	}
 }
 
 // Una animación que dura exactamente `steps` pasos, armada con una lista de imágenes.

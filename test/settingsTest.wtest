@@ -138,7 +138,7 @@ describe "tests de los settings de las maquinas" {
   }
 }
 
-// El panel de la herramienta edit. La zona interactiva ocupa x 21 a 24; arriba de todo (y 14)
+// El panel de la herramienta edit. La zona interactiva ocupa x 18 a 21; arriba de todo (y 11)
 // va el título de la categoría, abajo el nombre del setting y después sus opciones, de a 4 por fila.
 describe "tests del panel de edit" {
 
@@ -150,7 +150,12 @@ describe "tests del panel de edit" {
     board.push(game.at(8, 8), dispenser)
     4.times({ _ => if (arm.inputSide() != left) arm.rotate() })
     board.push(game.at(8, 4), arm)
-    toolsManager.select(edit)
+  }
+
+  // Elige la máquina de esa celda con un clic y aprieta X: se abre su panel
+  method editAt(x, y) {
+    toolsManager.onClick(game.at(x, y))
+    toolsManager.editKey()
   }
 
   // un click en una celda de la zona interactiva
@@ -158,105 +163,106 @@ describe "tests del panel de edit" {
     toolsManager.onClick(game.at(x, y))
   }
 
-  method panelVisuals() = (21..24).flatMap({ x => (0..14).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
+  method panelVisuals() = (18..21).flatMap({ x => (0..11).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
 
   method markers() = self.panelVisuals().filter({ visual => visual.className().endsWith("OptionMarker") })
 
   method texts() = self.panelVisuals().filter({ visual => visual.className().endsWith("MenuText") })
 
-  test "sin maquina elegida no muestra nada" {
-    assert.that(game.allVisuals().filter({ visual => menuManager.inInteractiveMenu(visual.position()) }).isEmpty())
+  test "sin editar ninguna maquina, el panel de edit no muestra nada" {
+    assert.notThat(toolsManager.isEditing())
+    assert.equals(0, self.markers().size())
   }
 
   test "elegir el dispenser muestra los titulos, los nombres y una marca por setting" {
-    toolsManager.onClick(game.at(8, 8))
+    self.editAt(8, 8)
     assert.equals(2, self.markers().size())
-    assert.equals("PRODUCCION", self.texts().find({ t => t.position().y() == 14 }).text())
-    assert.equals("Ingrediente", self.texts().find({ t => t.position().y() == 13 }).text())
-    // 13 ingredientes, de a 4 por fila: ocupan las filas 12 a 9
-    assert.equals("Velocidad", self.texts().find({ t => t.position().y() == 8 }).text())
+    assert.equals("PRODUCCION", self.texts().find({ t => t.position().y() == 11 }).text())
+    assert.equals("Ingrediente", self.texts().find({ t => t.position().y() == 10 }).text())
+    // 13 ingredientes, de a 4 por fila: ocupan las filas 9 a 6
+    assert.equals("Velocidad", self.texts().find({ t => t.position().y() == 5 }).text())
   }
 
   test "la categoria se muestra una sola vez aunque tenga dos settings" {
-    toolsManager.onClick(game.at(8, 8))
+    self.editAt(8, 8)
     const titles = self.texts().filter({ text => text.text() == "PRODUCCION" })
     assert.equals(1, titles.size())
   }
 
   test "clickear un ingrediente se lo aplica al dispenser" {
-    toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(21, 12)
+    self.editAt(8, 8)
+    self.clickPanel(18, 9)
     assert.equals(lettuce, dispenser.product())
   }
 
   test "el ingrediente que no entra en la primera fila va abajo" {
-    toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(21, 11)
+    self.editAt(8, 8)
+    self.clickPanel(18, 8)
     assert.equals(tomato, dispenser.product())
   }
 
   test "clickear una velocidad se la aplica al dispenser" {
-    toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(23, 7)
+    self.editAt(8, 8)
+    self.clickPanel(20, 4)
     assert.equals(2, dispenser.settings().last().value())
   }
 
   test "la marca se mueve a la opcion clickeada y sigue habiendo una por setting" {
-    toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(22, 12)
+    self.editAt(8, 8)
+    self.clickPanel(19, 9)
     assert.equals(2, self.markers().size())
-    assert.that(self.markers().any({ marker => marker.position() == new CellPosition(x = 22, y = 12) }))
+    assert.that(self.markers().any({ marker => marker.position() == new CellPosition(x = 19, y = 9) }))
   }
 
   test "clickear en un lugar sin opcion no cambia nada" {
-    toolsManager.onClick(game.at(8, 8))
-    self.clickPanel(24, 12)
-    self.clickPanel(22, 1)
+    self.editAt(8, 8)
+    self.clickPanel(21, 9)
+    self.clickPanel(19, 0)
     assert.equals(potato, dispenser.product())
   }
 
   test "el brazo muestra su unico setting, de movimiento" {
-    toolsManager.onClick(game.at(8, 4))
-    assert.equals("MOVIMIENTO", self.texts().find({ t => t.position().y() == 14 }).text())
+    self.editAt(8, 4)
+    assert.equals("MOVIMIENTO", self.texts().find({ t => t.position().y() == 11 }).text())
     assert.equals(1, self.markers().size())
   }
 
   test "clickear izquierda en el brazo cambia hacia donde entrega" {
-    toolsManager.onClick(game.at(8, 4))
-    self.clickPanel(22, 12)
+    self.editAt(8, 4)
+    self.clickPanel(19, 9)
     assert.equals(up, arm.outputSide())
   }
 
   test "elegir otra maquina cambia lo que se muestra" {
-    toolsManager.onClick(game.at(8, 8))
-    toolsManager.onClick(game.at(8, 4))
+    self.editAt(8, 8)
+    self.editAt(8, 4)
     assert.equals(1, self.markers().size())
   }
 
   test "clickear una celda vacia del tablero saca lo que se mostraba" {
-    toolsManager.onClick(game.at(8, 8))
+    self.editAt(8, 8)
     toolsManager.onClick(game.at(15, 3))
     assert.equals(0, self.markers().size())
   }
 
-  // El brazo inteligente dibuja una columna por salida: Izq. (x 21), Recto (x 22) y Der. (x 23)
+  // El brazo inteligente dibuja una columna por salida: Izq. (x 18), Recto (x 19) y Der. (x 20)
   test "el brazo inteligente muestra una columna de ingredientes por salida" {
     const smart = new SmartRoboticArm()
     board.push(game.at(14, 8), smart)
-    toolsManager.onClick(game.at(14, 8))
-    const headers = self.texts().filter({ text => text.position().y() == 13 }).map({ text => text.text() })
+    self.editAt(14, 8)
+    const headers = self.texts().filter({ text => text.position().y() == 10 }).map({ text => text.text() })
     assert.equals(3, headers.size())
   }
 
   test "clickear un ingrediente de la columna lo prende en esa salida" {
     const smart = new SmartRoboticArm()
     board.push(game.at(14, 8), smart)
-    toolsManager.onClick(game.at(14, 8))
+    self.editAt(14, 8)
     const before = self.markers().size()
-    self.clickPanel(21, 12)
+    self.clickPanel(18, 9)
     assert.equals(1, smart.settings().find({ setting => setting.name() == "Izq." }).value().size())
     assert.equals(before + 1, self.markers().size())
-    self.clickPanel(21, 12)
+    self.clickPanel(18, 9)
     assert.equals(before, self.markers().size())
   }
 }

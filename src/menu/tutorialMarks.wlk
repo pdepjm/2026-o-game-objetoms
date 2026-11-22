@@ -24,24 +24,59 @@ import board.*
 // - un recuadro que late en las celdas donde el jugador tiene que hacer algo (colocar, rotar, editar)
 // - una flecha que rebota arriba de la máquina que explica el mensaje ("las papas salen de acá")
 // Los dibuja levelManager con cada aviso al tutorial. Sin tutorial no hay ninguno.
+// Si el jugador hace algo que el paso no deja, el recuadro se pone rojo un momento (flashError).
 object tutorialMarks {
 	var marks = []
+	const errorMillis = 600
+	// Mientras se cocina no se ven (ver levelManager._cookingChanged): se siguen anotando, y vuelven a
+	// aparecer al apagar la simulación
+	var hidden = false
 
 	method marks() = marks
 
 	method show(targetCells, pointedCells) {
-		marks.forEach({ mark => game.removeVisual(mark) })
-		marks = targetCells.map({ cell => new TutorialMark(position = new CellPosition(x = cell.x(), y = cell.y()), image = "tutorial/place.gif") })
-			+ pointedCells.map({ cell => new TutorialMark(position = self.arrowPosition(cell), image = "tutorial/look.gif") })
-		marks.forEach({ mark => game.addVisual(mark) })
+		self.removeVisuals()
+		marks = targetCells.map({ cell => new TutorialMark(position = new CellPosition(x = cell.x(), y = cell.y()), normalImage = "tutorial/place.gif", errorImage = "tutorial/place_error.gif") })
+			+ pointedCells.map({ cell => new TutorialMark(position = self.arrowPosition(cell), normalImage = "tutorial/look.gif", errorImage = "tutorial/look.gif") })
+		if (!hidden) marks.forEach({ mark => game.addVisual(mark) })
+	}
+
+	method hide() {
+		hidden = true
+		self.removeVisuals()
+	}
+
+	method reveal() {
+		if (hidden) {
+			hidden = false
+			marks.forEach({ mark => game.addVisual(mark) })
+		}
+	}
+
+	method removeVisuals() {
+		marks.forEach({ mark => if (game.hasVisual(mark)) game.removeVisual(mark) })
 	}
 
 	// Arriba de la máquina de esa celda, centrada sobre ella: con una de 2x2, arriba de su fila de
 	// arriba y entre sus dos columnas. Si no hay máquina, arriba de la celda.
 	method arrowPosition(cell) = board.machineAt(cell).arrowPosition(cell)
+
+	// Los recuadros que se ven se ponen rojos y, un momento después, vuelven a la normalidad
+	// (si para entonces ya son otros, éstos ya no se ven y no pasa nada)
+	method flashError() {
+		const flashed = marks
+		flashed.forEach({ mark => mark.showError() })
+		game.schedule(errorMillis, { flashed.forEach({ mark => mark.showNormal() }) })
+	}
 }
 
 class TutorialMark {
 	const property position
-	const property image
+	const normalImage
+	const errorImage
+	var showingError = false
+
+	method image() = if (showingError) errorImage else normalImage
+	method showError() { showingError = true }
+	method showNormal() { showingError = false }
 }

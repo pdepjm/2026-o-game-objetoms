@@ -56,7 +56,7 @@ object freePlay inherits Level(
 // sus pasos: para mover el armado, alcanza con cambiarlas acá.
 // La línea va por la fila `row` y dobla hacia arriba en la columna del primer platito.
 object friesTutorialCells {
-	const property row = 7
+	const property row = 5
 
 	method at(column) = new CellPosition(x = column, y = row)
 
@@ -146,7 +146,8 @@ object tutorialLevel inherits Level(
                 pointsAt = [friesTutorialCells.firstBelt()]
             ),
             new MachineStep(
-                lines = ["Poné la", "cortadora en el", "recuadro: corta", "las papas que", "le trae la", "cinta"],
+                lines = ["Poné la", "cortadora: corta", "las papas que", "le trae la cinta"],
+                keys = ["place"],
                 cells = [friesTutorialCells.cutter()],
                 allowedMachines = [machineManager.cuttingMachineFactory()],
                 condition = { machine => machine.direction() == right }
@@ -157,7 +158,8 @@ object tutorialLevel inherits Level(
                 pointsAt = [friesTutorialCells.fixedArm()]
             ),
             new MachineStep(
-                lines = ["Poné la", "freidora en el", "recuadro, donde", "el brazo deja", "las papas"],
+                lines = ["Poné la", "freidora donde", "el brazo deja", "las papas"],
+                keys = ["place"],
                 cells = [friesTutorialCells.fryer()],
                 allowedMachines = [machineManager.fryerFactory()]
             ),
@@ -168,18 +170,19 @@ object tutorialLevel inherits Level(
             ),
             new MachineStep(
                 lines = ["Poné el brazo", "inteligente en", "el recuadro"],
+                keys = ["place"],
                 cells = [friesTutorialCells.smartArm()],
                 allowedMachines = [machineManager.smartRoboticArmFactory()]
             ),
             new MachineStep(
-                lines = ["Un brazo agarra", "de donde mira.", "Rotalo hasta", "que mire a la", "freidora"],
+                lines = ["Un brazo agarra", "de donde mira.", "Rotalo hasta que", "mire la freidora"],
                 keys = ["rotate"],
                 cells = [friesTutorialCells.smartArm()],
                 condition = { machine => machine.inputSide() == left }
             ),
             new MachineStep(
-                lines = ["Tocá el brazo y", "elegí la papa", "frita en Recto:", "sólo deja salir", "lo que elegís"],
-                keys = ["edit"],
+                lines = ["Elegí la papa", "frita en Recto:", "el brazo sólo", "deja salir eso."],
+                keys = ["edit", "choose"],
                 cells = [friesTutorialCells.smartArm()],
                 condition = { machine => machine.takes(friedPotato) }
             ),
@@ -203,8 +206,8 @@ object tutorialLevel inherits Level(
 // `bunRow` (dispenser, cinta, cortadora, cintas que suben al ensamblador). El plato sale por arriba
 // del ensamblador y va por la fila de arriba del tablero hasta el platito.
 object hotDogTutorialCells {
-	const property sausageRow = 10
-	const property bunRow = 8
+	const property sausageRow = 7
+	const property bunRow = 5
 
 	method sausageDispenser() = new CellPosition(x = 5, y = sausageRow)
 	method sausageBelt() = new CellPosition(x = 6, y = sausageRow)
@@ -235,8 +238,8 @@ object hotDogTutorialCells {
 // elegirle la receta) y con qué cosas trabaja un brazo. No se parece al nivel 1 (cheeseburgers y
 // papas fritas): otro plato, el ensamblador lo pone el jugador y el brazo es el común.
 //
-//   fila 10:  Dispenser salchichas  cinta  HORNO      BRAZO  ┌ENSAMBLADOR┐ → cintas hasta el platito
-//   fila 8:   Dispenser (a panes)   cinta  cortadora  cinta  cinta que sube al ensamblador
+//   fila 7:   Dispenser salchichas  cinta  HORNO      BRAZO  ┌ENSAMBLADOR┐ → cintas hasta el platito
+//   fila 5:   Dispenser (a panes)   cinta  cortadora  cinta  cinta que sube al ensamblador
 //
 // En mayúsculas lo que pone el jugador. El Dispenser de abajo arranca largando salchichas: hay
 // que editarlo para que largue panes.
@@ -309,8 +312,8 @@ object hotDogTutorialLevel inherits Level(
                 pointsAt = [hotDogTutorialCells.bunDispenser()]
             ),
             new MachineStep(
-                lines = ["Tocá el", "dispenser del", "recuadro y", "elegí el pan"],
-                keys = ["edit"],
+                lines = ["Hacé que el", "dispenser del", "recuadro largue", "pan."],
+                keys = ["edit", "choose"],
                 cells = [hotDogTutorialCells.bunDispenser()],
                 condition = { machine => machine.product() == bun }
             ),
@@ -332,15 +335,15 @@ object hotDogTutorialLevel inherits Level(
                 pointsAt = [hotDogTutorialCells.bunBeltUp()]
             ),
             new MachineStep(
-                lines = ["Que apunte", "arriba, y poné", "el ensamblador", "en el recuadro"],
-                keys = ["up"],
+                lines = ["Poné el", "ensamblador", "apuntando arriba"],
+                keys = ["place", "up"],
                 cells = hotDogTutorialCells.assemblerCells(),
                 allowedMachines = [machineManager.assemblerFactory()],
                 condition = { machine => machine.direction() == up }
             ),
             new MachineStep(
-                lines = ["Arma la receta", "elegida. Tocá", "el ensamblador", "y elegí el", "pancho"],
-                keys = ["edit"],
+                lines = ["Arma la receta", "elegida: elegí", "el pancho."],
+                keys = ["edit", "choose"],
                 cells = hotDogTutorialCells.assemblerCells(),
                 condition = { machine => machine.selectedRecipe() == hotDogRecipe }
             ),
@@ -355,8 +358,8 @@ object hotDogTutorialLevel inherits Level(
                 pointsAt = [hotDogTutorialCells.assembler()]
             ),
             new MachineStep(
-                lines = ["Que mire a la", "izquierda, y", "poné el brazo", "entre el horno", "y el ensamblador"],
-                keys = ["left"],
+                lines = ["Poné el brazo", "entre el horno", "y el ensamblador"],
+                keys = ["place", "left"],
                 cells = [hotDogTutorialCells.arm()],
                 allowedMachines = [machineManager.automaticArmFactory()],
                 condition = { machine => machine.inputSide() == left }
@@ -379,14 +382,14 @@ object hotDogTutorialLevel inherits Level(
 // Las celdas del tutorial de energía (ver friesTutorialCells). Una sola línea por la fila de arriba del
 // tablero: dispenser, cinta, cortadora y cintas fijas hasta el platito. Las dos del medio las pone el jugador.
 object energyTutorialCells {
-	const property row = 13
+	const property row = 10
 
 	method at(column) = new CellPosition(x = column, y = row)
 
-	method dispenser() = self.at(11)
-	method belt() = self.at(12)          // la pone el jugador
-	method cutter() = self.at(13)        // la pone el jugador
-	method fixedBelts() = [self.at(14), self.at(15)]
+	method dispenser() = self.at(8)
+	method belt() = self.at(9)           // la pone el jugador
+	method cutter() = self.at(10)        // la pone el jugador
+	method fixedBelts() = [self.at(11), self.at(12)]
 	method lastBelt() = self.at(deliveryPoints.slots().first().cell().x())   // sube al platito
 
 	method plate() = deliveryPoints.slots().first().cell()
@@ -396,7 +399,7 @@ object energyTutorialCells {
 // si se pasa, no se puede prender la simulación. Con todo armado a velocidad normal se gasta 10 y el límite
 // es 9, así que hay que bajarle la velocidad al dispenser (x0.5 gasta 1 menos). Las máquinas fijas también gastan.
 //
-//   fila 13:  Dispenser  cinta    cortadora  cinta  cinta  cinta que sube al platito
+//   fila 10:  Dispenser  cinta    cortadora  cinta  cinta  cinta que sube al platito
 //             fijo       JUGADOR  JUGADOR    fija   fija   fija
 object energyTutorialLevel inherits Level(
 	name = "Tutorial 3",
@@ -449,13 +452,14 @@ object energyTutorialLevel inherits Level(
             ),
             new MachineStep(
                 lines = ["Ahora la", "cortadora: gasta", "más que la", "cinta"],
+                keys = ["place"],
                 cells = [energyTutorialCells.cutter()],
                 allowedMachines = [machineManager.cuttingMachineFactory()],
                 condition = { machine => machine.direction() == right }
             ),
             new MachineStep(
-                lines = ["¡Te pasaste del", "límite! Tocá el", "dispenser y", "bajá su", "velocidad a x0.5"],
-                keys = ["edit"],
+                lines = ["¡Te pasaste del", "límite! Bajá la", "velocidad del", "dispenser: x0.5"],
+                keys = ["edit", "choose"],
                 cells = [energyTutorialCells.dispenser()],
                 condition = { machine => machine.speed() == 0.5 }
             ),
@@ -494,11 +498,11 @@ object level1 inherits Level(
     ],
     fixedMachines = [
         new Placement(
-            position = new CellPosition(x=5, y=10),
+            position = new CellPosition(x=5, y=8),
             factory = {=> new Dispenser(direction = right, availableKinds = [lettuce])}
         ),
         new Placement(
-            position = new CellPosition(x=5, y=4),
+            position = new CellPosition(x=5, y=3),
             factory = {=> new Dispenser(direction = right, availableKinds = [tomato])}
         )
     ]
@@ -525,11 +529,11 @@ object level2 inherits Level(
     ],
     fixedMachines = [
         new Placement(
-            position = new CellPosition(x=5, y=9),
+            position = new CellPosition(x=5, y=8),
             factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
         ),
         new Placement(
-            position = new CellPosition(x=5, y=8),
+            position = new CellPosition(x=5, y=7),
             factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
         ),
         new Placement(
@@ -546,9 +550,9 @@ object level2 inherits Level(
 // NIVEL 3: desayunos y pizzas, a la vez. Dos ensambladores, cada uno a su platito. El desayuno lleva un
 // huevo frito (la freidora sólo trabaja con brazos: uno que se lo lleve y uno inteligente que espere a que
 // se fría) y panceta cocinada; la pizza, masa cocinada, queso cortado una sola vez y salame cortado.
-// Cinco Dispensers que ofrecen todo. El tablero está limitado: arriba se arma la pizza (filas 7 a 10,
-// con un pasillo de tres columnas hasta su platito) y abajo el desayuno (filas 2 a 5, y una sola columna
-// hasta el suyo). La fila 6 las separa, y la esquina de arriba a la izquierda no se usa.
+// Cinco Dispensers que ofrecen todo. El tablero está limitado: arriba se arma la pizza (filas 7 a 9, y las
+// columnas 12 y 13 hasta la fila 10, para llegar a su platito) y abajo el desayuno (filas 2 a 4, y una sola
+// columna, la 14, hasta el suyo). Las filas 5 y 6 las separan, y la fila de arriba a la izquierda no se usa.
 object level3 inherits Level(
 	name = "Nivel 3",
 	availableMachines = [
@@ -563,12 +567,10 @@ object level3 inherits Level(
     availableRecipes = [toastRecipe, pizzaPepperoniRecipe, breakfastRecipe],
     blockedLayer = new BlockedLayer(image = "levels/blocked_level3.png"),
     buildZones = [
-        new Zone(minX = 6, maxX = 12, minY = 7, maxY = 10),
-        new Zone(minX = 13, maxX = 15, minY = 7, maxY = 12),
-        new Zone(minX = 13, maxX = 16, minY = 13, maxY = 13),
-        new Zone(minX = 6, maxX = 16, minY = 2, maxY = 5),
-        new Zone(minX = 17, maxX = 18, minY = 2, maxY = 5),
-        new Zone(minX = 17, maxX = 17, minY = 6, maxY = 13)
+        new Zone(minX = 6, maxX = 11, minY = 7, maxY = 9),
+        new Zone(minX = 12, maxX = 13, minY = 7, maxY = 10),
+        new Zone(minX = 6, maxX = 15, minY = 2, maxY = 4),
+        new Zone(minX = 14, maxX = 14, minY = 5, maxY = 10)
     ],
 	goals = [
         new DeliveryGoal(
@@ -596,11 +598,11 @@ object level3 inherits Level(
             factory = {=> new Dispenser(direction = right, availableKinds = [pizzaDough, cheese, salami, egg, bacon])}
         ),
         new Placement(
-            position = new CellPosition(x=5, y=5),
+            position = new CellPosition(x=5, y=4),
             factory = {=> new Dispenser(direction = right, availableKinds = [pizzaDough, cheese, salami, egg, bacon])}
         ),
         new Placement(
-            position = new CellPosition(x=5, y=3),
+            position = new CellPosition(x=5, y=2),
             factory = {=> new Dispenser(direction = right, availableKinds = [pizzaDough, cheese, salami, egg, bacon])}
         )
     ]
@@ -627,22 +629,22 @@ object level4 inherits Level(
             label = "Hamburguesas"
         )
     ],
-    energyLimit = new EnergyLimit(max = 45),
+    energyLimit = new EnergyLimit(max = 40),
     fixedMachines = [
-        new Placement(
-            position = new CellPosition(x=5, y=9),
-            factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
-        ),
         new Placement(
             position = new CellPosition(x=5, y=8),
             factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
         ),
         new Placement(
-            position = new CellPosition(x=5, y=6),
+            position = new CellPosition(x=5, y=7),
             factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
         ),
         new Placement(
             position = new CellPosition(x=5, y=5),
+            factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
+        ),
+        new Placement(
+            position = new CellPosition(x=5, y=4),
             factory = {=> new Dispenser(direction = right, availableKinds = [bun, lettuce, tomato, meat])}
         )
     ]

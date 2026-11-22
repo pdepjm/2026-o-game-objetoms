@@ -26,6 +26,7 @@ class Belt inherits Machine {
 	var shape = straightShape
 
 	override method name() = "Belt"
+	override method label() = "Cinta"
 	override method baseEnergy() = 1
 
 	override method runningImage() = self.gifImage()

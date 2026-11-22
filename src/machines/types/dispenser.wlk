@@ -16,12 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import wollok.game.*
 import src.directions.*
 import machines.machineClasses.*
 import machines.settings.*
 import simulation.simulationEngine.*
 import food.foodClasses.*
 import food.foodTypes.*
+import cellPosition.*
 
 // Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
 // Se configura qué ingrediente larga y a qué velocidad (ver settings.wlk).
@@ -36,8 +38,12 @@ class Dispenser inherits Machine {
 		kinds = availableKinds
 	)
 	const speedSetting = new SpeedSetting(value = 1)
+	// Una insignia con el ingrediente que larga, en una esquina de arriba (ver DispenserBadge)
+	const badge = new DispenserBadge(dispenser = self)
 
 	override method name() = "Dispenser"
+	override method label() = "Dispenser"
+	override method article() = "el"
 	override method baseEnergy() = 1
 
 	override method runningImage() = self.gifImage()
@@ -50,6 +56,16 @@ class Dispenser inherits Machine {
 	}
 
 	override method settings() = [productSetting, speedSetting]
+
+	method badge() = badge
+
+	// La insignia se dibuja encima del dispenser mientras está en el tablero, y se mueve al rotarlo
+	override method addedToBoard() { badge.show() }
+	override method removedFromBoard() { badge.hide() }
+	override method rotate() {
+		super()
+		badge.update()
+	}
 
 	// El multiplicador de velocidad elegido (0.5, 1 o 2)
 	override method speed() = speedSetting.value()
@@ -94,4 +110,31 @@ class Dispenser inherits Machine {
 	override method onPushed(item) {
 		self.scheduleNext()
 	}
+}
+
+// La insignia del dispenser: un círculo con el ingrediente que larga (assets/machines/Dispenser/badge/,
+// ver makeBadges.py), en la esquina de arriba del lado contrario a la salida, así no tapa la flecha.
+// Mide 30x30 px y sobresale un poco de la celda.
+// RENDIMIENTO: la posición se calcula sólo al colocarlo o rotarlo; la imagen es la del ingrediente elegido,
+// que la arma una vez (IngredientKind.badgeImage).
+class DispenserBadge {
+	const dispenser
+	var position = new CellPosition(x = 0, y = 0)
+
+	method position() = position
+	method image() = dispenser.product().badgeImage()
+
+	method update() {
+		const cell = dispenser.cell()
+		// mirando a la derecha, la esquina de la izquierda; si no, la de la derecha
+		const left = if (dispenser.direction() == right) cell.x() - 0.1 else cell.x() + 0.58
+		position = new CellPosition(x = left, y = cell.y() + 0.6)
+	}
+
+	method show() {
+		self.update()
+		if (!game.hasVisual(self)) game.addVisual(self)
+	}
+
+	method hide() { if (game.hasVisual(self)) game.removeVisual(self) }
 }

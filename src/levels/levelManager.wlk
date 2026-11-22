@@ -26,6 +26,7 @@ import machines.machineManager.*
 import menu.levelInfoMenu.*
 import menu.tutorialMarks.*
 import menu.recipeBook.*
+import menu.chefGuide.*
 
 object levelManager {
     // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
@@ -79,6 +80,9 @@ object levelManager {
         self._showEnergy()
         level.showHints(levelInfoMenu)
         self._notifyTutorial({ tutorial => tutorial.onLevelLoaded(level) })
+        // el menú de la máquina elegida, arriba de las máquinas fijas
+        toolsManager.boardChanged()
+        self._cookingChanged()
     }
     method restart() {self.load(currentLevel)}
 
@@ -114,7 +118,21 @@ object levelManager {
 	    		levelInfoMenu.updateProgress(currentLevel)
 	    	}
 	    	self._notifyTutorial({ tutorial => tutorial.onSimulationToggled(simulationEngine.running()) })
+	    	self._cookingChanged()
 	    }
+    }
+
+    // Mientras se cocina queda todo limpio: sin el panel de editar, el menú de la máquina, el cocinero
+    // ni las marcas del tutorial (las insignias de los dispensers quedan). Al apagar, vuelven.
+    method _cookingChanged() {
+        if (simulationEngine.running()) {
+            toolsManager.cookingStarted()
+            chefGuide.silence()
+            tutorialMarks.hide()
+        } else {
+            chefGuide.speak()
+            tutorialMarks.reveal()
+        }
     }
 
     // ¿La energía que gastan las máquinas entra en el límite del nivel?
@@ -141,17 +159,17 @@ object levelManager {
 
     method finishLevel() {
     	simulationEngine.stop()                                // directo al engine: el progreso NO se borra
+    	self._cookingChanged()                                 // vuelve el cocinero, a festejar
     	levelInfoMenu.showCompleted(self.hasNext())
     }
 
     // ----------- TUTORIAL -----------
     // Lo que pasa en el juego le llega al tutorial del nivel actual (ver tutorial.wlk). Estos métodos
-    // sólo reenvían: los llaman las herramientas, toolsManager y editMenu. board y simulationEngine
+    // sólo reenvían: los llaman las acciones (userTools), toolsManager y editMenu. board y simulationEngine
     // no avisan nada, así los tests que los usan directo no dependen de los niveles.
 
     method tutorial() = currentLevel.tutorial()
 
-    method toolSelected(tool) { self._notifyTutorial({ tutorial => tutorial.onToolSelected(tool) }) }
     method machinePlaced(machine) {
         self._showEnergy()
         self._notifyTutorial({ tutorial => tutorial.onMachinePlaced(machine) })
@@ -182,13 +200,39 @@ object levelManager {
         self.load(self.levelToPlay())
     }
 
-    // ¿Deja usar esa herramienta en esa celda? Lo pregunta toolsManager antes de cada click en el tablero
+    // ¿Deja usar esa acción en esa celda? Lo pregunta toolsManager antes de colocar, rotar, editar o borrar
     method allowsTool(tool, pos) = self.tutorial().allowsTool(tool, pos)
 
-    // Le avisa al tutorial y muestra su mensaje y sus indicadores, que pueden haber cambiado
+    // ----------- CUANDO ALGO NO VA -----------
+    // El cocinero dice qué estuvo mal y el recuadro se pone rojo un momento (sin tutorial no pasa nada)
+
+    // El tutorial no dejó usar esa acción en esa celda (toolsManager)
+    method toolRejected(tool, pos) { self._complain(self.tutorial().complaintFor(tool, pos)) }
+
+    // Se eligió una máquina en el menú de colocar (placeMenu): si no es la que pide el paso, se marca en rojo
+    method machineSelected(factory) {
+        const complaint = self.tutorial().complaintForMachine(factory)
+        if (!complaint.isEmpty()) placeMenu.flashError(factory)
+        self._complain(complaint)
+    }
+
+    method _complain(complaint) {
+        if (!complaint.isEmpty()) {
+            chefGuide.complain(complaint)
+            tutorialMarks.flashError()
+        }
+    }
+
+    // Le avisa al tutorial y muestra su mensaje (lo dice el cocinero), sus teclas, sus indicadores y la
+    // máquina que pide, que pueden haber cambiado. El cocinero va después de los indicadores: queda arriba.
+    // Si el paso pide algo en otro lugar, esa celda queda elegida (así C o X actúan sobre ella).
     method _notifyTutorial(event) {
+        const before = self.tutorial().targetCells()
         event.apply(self.tutorial())
-        levelInfoMenu.showTutorialMessage(self.tutorial().stepLabels(), self.tutorial().messageLines(), self.tutorial().messageKeys())
-        tutorialMarks.show(self.tutorial().targetCells(), self.tutorial().pointedCells())
+        const targets = self.tutorial().targetCells()
+        if (!targets.isEmpty() && targets != before) toolsManager.jumpTo(targets.first())
+        tutorialMarks.show(targets, self.tutorial().pointedCells())
+        chefGuide.say(self.tutorial().stepLabels(), self.tutorial().messageLines(), self.tutorial().messageKeys(), self.tutorial().targetCells() + self.tutorial().pointedCells())
+        placeMenu.highlight(self.tutorial().wantedMachines())
     }
 }

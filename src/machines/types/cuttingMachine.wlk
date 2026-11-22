@@ -23,10 +23,11 @@ import food.foodClasses.*
 
 class CuttingMachine inherits ProcessingMachine {
 	override method name() = "CuttingMachine"
+	override method label() = "Cortadora"
 	override method baseEnergy() = 1
 
 	override method foodProcess() = cutting
 
-	override method workImages() = self.actionAnimation("cut", 17).frames()
+	override method workImages() = self.actionAnimation("cut", 9).frames()
 
 }

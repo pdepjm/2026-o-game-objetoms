@@ -147,8 +147,14 @@ class MachineSprite inherits MachineAnimator {
 	// El GIF de la máquina andando (sólo para las que se animan con GIF, como la cinta)
 	method gifImage() = "machines/" + self.name() + "/" + self.direction().name() + ".gif"
 	
-	// La imagen del menú de máquinas, según la dirección elegida para colocarla
+	// El casillero del menú de colocar, según la dirección elegida para colocarla: la máquina en chico con
+	// su nombre abajo (los genera assets/menu/makePlaceSlots.py)
 	method menuImage(aDirection) = "machines/" + self.name() + "/" + aDirection.name() + "_menu.png"
+
+	// El nombre que ve el jugador, y con su artículo ("la cinta"): lo dice el cocinero del tutorial
+	method label() = self.name()
+	method article() = "la"
+	method nameWithArticle() = self.article() + " " + self.label().toLowerCase()
 	
 	// ----------- ESTADOS DEL DIBUJO -----------
 	// Con la simulación apagada se ve quieta (staticImage) y prendida, animada (runningImage).
@@ -266,9 +272,15 @@ class Machine inherits MachineSprite {
 		direction = direction.next()
 		self.showStatic()
 	}
+
+	// ----------- LO QUE DIBUJA APARTE -----------
+	// board avisa cuando la agrega y cuando la saca: así una máquina puede dibujar algo más encima
+	// (el dispenser, su insignia). Por defecto no dibuja nada.
+	method addedToBoard() {}
+	method removedFromBoard() {}
 	
 	// ----------- CONFIGURACION -----------
-	// Los settings que acepta (ver settings.wlk), que el menú de la herramienta edit deja cambiar.
+	// Los settings que acepta (ver settings.wlk), que el panel de editar (X) deja cambiar.
 	// Por defecto no tiene ninguno; la sobrescriben las máquinas configurables.
 	method settings() = []
 
@@ -443,7 +455,7 @@ class Machine inherits MachineSprite {
 
 class ProcessingMachine inherits Machine {
 
-	// Qué tan rápido procesa (se cambia con la herramienta edit): el tiempo de cada ingrediente se divide por la velocidad
+	// Qué tan rápido procesa (se cambia con X, editando la máquina): el tiempo de cada ingrediente se divide por la velocidad
 	const speedSetting = new SpeedSetting(value = 1)
 
 	override method settings() = [speedSetting]

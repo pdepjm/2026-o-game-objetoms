@@ -24,9 +24,9 @@ import board.*
 import levels.levelManager.*
 import sound.sfx.*
 
-// Panel de la zona interactiva mientras la herramienta activa es edit.
+// Panel de la zona interactiva mientras el jugador está EDITANDO una máquina (X sobre la elegida).
 // Responde a show, hide y onClick, igual que el resto de los paneles (ver menuManager).
-// Muestra los settings de la máquina elegida con la herramienta edit, agrupados por categoría,
+// Muestra los settings de la máquina elegida (la del cursor), agrupados por categoría,
 // y al clickear una opción se la aplica al setting. No sabe de qué máquina se trata: sólo le pide
 // settings() y trabaja con lo que devuelve (ver machines/settings.wlk).
 object editMenu{
@@ -37,8 +37,10 @@ object editMenu{
     // Cada opción dibujada, para saber qué se clickeó
     var slots = []
     var markers = []
+    // La opción marcada para el teclado (flechas y Enter): su índice en slots
+    var focusIndex = 0
 
-    // Sólo se dibuja mientras es el panel activo (herramienta edit)
+    // Sólo se dibuja mientras es el panel activo (EDITANDO)
     var visible = false
 
     // Mensajes que le manda menuManager
@@ -54,8 +56,7 @@ object editMenu{
         self.vaciarRenders()
     }
 
-    // Lo llama la herramienta edit al clickear el tablero: elige la máquina (si hay una) y
-    // muestra sus settings
+    // Lo llama la acción edit (X sobre la máquina elegida): elige la máquina y muestra sus settings
     method selectMachine(pos) {
         selectedMachine = board.machineAt(pos)
         if (visible) self.render()
@@ -84,10 +85,10 @@ object editMenu{
             [op]
     */
     method columns() = 4
-    method topRow() = 14
+    method topRow() = 11
 
     // La opción dibujada en esa posición (noSlot si el click cayó afuera de todas).
-    // Como las opciones se alinean con las celdas enteras de la cuadrícula de Wollok (x: 21 a 24),
+    // Como las opciones se alinean con las celdas enteras de la cuadrícula de Wollok (x: 18 a 21),
     // la comparación exacta x == pos.x() e y == pos.y() garantiza que cualquier click dentro del
     // casillero de 50x50 px active la opción correcta sin importar si se clickea a la izquierda o derecha.
     method slotAt(pos) = slots.findOrDefault({ slot => slot.position().x() == pos.x() && slot.position().y() == pos.y() }, noSlot)
@@ -127,6 +128,37 @@ object editMenu{
         })
 
         self.updateMarkers()
+        focusIndex = 0
+        self.updateFocus()
+    }
+
+    // ----------- TECLADO -----------
+
+    // Las flechas mueven la marca por las opciones, en el orden en que se dibujan
+    method moveFocus(direction) {
+        if (!slots.isEmpty()) {
+            focusIndex = (focusIndex + direction.listStep() + slots.size()).rem(slots.size())
+            self.updateFocus()
+            sfx.directionChange()
+        }
+    }
+
+    // Enter: aplica la opción marcada
+    method chooseFocused() {
+        if (!slots.isEmpty()) self.choose(slots.get(focusIndex))
+    }
+
+    method focusIndex() = focusIndex
+    // Cuántas opciones hay dibujadas (para los tests)
+    method slotCount() = slots.size()
+
+    // La marca va sobre la opción marcada (y arriba de todo). Sólo se llama cuando cambia.
+    method updateFocus() {
+        if (game.hasVisual(optionFocus)) game.removeVisual(optionFocus)
+        if (!slots.isEmpty()) {
+            optionFocus.moveTo(slots.get(focusIndex).position())
+            game.addVisual(optionFocus)
+        }
     }
 
     // Dibuja las opciones del setting de a self.columns() por fila, empezando en esa fila.
@@ -222,6 +254,11 @@ object editMenu{
         markers = slots.filter({ slot => slot.setting().isSelected(slot.option()) })
             .map({ slot => new OptionMarker(position = slot.position()) })
         markers.forEach({ marker => game.addVisual(marker) })
+        // la marca del teclado, arriba de las marcas
+        if (game.hasVisual(optionFocus)) {
+            game.removeVisual(optionFocus)
+            game.addVisual(optionFocus)
+        }
     }
 
     // Remueve de la pantalla todo lo dibujado hasta ese momento
@@ -231,11 +268,21 @@ object editMenu{
         renderedItems = []
         markers = []
         slots = []
+        if (game.hasVisual(optionFocus)) game.removeVisual(optionFocus)
     }
 
     // La dirección no cambia las imágenes de las opciones, pero toolsManager puede avisar igual
     method updateImages() {}
 
+}
+
+// La marca de la opción elegida con el teclado. Guarda su posición: se mueve sólo con las flechas.
+object optionFocus {
+    var position = game.origin()
+
+    method position() = position
+    method image() = "menu/option_focus.png"
+    method moveTo(aPosition) { position = aPosition }
 }
 
 // Una opción dibujada con su imagen

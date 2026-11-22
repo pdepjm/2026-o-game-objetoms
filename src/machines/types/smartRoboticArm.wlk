@@ -55,6 +55,7 @@ class SmartRoboticArm inherits AutomaticArm {
 	]
 
 	override method name() = "AutomaticArm"
+	override method label() = "Brazo intel."
 	override method baseEnergy() = 3
 
 	// Las mismas imágenes del automático, recoloreadas en naranja (assets/machines/recolor.ps1)

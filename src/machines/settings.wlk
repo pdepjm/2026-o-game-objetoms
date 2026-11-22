@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - las configuraciones de las máquinas (lo que se cambia con la herramienta de editar).
+// Buffet Albert Einstein - las configuraciones de las máquinas (lo que se cambia editando la máquina, con X).
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Las configuraciones de las máquinas (lo que se cambia con la herramienta edit).
+// Las configuraciones de las máquinas (lo que se cambia editando la máquina, con X).
 //
 // Cada máquina declara los settings que acepta en settings() (por defecto, ninguno).
 // Un Setting guarda el valor elegido para ESA máquina y sabe qué opciones ofrece, en qué

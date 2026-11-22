@@ -40,7 +40,7 @@ describe "tests de board" {
 
   test "una posicion con y fuera del rango no esta en el tablero" {
     assert.notThat(board.inBoard(game.at(10, 0)))
-    assert.notThat(board.inBoard(game.at(10, 15)))
+    assert.notThat(board.inBoard(game.at(10, 11)))
   }
 
   test "una posicion dentro del rango esta en el tablero" {
@@ -49,7 +49,7 @@ describe "tests de board" {
 
   test "los bordes del rango tambien cuentan como dentro del tablero" {
     assert.that(board.inBoard(game.at(5, 1)))
-    assert.that(board.inBoard(game.at(19, 13)))
+    assert.that(board.inBoard(game.at(16, 10)))
   }
 
   test "no hay maquina en una posicion vacia" {
@@ -58,8 +58,8 @@ describe "tests de board" {
 
   // Una casilla vacía guarda noMachine: ninguna parece ocupada
   test "ninguna casilla del tablero vacio esta ocupada" {
-    const hayAlgunaOcupada = (5..19).any({ x =>
-      (1..13).any({ y => board.isThereAMachine(game.at(x, y)) })
+    const hayAlgunaOcupada = (5..16).any({ x =>
+      (1..10).any({ y => board.isThereAMachine(game.at(x, y)) })
     })
     assert.notThat(hayAlgunaOcupada)
   }
@@ -170,7 +170,7 @@ describe "tests de reiniciar todo" {
     board.push(game.at(6, 5), new Belt(direction = right))
     simulationEngine.run()
     simulationEngine.speed(3)
-    toolsManager.select(delete)
+    toolsManager.startEditing()
     toolsManager.currentDirection(up)
     placeMenu.next()
 
@@ -179,7 +179,7 @@ describe "tests de reiniciar todo" {
     assert.that(board.machines().isEmpty())
     assert.notThat(simulationEngine.running())
     assert.equals(1, simulationEngine.speed())
-    assert.equals(noTool, toolsManager.selectedTool())
+    assert.equals(placingMode, toolsManager.mode())
     assert.equals(right, toolsManager.currentDirection())
     assert.equals(0, placeMenu.currentPage())
   }

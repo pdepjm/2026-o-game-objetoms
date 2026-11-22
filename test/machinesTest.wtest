@@ -26,6 +26,8 @@ import src.machines.types.fryer.*
 import src.tools.toolsManager.*
 import src.directions.*
 import wollok.game.*
+import src.board.*
+import src.food.foodTypes.*
 
 describe "tests de Machine" {
 
@@ -127,5 +129,44 @@ describe "tests de Machine" {
     const belt = new Belt()
     belt.position(game.at(7, 4))
     assert.equals(game.at(7, 4), belt.cell())
+  }
+}
+
+// La insignia del dispenser: el ingrediente que larga, en una esquina de arriba (ver DispenserBadge)
+describe "tests de la insignia del dispenser" {
+
+  method initialize() {
+    board.clear()
+  }
+
+  test "al colocar un dispenser se dibuja su insignia, con el ingrediente que larga" {
+    const dispenser = new Dispenser(direction = down)
+    board.push(game.at(8, 5), dispenser)
+    assert.that(game.hasVisual(dispenser.badge()))
+    assert.equals("machines/Dispenser/badge/food/Ingredients/potatoes/potato_raw.png", dispenser.badge().image())
+  }
+
+  test "al cambiar el ingrediente cambia la insignia" {
+    const dispenser = new Dispenser(direction = down)
+    board.push(game.at(8, 5), dispenser)
+    dispenser.product(tomato)
+    assert.equals("machines/Dispenser/badge/" + tomato.image(), dispenser.badge().image())
+  }
+
+  test "mirando a la derecha va en la esquina de la izquierda; si no, en la de la derecha" {
+    const dispenser = new Dispenser(direction = down)
+    board.push(game.at(8, 5), dispenser)
+    assert.equals(8.58, dispenser.badge().position().x())
+    3.times({ _ => dispenser.rotate() })
+    assert.equals(right, dispenser.direction())
+    assert.equals(7.9, dispenser.badge().position().x())
+    assert.equals(5.6, dispenser.badge().position().y())
+  }
+
+  test "al sacar el dispenser se va su insignia" {
+    const dispenser = new Dispenser(direction = down)
+    board.push(game.at(8, 5), dispenser)
+    board.pop(game.at(8, 5))
+    assert.notThat(game.hasVisual(dispenser.badge()))
   }
 }

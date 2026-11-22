@@ -29,8 +29,8 @@ class Cell {
 }
 
 object board {
-	const maxColumn = 19
-	const maxRow = 13
+	const maxColumn = 16
+	const maxRow = 10
 	const deliverySlots = []
 	// Dónde puede construir el jugador (ver "ZONAS DONDE SE PUEDE CONSTRUIR", al final)
 	var buildZones = [wholeBoard]
@@ -108,6 +108,8 @@ object board {
 		)
 		game.addVisual(element)
 		self.addToGrid(position, element)
+		// lo que la máquina dibuja aparte (la insignia del dispenser), encima de ella
+		element.addedToBoard()
 		simulationEngine.addSimulatedObject(element)
 		
 		// NUEVO: Al colocar una máquina, actualizamos las cintas de al lado
@@ -115,7 +117,7 @@ object board {
 	}
 
 	// Saca la máquina de esa posición, aunque esté bloqueada: el bloqueo es para el jugador
-	// (lo controlan las herramientas delete y rotate), no para el juego. Así board.clear()
+	// (lo controlan las acciones delete y rotate), no para el juego. Así board.clear()
 	// también se lleva las máquinas fijas de un nivel al reiniciarlo o cambiar de nivel.
 	method pop(position) {
 		if (self.isThereAMachine(position)) {
@@ -125,6 +127,7 @@ object board {
 				game.removeVisual(item)
 			})
 			simulationEngine.removeSimulatedObject(machine)
+			machine.removedFromBoard()
 			game.removeVisual(machine)
 			self.removeFromGrid(position)
 			
@@ -133,7 +136,7 @@ object board {
 		}
 	}
 
-	method inBoard(pos) = pos.x().between(5, 19) && pos.y().between(1, 13)
+	method inBoard(pos) = pos.x().between(5, maxColumn) && pos.y().between(1, maxRow)
 
 	method isThereAMachine(pos) = !self.machineAt(pos).asList().isEmpty()
 

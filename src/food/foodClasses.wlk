@@ -34,8 +34,17 @@ object cooking {}
 // Clase para los ingredientes
 class IngredientKind{
     const transitions = new Dictionary()
+    // La insignia del dispenser que lo larga (se arma una vez: la dibuja el dispenser en cada frame)
+    var badgeImage = ""
 
     method image()
+
+    // La insignia del dispenser: el ingrediente centrado en un círculo (assets/machines/Dispenser/makeBadges.py
+    // la genera con la misma ruta que la imagen, adentro de badge/)
+    method badgeImage() {
+        if (badgeImage.isEmpty()) badgeImage = "machines/Dispenser/badge/" + self.image()
+        return badgeImage
+    }
 
     // Un kind también es un filtro de items: deja pasar a los que son de ese kind (ver settings.wlk)
     method accepts(item) = item.kind() == self

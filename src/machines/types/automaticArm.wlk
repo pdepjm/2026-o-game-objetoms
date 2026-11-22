@@ -41,9 +41,12 @@ import board.*
 // entregar directo, sin perder pasos.
 class AutomaticArm inherits Machine {
 	// ----------- ATRIBUTOS -----------
-	// Frames que hay en cada carpeta de animación (los genera assets/machines/gifToFrames.py)
-	const rotateFrames = 7
-	const catchFrames = 28
+	// Frames que hay en cada carpeta de animación (los genera assets/machines/gifToFrames.py, y se dejó uno
+	// de cada dos), y cuántos pasos dura cada animación (lo mismo que cuando tenían todos los cuadros)
+	const rotateFrames = 4
+	const rotateSteps = 7
+	const catchFrames = 14
+	const catchSteps = 28
 
 	// El lado por el que recibe: el que se eligió al colocarlo, y cambia al rotarlo.
 	// direction, en cambio, es hacia dónde está mirando la pinza en este momento.
@@ -64,6 +67,8 @@ class AutomaticArm inherits Machine {
 
 	// ----------- IDENTIDAD -----------
 	override method name() = "AutomaticArm"
+	override method label() = "Brazo"
+	override method article() = "el"
 	override method baseEnergy() = 2
 
 	// ----------- ROTACION -----------
@@ -97,20 +102,21 @@ class AutomaticArm inherits Machine {
 
 	override method staticImage() = self.assetFolder() + direction.name() + "_game.png"
 
-	// Una animación del brazo, por ejemplo armAnimation(down, up, "rotate", rotateFrames)
-	method armAnimation(fromSide, toSide, kind, frameCount) = new FrameAnimation(
+	// Una animación del brazo, por ejemplo armAnimation(down, up, "rotate", rotateFrames, rotateSteps)
+	method armAnimation(fromSide, toSide, kind, frameCount, steps) = new FrameAnimation(
 		path = self.assetFolder() + fromSide.name() + "_to_" + toSide.name() + "_" + kind,
-		frameCount = frameCount
+		frameCount = frameCount,
+		steps = steps
 	)
 
 	// Gira de un lado a otro
 	method showTurn(fromSide, toSide, afterBlock) {
-		self.play(self.armAnimation(fromSide, toSide, "rotate", rotateFrames), afterBlock)
+		self.play(self.armAnimation(fromSide, toSide, "rotate", rotateFrames, rotateSteps), afterBlock)
 	}
 
 	// Agarra del primer lado y gira hasta el otro
 	method showCatch(fromSide, toSide, afterBlock) {
-		self.play(self.armAnimation(fromSide, toSide, "catch", catchFrames), afterBlock)
+		self.play(self.armAnimation(fromSide, toSide, "catch", catchFrames, catchSteps), afterBlock)
 	}
 
 	// ----------- ITEMS -----------
@@ -139,7 +145,7 @@ class AutomaticArm inherits Machine {
 	// Lo agarra y gira hacia el lado contrario. El item viaja a la otra celda mientras tanto.
 	method carry() {
 		const to = self.outputSideFor(self.itemToPush())
-		self.itemToPush().moveInSteps(to.move(self.cell()), catchFrames)
+		self.itemToPush().moveInSteps(to.move(self.cell()), catchSteps)
 		self.showCatch(from, to, {
 			direction = to
 			// Entrega hacia el lado al que quedó mirando (el contrario al del que vino el item).

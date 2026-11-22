@@ -70,7 +70,7 @@ Para agregar otro tipo de objetivo (por ejemplo, "sin quemar nada"), alcanza con
 
 Primero se apaga y se limpia, después se arma:
 
-1. `simulationEngine.reset()`, `board.clear()` y `toolsManager.reset()`: apaga la simulación, saca las máquinas (los platitos quedan) y deja sin herramienta.
+1. `simulationEngine.reset()`, `board.clear()` y `toolsManager.reset()`: apaga la simulación, saca las máquinas (los platitos quedan) y deja COLOCANDO, sin máquina elegida.
 2. Guarda el nivel y lo marca sin completar.
 3. `machineManager.changeCatalog(...)` con sus máquinas, y `placeMenu.resetPage()`.
 4. Coloca sus máquinas fijas.
@@ -93,11 +93,11 @@ Pasa por `levelManager` (no directo al engine) para que el engine no sepa de niv
 
 ## Dónde se puede construir: `buildZones`
 
-Una lista de rectángulos (`Zone`, de `src/board.wlk`), con las coordenadas del tablero (x 5 a 19, y 1 a 13) y los bordes incluidos. El jugador puede colocar una máquina si **todas** sus celdas están en alguna de las zonas; una de 2x2 puede quedar repartida entre dos zonas pegadas.
+Una lista de rectángulos (`Zone`, de `src/board.wlk`), con las coordenadas del tablero (x 5 a 16, y 1 a 10) y los bordes incluidos. El jugador puede colocar una máquina si **todas** sus celdas están en alguna de las zonas; una de 2x2 puede quedar repartida entre dos zonas pegadas.
 
 ```wollok
 // Sólo se puede construir en la mitad izquierda del tablero y en una franja arriba a la derecha
-buildZones = [new Zone(minX = 5, maxX = 12, minY = 1, maxY = 13), new Zone(minX = 13, maxX = 19, minY = 11, maxY = 13)]
+buildZones = [new Zone(minX = 5, maxX = 10, minY = 1, maxY = 10), new Zone(minX = 11, maxX = 16, minY = 8, maxY = 10)]
 ```
 
 - Las celdas fuera de las zonas se ven oscurecidas, para que el jugador sepa dónde puede construir.
@@ -147,7 +147,6 @@ Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pa
 | Mensaje | Cuándo |
 |---|---|
 | `onLevelLoaded(nivel)` | Al final de `levelManager.load` (también al reiniciar) |
-| `onToolSelected(herramienta)` | `toolsManager.select` (llega `noTool` si se deselecciona) |
 | `onMachinePlaced(maquina)` | `place`, después de colocarla |
 | `onMachineRemoved(maquina)` | `delete`, **después** de sacarla (se guarda la máquina antes, así el tutorial ve el tablero sin ella) |
 | `onMachineRotated(maquina)` | `rotate`, después de rotarla |
@@ -156,11 +155,14 @@ Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pa
 | `onDelivered(item)` | `levelManager.delivered` |
 | `onLevelWon(nivel)` | `levelManager.won` |
 | `onContinue()` | La tecla Enter (`levelManager.continueTutorial`): seguir después de una explicación |
-| `allowsTool(herramienta, pos)` | `toolsManager.onClick`, antes de usar la herramienta en el tablero. Si es `false`, el click no hace nada |
+| `allowsTool(acción, pos)` | `toolsManager.useAt`, antes de colocar, rotar, editar o borrar. Si es `false`, no hace nada y el cocinero dice por qué |
+| `waitsForContinue()` | `playingScreen`, con Enter o un clic en el globo: si el cocinero está explicando (`ExplainStep`), sigue |
 | `allowsSimulationToggle()` | `levelManager.toggleSimulation`. Si es `false`, no prende ni apaga |
-| `messageLines()` | Después de cada aviso: las líneas del mensaje (de hasta `levelInfoMenu.tutorialMaxLength()`, 16 caracteres) |
+| `messageLines()` | Después de cada aviso: las líneas del mensaje, que dice el cocinero (`chefGuide`) en su globo (como máximo `chefGuide.maxLines()`, 6, de hasta `chefGuide.maxLength()`, 16 caracteres: lo revisa un test) |
 | `stepLabels()` | Después de cada aviso: una lista con dónde va el jugador, arriba del mensaje (`StepTutorial`: `["PASO 2 DE 8"]`). Vacía: no se muestra |
-| `messageKeys()` | Después de cada aviso: las teclas que acompañan al mensaje (`"place"`, `"continue"`…), que se dibujan con el estilo de las teclas del fondo. **Entre líneas y teclas, como máximo `tutorialMaxLines()` (6)**: lo revisa un test |
+| `messageKeys()` | Después de cada aviso: las teclas que acompañan al mensaje (`"place"`, `"continue"`…), que el cocinero dice en su globo, debajo del mensaje ("[ENTER] para seguir") |
+| `complaintFor(acción, pos)`, `complaintForMachine(fábrica)` | Cuando el jugador hace algo que el paso no deja (usar una herramienta fuera del recuadro, tocar el tablero sin herramienta, elegir otra máquina en el menú): lo que dice el cocinero, en rojo, un momento (`[]`: nada). Cada paso decide: fuera del recuadro, "Ahí no: es en el recuadro"; en un `MachineStep`, cuál máquina va; en un `ExplainStep`, que apriete Enter |
+| `wantedMachines()` | Las máquinas que pide el paso: su casillero titila en el menú de colocar |
 | `allMessages()` | Todos los mensajes que puede mostrar. Sólo para los tests (ver abajo) |
 | `targetCells()` | Después de cada aviso: las celdas donde el jugador tiene que hacer algo. Se marcan con un recuadro amarillo que late |
 | `pointedCells()` | Después de cada aviso: las celdas de las máquinas que explica el mensaje. Se señala la máquina con una flecha naranja arriba (centrada, si es de 2x2) |
@@ -179,7 +181,7 @@ Todos tienen `lines`, y opcionalmente:
 | `cells` | Las celdas donde deja **colocar, borrar y rotar** (en ningún otro lado). Se marcan con el recuadro. Para una máquina de 2x2, sus cuatro celdas |
 | `pointsAt` | Las celdas de las máquinas de las que habla el mensaje. Se señalan con la flecha: así el texto puede decir "de la flecha" en vez de "a la derecha de las papas" |
 | `allowsSimulation` | Si deja prender y apagar la simulación (por defecto, no) |
-| `keys` | Las teclas que explica el paso, por nombre: `place` (Z), `edit` (X), `rotate` (C), `up` (W), `left` (A), `continue` (Enter), `start` y `stop` (Espacio). Se muestran como las teclas del fondo, así el texto no dice "Z:". Para una tecla nueva, agregarla en `HINTS` de `assets/menu/makeKeyHints.py` y correrlo |
+| `keys` | Las teclas que explica el paso, por nombre: `place` (Z), `edit` (X), `rotate` (C), `up` (W), `left` (A), `continue` (Enter), `start` y `stop` (Espacio), y lo que se hace con el clic: `clickPlace` (elegir y colocar), `clickEdit` (abrir y elegir) y `clickRotate` (en la máquina). El cocinero las dice debajo del mensaje, cada una en el lugar de una línea (líneas más teclas: como máximo 6), así el texto no dice "apretá Z". Para una tecla nueva, agregarla en `KEYS` de `assets/tutorial/makeChef.py` y correrlo |
 
 **Un paso o pide hacer algo (`cells`, el recuadro) o explica (`pointsAt`, la flecha), no las dos cosas:** si tiene `cells`, la flecha no se muestra. Para explicar una máquina y después pedir otra, dos pasos: un `ExplainStep` y el que pide.
 
@@ -191,9 +193,8 @@ Fuera de sus `cells`, un paso deja **editar cualquier máquina, también las fij
 | `MachineStep(cells, condition, allowedMachines)` | Cuando en todas sus celdas hay una máquina que cumple `condition` (`{ machine => machine.direction() == right }`; por defecto, cualquiera). `allowedMachines` son las fábricas del catálogo que deja construir (`machineManager.beltFactory()`): así el paso no le pregunta a la máquina qué es, sino que sólo deja colocar la que corresponde. Vacía: no restringe. Si son las cuatro celdas de una de 2x2, es la misma máquina en todas |
 | `RunStep` | Mientras la simulación está prendida (y deja prenderla) |
 | `ExplainStep` | Al apretar Enter. Para explicar una máquina (con `pointsAt`) antes del paso que pide algo. **Queda cumplido**: si el jugador vuelve a un paso anterior, no se repite |
-| `ToolStep(tool)` | Al elegir esa herramienta. **Queda cumplido** aunque después se elija otra |
 
-Para un paso que se cumpla con otro evento ("cambiá un setting", "entregá algo"), una subclase de `EventStep` que sobrescriba ese evento y llame a `happened()`, como `ToolStep`:
+Para un paso que se cumpla con otro evento ("cambiá un setting", "entregá algo"), una subclase de `EventStep` que sobrescriba ese evento y llame a `happened()`, como `ExplainStep`:
 
 ```wollok
 class SettingStep inherits EventStep {

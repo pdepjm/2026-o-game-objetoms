@@ -33,7 +33,7 @@ import src.levels.levelsTypes.*
 import src.levels.levelManager.*
 
 // La capa de celdas bloqueadas de ese nivel (la imagen no hace falta que sea la de verdad)
-const zonedLayer = new BlockedLayer(image = "blocked_cell.png")
+const zonedLayer = new BlockedLayer(image = "levels/blocked_tutorial.png")
 
 // Un nivel sólo para estos tests: se puede construir en dos franjas, x 5 a 8 y x 9 a 10 (pegadas),
 // todo el alto; y trae un Dispenser fijo FUERA de esas zonas, en (15, 7)
@@ -56,8 +56,7 @@ describe "tests de las zonas donde se puede construir" {
   // Coloca con la herramienta place, como el jugador
   method place(factory, pos) {
     machineManager.changeCatalog([factory])
-    toolsManager.select(place)
-    toolsManager.onClick(pos)
+    toolsManager.useAt(place, pos)
   }
 
   // ¿Se está dibujando la capa de celdas bloqueadas?

@@ -66,8 +66,7 @@ describe "tests de maquinas bloqueadas" {
   }
 
   method useTool(tool, pos) {
-    toolsManager.select(tool)
-    toolsManager.onClick(pos)
+    toolsManager.useAt(tool, pos)
   }
 
   test "una maquina creada con Placement queda bloqueada" {
@@ -105,7 +104,7 @@ describe "tests de maquinas bloqueadas" {
     menuManager.setUp()
     self.placeLockedDispenser()
     self.useTool(edit, game.at(8, 8))
-    const panel = (21..24).flatMap({ x => (0..14).flatMap({ y => game.getObjectsIn(game.at(x, y)) }) })
+    const panel = (18..21).flatMap({ x => (0..11).flatMap({ y => game.getObjectsIn(game.at(x, y)) }) })
     assert.notThat(panel.isEmpty())
   }
 

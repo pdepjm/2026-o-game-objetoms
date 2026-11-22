@@ -24,6 +24,8 @@ import food.foodClasses.*
 class Oven inherits ProcessingMachine {
 
 	override method name() = "Oven"
+	override method label() = "Horno"
+	override method article() = "el"
 	override method baseEnergy() = 2
 
 	override method foodProcess() = cooking

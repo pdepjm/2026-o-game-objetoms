@@ -24,7 +24,6 @@
 # - ribbon.png: la cinta roja del nombre del nivel (como el título del juego)
 # - card_<n>.png: la tarjeta de papel del objetivo, para 1, 2 o 3 objetivos
 # - bar_<d>.png: la barra de progreso de un objetivo, llena d décimos (0 a 10)
-# - bubble_<n>.png: el globo de diálogo del tutorial, para 1 a 6 líneas
 #
 # Las medidas salen de las filas de levelInfoMenu: una fila mide 50 px, y las líneas del tutorial van
 # cada 0.55 filas. Si cambian ahí, cambiarlas acá y volver a correrlo.
@@ -106,6 +105,4 @@ if __name__ == '__main__':
         card(n)
     for t in range(11):
         bar(t)
-    for n in range(1, 7):
-        bubble(n)
     print('ok')

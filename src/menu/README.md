@@ -4,48 +4,57 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 
 | Zona | Celdas | Qué muestra |
 |---|---|---|
-| Barra de herramientas | x 21 a 24, y 15 | La herramienta elegida (`toolBar`) |
-| Zona interactiva | x 21 a 24, y 0 a 14 | El panel de la herramienta elegida (máquinas, info, o nada) |
-| Información del nivel | x 0 a 4, y 1 a 14 | Reservada (todavía vacía) |
+| Cartel del modo | x 18 a 21, y 12 | COLOCANDO o EDITANDO (`modeBanner`) |
+| Zona interactiva | x 18 a 21, y 0 a 11 | El panel del modo: las máquinas para colocar, o los ajustes de la máquina que se edita |
+| Botones de abajo a la izquierda | x 0 a 3, y 0 a 3 | Recetario, menú, iniciar/pausa y velocidad, clickeables (`sideButtons`) |
+| Información del nivel | x 0 a 4, y 1 a 11 | Reservada (todavía vacía) |
 
 | Archivo | Qué tiene |
 |---|---|
 | `menuManager.wlk` | `menuManager`: el que conoce a todos los menús y les reenvía los eventos. También `emptyMenu`. Las zonas de la pantalla son `Zone`, que está en `src/board.wlk` |
-| `placeMenu.wlk` | El panel de la herramienta **place**: las máquinas para elegir, con páginas y un marco sobre la elegida |
-| `editMenu.wlk` | El panel de la herramienta **edit**: los settings de la máquina elegida, agrupados por categoría |
-| `toolBar.wlk` | La barra que muestra qué herramienta está elegida |
+| `placeMenu.wlk` | El panel de **COLOCANDO**: las máquinas para elegir, con páginas y un marco sobre la elegida, y los botones de dirección |
+| `editMenu.wlk` | El panel de **EDITANDO**: los settings de la máquina elegida, agrupados por categoría (con clic, o con las flechas y Enter) |
+| `modeBanner.wlk` | El cartel COLOCANDO / EDITANDO de arriba a la derecha |
+| `sideButtons.wlk` | Los botones de abajo a la izquierda: recetario, menú, iniciar/pausa y velocidad (`speedFrame` marca la elegida) |
 | `levelInfoMenu.wlk` | La información del nivel, en la zona de la izquierda: nombre, objetivos y si se ganó |
 | `menuText.wlk` | `MenuText`: un texto de los menús. Lo usan `editMenu` y `levelInfoMenu` |
 
 ## `menuManager.wlk`
 
 - **Es el único que conoce los menús.** El resto del juego le avisa lo que pasó y él se lo pasa al menú que corresponde:
-  - `toolChanged(herramienta)`: actualiza la barra y cambia el panel de la zona interactiva;
+  - `modeChanged(modo)`: actualiza el cartel y cambia el panel de la zona interactiva;
   - `directionChanged()`: actualiza las imágenes de las máquinas del panel (cambian con W/A/S/D);
-  - `prevPage()` y `nextPage()`: teclas Q y E;
+  - `chooseMachine(paso)`: teclas Q y E;
   - `onClick(posición)`: un click dentro de la zona interactiva.
 - **Los paneles** (`placeMenu`, `editMenu` y `emptyMenu`) entienden los mismos mensajes (`show()`, `hide()` y `onClick(posición)`), así el manager no tiene que preguntar cuál es.
-- **Qué panel le toca a cada herramienta:** place → `placeMenu`, edit → `editMenu`. Sin herramienta, delete y rotate muestran `emptyMenu` (nada).
+- **Qué panel le toca a cada modo:** COLOCANDO (`placingMode`) → `placeMenu`, EDITANDO (`editingMode`) → `editMenu`. Antes de empezar a jugar, `emptyMenu` (nada).
 - `Zone`: un rectángulo de celdas. `contains(posición)` dice si un click cayó adentro, y `at(dx, dy)` da una posición relativa a su esquina inferior izquierda.
 
 ## `placeMenu.wlk`
 
-- Muestra 4 máquinas por página, en 4 slots de arriba hacia abajo. El orden sale de `machineManager` (ver [`machines/README.md`](../machines/README.md)).
-- Las páginas se cambian con Q y E. Cada página muestra 4 máquinas; `prev` y `next` avanzan de a una, sin pasarse de la primera ni de la última.
+- Se ve mientras el jugador está COLOCANDO (siempre, salvo mientras edita una máquina).
+- Muestra 4 máquinas por página, en casilleros de 2x2 celdas de a 2 por fila: el 1 arriba a la izquierda (x 18, y 10), el 2 a su derecha (x 20), y el 3 y el 4 abajo (y 8). Debajo va la ayuda (`menu/place_help.png`, o `place_help_pages.png` si hay más de una página). El orden sale de `machineManager` (ver [`machines/README.md`](../machines/README.md)).
+- Q y E eligen la máquina anterior o la siguiente del catálogo (`chooseNext`), y pasan de página solas. Cada página muestra 4 máquinas; `prev` y `next` avanzan de a una página, sin pasarse de la primera ni de la última.
+- Abajo, en la fila 4, los botones de dirección (← ↑ ↓ →, `menu/dir_pad.png`, una celda cada uno) eligen hacia dónde mira la máquina a colocar; `directionFrame` marca la elegida.
 - `resetPage()`: vuelve a la primera página, y redibuja si el panel se está viendo. Se usa al cambiar el catálogo (`machineManager.changeCatalog`): si el nuevo tiene menos páginas, la página actual podría no existir.
-- Al hacer click en un slot elige esa máquina (`machineManager.select`) y mueve el marco (`overlay`) encima.
-- `MenuItem`: cada máquina dibujada en el panel. Le pide la imagen a una máquina de muestra (`menuImage(dirección)`), así cada tipo decide qué mostrar (el brazo, por ejemplo, por ahora siempre muestra la misma).
-- `overlay`: el marco sobre la máquina elegida. Sólo se dibuja si esa máquina está en la página que se ve.
+- Al hacer click en un casillero elige esa máquina (`machineManager.select`), mueve el marco amarillo encima y le avisa a `levelManager.machineSelected`: si el tutorial pide otra, el casillero se pone rojo un momento (`flashError`) y el cocinero dice cuál va.
+- `MenuItem`: cada máquina dibujada en el panel. Le pide la imagen a una máquina de muestra (`menuImage(dirección)`: la máquina en chico con su nombre abajo, ver `assets/menu/makePlaceSlots.py`), así cada tipo decide qué mostrar (el brazo, por ejemplo, por ahora siempre muestra la misma).
+- `selectionFrame`: el marco amarillo sobre la máquina elegida. Sólo se dibuja si esa máquina está en la página que se ve.
+- `highlight(fábricas)`: las máquinas que pide el paso del tutorial; su casillero titila (`menu/slot_hint.gif`). Lo llama `levelManager` con cada aviso al tutorial.
 
 > **RENDIMIENTO:** las imágenes y la posición del marco se calculan sólo cuando cambia algo (dirección, página o máquina elegida), no en cada frame. `selectedSlot()` es caro porque crea máquinas para comparar nombres: no llamarlo desde algo que se dibuja.
 
-## `toolBar.wlk`
+## `modeBanner.wlk`
 
-Muestra `tools/<herramienta>_selected.png`, o `tools/default.png` si no hay ninguna elegida. La actualiza `menuManager` cuando cambia la herramienta.
+Muestra `menu/mode_placing.png` (COLOCANDO) o `menu/mode_editing.png` (EDITANDO, con la tecla Retroceso para salir). Lo cambia `menuManager.modeChanged`. Las imágenes las genera `assets/menu/makeBoardUi.py`.
+
+## `sideButtons.wlk`
+
+Los botones de abajo a la izquierda, uno por fila de celdas (Wollok avisa el clic por celda): F RECETARIO (fila 3), M MENÚ (fila 2), ESPACIO INICIAR / PAUSA (fila 1) y 1, 2, 3 (fila 0, una celda cada uno). Cada uno hace lo mismo que su tecla. La imagen (`menu/side_buttons.png`) tapa las teclas que trae dibujadas el fondo. `speedFrame` toma su posición de una lista armada una vez, según `simulationEngine.speed()`.
 
 ## `editMenu.wlk`
 
-Muestra los settings de la máquina elegida con la herramienta edit (ver [`machines/README.md`](../machines/README.md#configuración-settings)). **No sabe de qué máquina se trata**: le pide `settings()` y dibuja lo que devuelve.
+Muestra los settings de la máquina que se edita (X sobre la elegida; ver [`machines/README.md`](../machines/README.md#configuración-settings)). **No sabe de qué máquina se trata**: le pide `settings()` y dibuja lo que devuelve.
 
 - Se dibuja de arriba hacia abajo, una línea por vez. Por cada categoría: el título en mayúsculas y, por cada setting de esa categoría, su nombre y sus opciones de a 4 por fila (el ancho de la zona):
 
@@ -76,18 +85,15 @@ Muestra los settings de la máquina elegida con la herramienta edit (ver [`machi
 
 ## `levelInfoMenu.wlk`
 
-Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14), centrada en la parte azul (columna 1.5). **No decide nada**: le avisa `levelManager` (ver [`levels/README.md`](../levels/README.md)).
+Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 11), centrada en la parte azul (columna 1.5). **No decide nada**: le avisa `levelManager` (ver [`levels/README.md`](../levels/README.md)).
 
 | Fila (y) | Qué muestra |
 |---|---|
-| 13 | El nombre del nivel, en mayúsculas y en amarillo, sobre una cinta roja como el título del juego |
-| 12 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. En los tutoriales, el botón **T SALTEAR TUTORIAL** (`assets/menu/key_skip.png`), que también se clickea: `isSkipButton(pos)` dice si un click cayó en él. Se borra al cargar otro nivel |
-| 11 | `OBJETIVO`, en gris, arriba de una tarjeta de papel (como las hojas del recetario) que llega hasta el último objetivo. No aparece si el nivel no tiene objetivos con texto, como el modo libre |
-| 10 a 8 | Uno por objetivo (`level.shownGoals()`), como máximo 3: la imagen del plato a la izquierda, su texto en marrón y una barra de progreso que se llena por décimos (`goal.progressTenths()`) |
-| 7.5 | El paso del tutorial (`tutorial.stepLabels()`, por ejemplo `PASO 2 DE 8`), en gris, arriba de un globo de diálogo |
-| 7 hacia abajo | El mensaje del tutorial, en marrón dentro del globo: como máximo 6 líneas, separadas por 0.55 filas para que se lean como un párrafo. El globo tiene el alto justo para las líneas. Vacío en los niveles sin tutorial |
-| 3.65 hacia arriba | Las teclas del mensaje del tutorial, afuera del globo (en amarillo no se leen sobre el papel), la primera arriba: imágenes `assets/menu/key_<nombre>.png` con el estilo de las teclas del fondo (por ejemplo `place`: Z COLOCAR). Se van cuando cambia el mensaje |
-| 4.6 y 3.7 | Al ganar: `¡Nivel completo!` y la tecla N (SIGUIENTE), o `¡Fin del juego!` y la tecla 0 (REINICIAR) si no hay otro nivel. Las teclas son imágenes (`assets/menu/key_next.png` y `key_restart.png`, las genera `makeKeyHints.py`) con el estilo de las teclas del fondo |
+| 10 | El nombre del nivel, en mayúsculas y en amarillo, sobre una cinta roja como el título del juego |
+| 9 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. En los tutoriales, el botón **T SALTEAR TUTORIAL** (`assets/menu/key_skip.png`), que también se clickea: `isSkipButton(pos)` dice si un click cayó en él. Se borra al cargar otro nivel |
+| 8 | `OBJETIVO`, en gris, arriba de una tarjeta de papel (como las hojas del recetario) que llega hasta el último objetivo. No aparece si el nivel no tiene objetivos con texto, como el modo libre |
+| 7 a 5 | Uno por objetivo (`level.shownGoals()`), como máximo 3: la imagen del plato a la izquierda, su texto en marrón y una barra de progreso que se llena por décimos (`goal.progressTenths()`) |
+| 4.5 y 3.7 | Al ganar: `¡Nivel completo!` y la tecla N (SIGUIENTE), o `¡Fin del juego!` y la tecla 0 (REINICIAR) si no hay otro nivel. Las teclas son imágenes (`assets/menu/key_next.png` y `key_restart.png`, las genera `makeKeyHints.py`) con el estilo de las teclas del fondo |
 | 3.5 hacia abajo | Nada: el fondo (`background.gif`) tiene dibujadas las teclas F, M, Espacio y 1 2 3 |
 
 | Método | Lo llama | Qué hace |
@@ -95,19 +101,29 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 14)
 | `show(nivel)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
 | `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo los objetivos (`progressMessage()` y `progressBars()` devuelven lo que se ve) |
 | `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega el mensaje y la tecla para seguir (`completedMessage()` devuelve lo que dicen) |
-| `showTutorialMessage(paso, lineas, teclas)` | `levelManager`, al cargar un nivel y con cada aviso al tutorial | Reemplaza el globo, el paso, el mensaje y sus teclas (`tutorialStepLabel()`, `tutorialMessage()` y `tutorialMessageKeys()` devuelven lo que se ve) |
 
 - **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
-- Guarda lo dibujado en listas (el nombre, la tarjeta y el título; los objetivos; el mensaje de nivel completo; el globo, el mensaje y las teclas del tutorial) para reemplazar sólo lo que cambia.
+- Guarda lo dibujado en listas (el nombre, la tarjeta y el título; los objetivos; el mensaje de nivel completo; y el botón del tutorial) para reemplazar sólo lo que cambia.
 - **El estilo lo dan las imágenes de atrás** (`assets/menu/info/`: la cinta, las tarjetas para 1 a 3 objetivos, las barras de 0 a 10 décimos y los globos para 1 a 6 líneas, que genera `makeLevelInfo.py`) **y las letras**. Las imágenes se agregan antes que los textos, porque se dibujan en ese orden.
 - **Sobre el papel (la tarjeta y el globo) los textos se escriben con sprites** (`spriteText.wlk`), porque Wollok dibuja todos sus textos con un contorno oscuro que no se puede sacar, y ahí se ve raro. El nombre del nivel y los textos sobre el azul siguen siendo textos de Wollok (`MenuText`).
 - **Las posiciones con decimales son `CellPosition`**, no `game.at`: Wollok redondea a la celda la posición de `game.at` al dibujar, y la imagen quedaría corrida.
-- Wollok no corta el texto en varias líneas: con 4 celdas de ancho, los textos tienen que ser cortos. Para el tutorial, el límite está en `tutorialMaxLength()` (16) y `tutorialMaxLines()` (6), y lo revisa un test.
+- Wollok no corta el texto en varias líneas: con 4 celdas de ancho, los textos tienen que ser cortos.
 - **Centrado:** Wollok dibuja cada texto centrado en su celda, y la parte azul va de x 0 a 4. Por eso los textos van en la columna 1.5: su centro cae en x = 2.
+
+### `chefGuide.wlk`
+
+El cocinero que guía los tutoriales, sobre el tablero. Se para al lado de la celda del paso (la del recuadro, o la máquina que se explica) y la señala con la cuchara: arriba de ella si hay lugar, si no abajo; a su izquierda, salvo en las primeras columnas. Al costado tiene un globo con el paso (`PASO 2 DE 12`) y el mensaje (como máximo 6 líneas de 16 caracteres: `maxLines()` y `maxLength()`, lo revisa un test).
+
+| Método | Lo llama | Qué hace |
+|---|---|---|
+| `say(pasos, lineas, teclas, celdas)` | `levelManager`, con cada aviso al tutorial | Dibuja el cocinero y el globo, con las teclas del paso debajo del mensaje, una por fila (`tutorial/key_<nombre>.png`: "[ENTER] para seguir"). `message()`, `keys()` y `stepLabel()` devuelven lo que dice. Sin líneas (sin tutorial) no se ve; sin paso (`stepLabels()` vacío: terminó), festeja |
+| `complain(lineas)` | `levelManager`, cuando el jugador hizo algo que el paso no deja | Pone cara de "uy" y lo dice en un globo rojo un momento (1.7 s), y vuelve al mensaje del paso |
+
+Lo que dice al quejarse lo decide el tutorial (`complaintFor`, `complaintWithoutTool`, `complaintForMachine`: ver [`levels/README.md`](../levels/README.md)). Las imágenes (12 del cocinero: 3 caras, 2 poses y 2 lados; y los globos) las genera `assets/tutorial/makeChef.py`.
 
 ### `tutorialMarks.wlk`
 
-Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial. Las imágenes se generan con `assets/tutorial/makeMarks.py`.
+Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial. Si el jugador hace algo que el paso no deja, `flashError()` pone los recuadros en rojo (`tutorial/place_error.gif`) un momento. Las imágenes se generan con `assets/tutorial/makeMarks.py` (la roja, con `makeChef.py`).
 - `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).
 
 ## `recipeBook.wlk`
@@ -115,14 +131,14 @@ Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeña
 El libro de recetas: una tapa y una página por plato. Se abre con **F** (también desde la portada), **siempre en la tapa**, y se cierra con la cruz o con **F**. **Las flechas (izquierda y derecha) pasan las páginas**: la tapa está antes de la primera receta. **Mientras está abierto, la simulación queda en pausa** (`simulationEngine.pause()`), y al cerrarlo sigue desde donde estaba. Si estaba apagada, sigue apagada.
 
 - **Cada página es una imagen entera** de 800x500 (`assets/recipes_book/`), dibujada desde la celda (5, 2): ocupa x 5 a 20 e y 2 a 11. El código no dibuja textos: sólo cambia la imagen.
-- **La cruz se clickea**: ocupa las 4 celdas de arriba a la derecha de la imagen (x 19 y 20, y 10 y 11), porque Wollok avisa los clicks por celda. Tiene que estar en el mismo lugar en todas las páginas.
+- **Los botones del libro** (`bookButtons`, imágenes `menu/book_*.png`): la cruz (x 19 y 20, y 10 y 11) lo cierra, y las flechas de los costados (x 0 y x 21) pasan de página; se apagan en la primera y en la última. Un clic en la mitad izquierda del libro vuelve y en la derecha avanza. Wollok avisa los clics por celda.
 - Las flechas para pasar de página están dibujadas en las imágenes: "para avanzar →" en la tapa (`cover.png`), y "← anterior" y "siguiente →" en cada receta (la última no tiene "siguiente"). Si se vuelven a exportar las páginas, hay que dibujarlas.
 - Con el libro abierto, **los clicks van al libro y las demás teclas no hacen nada** (ver `userController.whenPlaying`).
 
 | Método | Qué hace |
 |---|---|
 | `open()` / `close()` / `toggle()` | Abre (en la tapa) y cierra |
-| `onClick(pos)` | Un click con el libro abierto: la cruz lo cierra |
+| `clickAt(pos, pantalla)` | Un clic con el libro abierto (ver arriba). Lo llama `BookScreen`, que es la pantalla mientras está abierto |
 | `prevPage()` / `nextPage()` | Las flechas. Desde la primera receta, la izquierda vuelve a la tapa; en la tapa la izquierda, y en la última receta la derecha, no hacen nada. Con el libro cerrado, tampoco |
 
 **Agregar un plato:**
@@ -133,9 +149,9 @@ El libro de recetas: una tapa y una página por plato. Se abre con **F** (tambi�
 
 ## `startMenu.wlk`
 
-La portada (`startScreen`), los controles (`menuControlsOverlay`, con I: `assets/menu/menu_controls.png`, que genera `makeKeyHints.py` sobre `menu_controls_base.png`) y el fondo del menú. **Enter** empieza a jugar: la primera vez arma el juego (las teclas, los menús, los platitos y el primer nivel). **M** vuelve a la portada y pausa la simulación; **S** en la portada cierra el juego.
+La portada (`startScreen`, sin las teclas de cada opción: la genera `assets/makeCover.py`), los controles (`menuControlsOverlay`, con I: `assets/menu/menu_controls.png`, cuyo panel redibuja `makeKeyHints.py`) y el fondo del menú. En la portada las opciones se eligen **con un clic, o con ↑ ↓ y Enter** (`coverMenu`, con un recuadro amarillo en la marcada: `coverFocus`); I, F y S siguen siendo atajos. INICIAR la primera vez arma el juego (las teclas, los menús, los platitos y el primer nivel). **M** vuelve a la portada y pausa la simulación.
 
-- `onClick(pos)` y `whenPlaying(acción)`: los resuelve la pantalla activa (`recipeBook.screenOver(screen)`: la del libro si está abierto, si no la del menú). Sólo `playingScreen` hace algo (clickea con la herramienta, ejecuta la tecla); la portada, las instrucciones y el libro (`bookScreen`) no hacen nada. `userController` sólo se los manda. El libro de recetas, en cambio, se puede abrir siempre. El recetario también es una máquina de estados: `closedBook` y `openBook`.
+- `onClick(pos)`, `whenPlaying(acción)`, `start()` (Enter), `arrow(dirección)` y `back()` (Retroceso): los resuelve la pantalla activa (`recipeBook.screenOver(screen)`: la del libro si está abierto, si no la del menú). Cada pantalla sabe qué hacer: la portada elige opciones, `playingScreen` juega, y el libro (`BookScreen`) pasa de página y se cierra. `userController` sólo se los manda. El libro de recetas, en cambio, se puede abrir siempre. El recetario también es una máquina de estados: `closedBook` y `openBook`.
 - Antes de que `main.wpgm` llame a `show()`, se considera que se está jugando: así los tests, que no pasan por la portada, pueden usar las teclas y los clicks.
 
 CÓMO JUGAR
@@ -173,19 +189,17 @@ Hay dos tipos de brazo, y elegir bien cuál usar es parte del desafío.
   saca del horno justo antes de que se queme. Un brazo básico podría
   sacarlo crudo.
 
-CONTROLES
-- Mouse: hacé click en el tablero para usar la herramienta elegida,
-  y en el menú de la derecha para elegir una máquina.
-- Z: elegir máquinas y colocarlas.
-- X: modificar una máquina ya colocada.
-- C: rotar una máquina ya colocada.
-- V: eliminar una máquina.
-- W, A, S, D: elegir hacia dónde mira la máquina antes de colocarla.
-- Q y E: cambiar de página en el menú de máquinas.
+CONTROLES (con el mouse o con el teclado, como quieras)
+- Clic en una celda vacía: colocar la máquina elegida en el menú de la
+  derecha (sólo con el clic).
+- Clic en una máquina: elegirla.
+- C, X, V: rotar, editar o borrar la máquina elegida (o su menú, abajo).
+- Retroceso: dejar de editar.
+- W, A, S, D (o los botones del menú): hacia dónde mira la máquina.
+- Q y E: cambiar de máquina en el menú.
 - F: abrir y cerrar el libro de recetas (las flechas pasan las recetas).
 - ESPACIO: prender y apagar la simulación.
 - 1, 2 y 3: velocidad de la simulación.
-Si apretás de nuevo la herramienta elegida, la deseleccionás.
 Con la simulación prendida no se puede colocar, borrar ni rotar:
 apagala para seguir construyendo.
 

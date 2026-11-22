@@ -22,7 +22,8 @@
 # M Menú): una tecla gris oscura con la letra blanca y, al lado, lo que hace en amarillo.
 #
 # - key_<nombre>.png (200x25): una tecla con su texto. Las muestra la info del nivel: al ganar (N y 0) y
-#   en el tutorial (ver levelInfoMenu). La tecla empieza en x 6, como las del fondo.
+#   el botón para saltear el tutorial (ver levelInfoMenu). Las teclas de los pasos del tutorial las dice el
+#   cocinero, en su globo (assets/tutorial/makeChef.py usa draw_key). La tecla empieza en x 6, como las del fondo.
 # - menu_controls.png: la pantalla de controles (la tecla I en la portada), con todas las teclas del juego.
 #   Se dibuja sobre menu_controls_base.png (el fondo con el título).
 #
@@ -64,7 +65,9 @@ def draw_key(im, x, y, text, height):
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=r * 0.8, fill=255)
     im.paste(inner, (x + inset, y + inset), mask)
     size = round(height * (0.64 if len(text) <= 1 else 0.48))
-    d.text((x + w / 2, y + height * 0.46), text, font=font(size), fill=LETTER, anchor='mm')
+    # el símbolo de Retroceso (⌫) no está en Segoe UI Bold: va con la fuente de símbolos
+    name = 'seguisym.ttf' if text == '⌫' else 'segoeuib.ttf'
+    d.text((x + w / 2, y + height * 0.46), text, font=font(size, name), fill=LETTER, anchor='mm')
     return x + w
 
 
@@ -84,79 +87,60 @@ def key_hint(keys, label, path):
 HINTS = [
     ('next', ['N'], 'SIGUIENTE'),
     ('restart', ['0'], 'REINICIAR'),
-    # las del tutorial
-    ('place', ['Z'], 'COLOCAR'),
-    ('edit', ['X'], 'EDITAR'),
-    ('rotate', ['C'], 'ROTAR'),
-    ('up', ['W'], 'MIRAR ARRIBA'),
-    ('left', ['A'], 'MIRAR A LA IZQ.'),
-    ('continue', ['ENTER'], 'SEGUIR'),
-    ('start', ['ESPACIO'], 'COCINAR'),
-    ('stop', ['ESPACIO'], 'APAGAR'),
+    # (las del tutorial las dice el cocinero: ver assets/tutorial/makeChef.py)
     # el botón para saltear el tutorial (también se clickea)
     ('skip', ['T'], 'SALTEAR TUTORIAL'),
 ]
 
-# La pantalla de controles: dos columnas de (teclas, texto)
+# La pantalla de controles: dos columnas de (teclas, texto). Ya no hay herramientas: el clic coloca o elige
+# una máquina, y C, X y V actúan sobre la elegida (ver toolsManager).
 CONTROLS_LEFT = ('CONSTRUIR', [
-    (['CLICK'], 'Usar la herramienta'),
-    (['Z'], 'Colocar'),
-    (['X'], 'Editar'),
-    (['C'], 'Rotar'),
-    (['V'], 'Borrar'),
+    (['CLIC'], 'Colocar o elegir máquina'),
+    (['←', '↑', '↓', '→'], 'Elegir opción (editando)'),
+    (['ENTER'], 'Aplicar (editando)'),
+    (['C'], 'Rotar la elegida'),
+    (['X'], 'Editar la elegida'),
+    (['V'], 'Borrar la elegida'),
+    (['Q', 'E'], 'Cambiar de máquina'),
     (['W', 'A', 'S', 'D'], 'Hacia dónde mira'),
-    (['Q', 'E'], 'Páginas de máquinas'),
-    (['T'], 'Saltear el tutorial'),
+    (['⌫'], 'Dejar de editar'),
 ])
 CONTROLS_RIGHT = ('JUGAR', [
-    (['ESPACIO'], 'Prender / apagar'),
+    (['ESPACIO'], 'Iniciar / pausar'),
     (['1', '2', '3'], 'Velocidad'),
     (['ENTER'], 'Seguir (tutorial)'),
+    (['T'], 'Saltear tutorial'),
     (['N'], 'Siguiente nivel'),
     (['0'], 'Reiniciar el nivel'),
     (['L'], 'Modo libre'),
     (['F'], 'Recetario'),
-    (['←', '→'], 'Pasar recetas'),
     (['M'], 'Volver al menú'),
 ])
 
-
-def bulbs(d, box, step=50):
-    """Las lamparitas del marco, como el panel de la portada"""
-    x0, y0, x1, y1 = box
-    points = [(x, y0) for x in range(x0 + 25, x1 - 10, step)] + [(x, y1) for x in range(x0 + 25, x1 - 10, step)]
-    points += [(x0, y) for y in range(y0 + 25, y1 - 10, step)] + [(x1, y) for y in range(y0 + 25, y1 - 10, step)]
-    for (x, y) in points:
-        d.ellipse([x - 7, y - 7, x + 7, y + 7], fill=(255, 236, 170, 255))
-        d.ellipse([x - 4, y - 4, x + 4, y + 4], fill=(255, 250, 225, 255))
+# El panel de madera de menu_controls.png (adentro del marco con lamparitas): se pinta de nuevo y se
+# escriben las dos columnas encima. El título y el "I volver al menú" de abajo quedan como están.
+PANEL = (132, 150, 968, 576)
+WOOD = (151, 68, 0, 255)
 
 
 def controls_screen():
-    im = Image.open('menu_controls_base.png').convert('RGBA')
+    im = Image.open('menu_controls.png').convert('RGBA')
     d = ImageDraw.Draw(im)
-    # el panel: marco gris con lamparitas y madera adentro, como el de la portada
-    frame = (95, 150, 1155, 770)
-    d.rounded_rectangle(frame, radius=24, fill=(120, 120, 125, 255))
-    bulbs(d, frame)
-    wood = (125, 180, 1125, 740)
-    d.rectangle(wood, fill=(150, 72, 10, 255), outline=(90, 40, 5, 255), width=4)
-    d.line([(625, 200), (625, 690)], fill=(100, 45, 5, 255), width=3)
-
-    title_font = font(30, 'ROCKEB.TTF')
-    label_font = font(22, 'segoeuib.ttf')
-    for (title, rows), x0 in ((CONTROLS_LEFT, 165), (CONTROLS_RIGHT, 665)):
-        d.text((x0 + 210, 215), title, font=title_font, fill=(255, 255, 255, 255), anchor='mm',
-               stroke_width=3, stroke_fill=(40, 20, 5, 255))
-        y = 255
+    d.rectangle(PANEL, fill=WOOD)
+    d.line([(550, 175), (550, 560)], fill=(100, 45, 5, 255), width=3)
+    title_font = font(26, 'segoeuib.ttf')
+    label_font = font(16, 'segoeuib.ttf')
+    for (title, rows), x0 in ((CONTROLS_LEFT, 155), (CONTROLS_RIGHT, 575)):
+        d.text((x0 + 185, 178), title, font=title_font, fill=(255, 255, 255, 255), anchor='mm')
+        d.line([(x0 + 70, 200), (x0 + 300, 200)], fill=(210, 160, 110, 255), width=2)
+        y = 214
         for keys, label in rows:
             x = x0
             for key in keys:
-                x = draw_key(im, x, y, key, 38) + 6
+                x = draw_key(im, x, y, key, 30) + 4
             d = ImageDraw.Draw(im)
-            d.text((max(x, x0 + 150) + 10, y + 19), label, font=label_font, fill=LABEL, anchor='lm')
-            y += 50
-    d.text((625, 712), 'I: volver', font=font(22, 'ROCKEB.TTF'), fill=(255, 255, 255, 255), anchor='mm',
-           stroke_width=2, stroke_fill=(40, 20, 5, 255))
+            d.text((max(x, x0 + 138) + 8, y + 15), label, font=label_font, fill=LABEL, anchor='lm')
+            y += 39
     im.save('menu_controls.png')
 
 
