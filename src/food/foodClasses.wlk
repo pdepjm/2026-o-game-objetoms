@@ -79,7 +79,7 @@ class DishKind {
 }
 
 // Lo que circula por el tablero. Delega en su kind, que cambia cuando lo procesan
-class Item inherits Animado {
+class Item inherits Animated {
     var kind
 
     // Getter

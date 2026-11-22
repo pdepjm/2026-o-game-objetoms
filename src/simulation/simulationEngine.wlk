@@ -110,6 +110,9 @@ object simulationEngine {
 		agenda.get(dueStep % slotCount).add(new ScheduledAction(dueStep = dueStep, action = action))
 	}
 
+	// El paso en el que va (para medir cuánto se cocinó: ver levelManager)
+	method currentStep() = currentStep
+
 	// Cantidad de pasos de simulación que equivalen a esos milisegundos
 	method stepsFor(milliseconds) = (milliseconds / tickMs).roundUp().max(1)
 
@@ -141,7 +144,7 @@ object simulationEngine {
 		agenda.forEach({ slot => slot.clear() })
 		animationEngine.reset()
 		self.allItems().forEach({ item =>
-			item.detener()
+			item.halt()
 			game.removeVisual(item)
 		})
 		simulatedObjects.forEach({ machine => machine.reset() })
@@ -157,7 +160,7 @@ object simulationEngine {
 	// Saca un item del tablero (lo consume una máquina, como el Assembler).
 	// Es la contraparte de addItem.
 	method removeItem(item) {
-		item.detener()
+		item.halt()
 		game.removeVisual(item)
 	}
 	// Todos los items que hay en el tablero (cada uno está en alguna máquina)

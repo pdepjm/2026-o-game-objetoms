@@ -59,6 +59,8 @@ class EnergyLimit {
 		menu.showEnergy(self.text(total), row, self.allows(total))
 	}
 	method text(total) = if (self.allows(total)) "Energía: " + total + "/" + max else "SIN ENERGÍA: " + total + "/" + max
+	// Lo que dice la comanda del nivel completo (ver levelComplete)
+	method usedText(total) = "Energía usada: " + total + "/" + max
 }
 
 // El nivel sin límite de energía
@@ -67,6 +69,7 @@ object unlimitedEnergy {
 	method showIn(menu, total, row) {}
 	method allows(total) = true
 	method text(total) = ""
+	method usedText(total) = "Energía usada: " + total
 }
 
 class Level {

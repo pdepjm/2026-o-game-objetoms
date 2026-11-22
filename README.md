@@ -127,7 +127,7 @@ El texto completo de la licencia se encuentra en el archivo [LICENSE](LICENSE) y
 
 **Amparado por la licencia:**
 - El código fuente en Wollok: `src/` (archivos `.wlk` y `.wpgm`) y `test/` (archivos `.wtest`). Es obra original del grupo objeTOMs y no incorpora código de terceros.
-- Los scripts de Python ubicados en `assets/` (`gifToFrames.py`, `assetRotate.py`, `svgToSprite.py`, `makeKeyHints.py`, `makeBoardUi.py`, `makeCover.py`, `makeLevelInfo.py` y `makeFont.py`). No forman parte del juego: son herramientas auxiliares para crear sprites e imágenes, y no se utilizan al jugar. No incorporan código de terceros.
+- Los scripts de Python ubicados en `assets/` (`gifToFrames.py`, `assetRotate.py`, `svgToSprite.py`, `makeKeyHints.py`, `makeBoardUi.py`, `makeArmAndTicket.py`, `makeBadges.py`, `makeCover.py`, `makeLevelInfo.py` y `makeFont.py`). No forman parte del juego: son herramientas auxiliares para crear sprites e imágenes, y no se utilizan al jugar. No incorporan código de terceros.
 - Los recursos de `assets/` (imágenes, GIFs y música). Son obra original del grupo objeTOMs: la música fue compuesta por el grupo y las imágenes fueron creadas por el grupo.
 - La documentación del repositorio (archivos `README.md`).
 

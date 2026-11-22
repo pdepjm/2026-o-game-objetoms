@@ -29,8 +29,8 @@ Genera lo que dibuja src/menu/placeMenu.wlk (los casilleros miden 2x2 celdas, 10
 - menu/slot_selected.png: el marco amarillo de la máquina elegida
 - menu/slot_hint.gif: el marco que titila en la máquina que pide el tutorial
 - menu/slot_error.png: el marco rojo de una máquina que no va (se ve un momento)
-- menu/place_help.png y menu/place_help_pages.png: la ayuda debajo de los casilleros (con Q/E si el
-  catálogo tiene más de una página)
+- menu/place_help.png: la ayuda debajo de los casilleros (clic y Q/E). Hacia dónde mira va en la brújula
+  (ver makeArmAndTicket.py)
 
 Uso (desde la raíz del repositorio):   python assets/menu/makePlaceSlots.py
 Requiere Pillow.
@@ -142,11 +142,10 @@ def help_image(lines, name):
 
 
 def helps():
-    # hacia dónde mira va abajo, en sus propios botones (dir_pad.png, ver makeBoardUi.py)
+    # hacia dónde mira va abajo, en la brújula (compass_*.png, ver makeArmAndTicket.py)
     lines = ["Clic: elegir máquina", "Q / E: cambiar de máquina"]
     help_image(lines, "place_help.png")
-    help_image(lines + ["(hay más páginas)"], "place_help_pages.png")
-    print("  menu/place_help.png, place_help_pages.png")
+    print("  menu/place_help.png")
 
 
 if __name__ == "__main__":

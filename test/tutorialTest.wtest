@@ -29,9 +29,8 @@ import src.machines.types.deliverySlot.*
 import src.menu.menuManager.*
 import src.menu.editMenu.*
 import src.menu.levelInfoMenu.*
-import src.menu.chefGuide.*
+import src.menu.tutorialGuide.*
 import src.menu.placeMenu.*
-import src.menu.tutorialMarks.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
@@ -42,7 +41,11 @@ import src.levels.levelsTypes.*
 import src.levels.levelManager.*
 import src.levels.tutorial.*
 import src.input.userController.*
+import src.menu.armMenu.*
+import src.menu.levelComplete.*
+import src.machines.settings.*
 import src.menu.startMenu.*
+import src.menu.actionsMenu.*
 
 // Fase 5 del plan de niveles: lo que el juego le avisa al tutorial, sus permisos y su mensaje.
 
@@ -188,12 +191,14 @@ describe "tests del tutorial de papas fritas" {
     self.chooseRecto(game.at(11, 5), friedPotato)
   }
 
-  // Elige un ingrediente en la salida Recto del brazo inteligente, clickeando su opción en el panel de edit
+  // Manda un ingrediente por la salida Recto del brazo inteligente (el lado opuesto a donde agarra),
+  // clickeando su casillero en el panel del brazo hasta que salga por ahí
   method chooseRecto(machinePos, kind) {
     self.useTool(edit, machinePos)
-    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == "Recto" })
-    const pos = (17 .. 21).flatMap({ x => (0 .. 12).map({ y => game.at(x, y) }) }).find({ pos => editMenu.slotAt(pos).matches(setting, kind) })
-    toolsManager.onClick(pos)
+    const arm = board.machineAt(machinePos)
+    const index = (0 .. arm.editKinds().size() - 1).find({ i => arm.editKinds().get(i) == kind })
+    const target = straightOut.sideFor(arm.inputSide())
+    4.times({ _ => if (arm.sideOf(kind) != target) toolsManager.onClick(armMenu.cellOf(index)) })
   }
 
   test "se juegan los tres tutoriales y despues los niveles 1, 2, 3 y 4" {
@@ -233,6 +238,25 @@ describe "tests del tutorial de papas fritas" {
     assert.that(tutorialMarks.marks().all({ mark => !game.hasVisual(mark) }))
   }
 
+  // RENDIMIENTO: con cada entrega se le avisa al tutorial, pero si no cambia nada no se redibuja nada
+  test "un aviso al tutorial que no cambia el paso no redibuja las marcas ni el cocinero" {
+    self.build()
+    const marks = tutorialMarks.marks()
+    const drawn = chefGuide.drawnVisuals()
+    const tutorial = levelManager.tutorial()
+    tutorialMarks.show(tutorial.targetCells(), tutorial.pointedCells())
+    chefGuide.say(tutorial.stepLabels(), tutorial.messageLines(), tutorial.messageKeys(), tutorial.targetCells() + tutorial.pointedCells())
+    assert.that(marks == tutorialMarks.marks())
+    assert.that(drawn == chefGuide.drawnVisuals())
+  }
+
+  // RENDIMIENTO: el mensaje del globo es una sola imagen. Lo dibujado es el cocinero, el globo, la etiqueta
+  // del paso (un texto letra por letra: cuenta como uno), el mensaje y la tecla para seguir
+  test "el globo dibuja el mensaje con una sola imagen" {
+    assert.equals(5, chefGuide.drawnVisuals().size())
+    assert.equals("tutorial/messages/0.png", chefGuide.drawnVisuals().get(3).image())
+  }
+
   test "mientras se cocina, un clic en una maquina no la elige ni muestra su menu" {
     self.build()
     levelManager.toggleSimulation()
@@ -260,6 +284,26 @@ describe "tests del tutorial de papas fritas" {
     levelManager.toggleSimulation()
     (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
     assert.that(chefGuide.keys().isEmpty())
+  }
+
+  test "al ganar aparece la comanda, y su boton SIGUIENTE NIVEL carga el proximo" {
+    self.build()
+    levelManager.toggleSimulation()
+    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    assert.that(levelComplete.isShown())
+    assert.that(levelComplete.lines().contains("Papas Fritas: 2/2"))
+    playingScreen.onClick(game.at(10, 3))
+    assert.equals(hotDogTutorialLevel, levelManager.currentLevel())
+    assert.notThat(levelComplete.isShown())
+  }
+
+  test "con la comanda, un clic fuera de sus botones no hace nada" {
+    self.build()
+    levelManager.toggleSimulation()
+    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    playingScreen.onClick(game.at(8, 8))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+    assert.that(levelComplete.isShown())
   }
 
   test "al explicar muestra solo la flecha, arriba del dispenser" {
@@ -339,7 +383,22 @@ describe "tests del tutorial de papas fritas" {
     assert.equals("Un brazo agarra", self.message().first())
     self.useTool(rotate, game.at(11, 5))
     self.useTool(rotate, game.at(11, 5))
-    assert.equals("Elegí la papa", self.message().first())
+    assert.equals("Tocá la papa", self.message().first())
+  }
+
+  test "en el paso del brazo, el primer clic manda la papa frita hacia arriba y todavia no alcanza" {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.placeMachine(2, game.at(10, 5))
+    self.placeMachine(3, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(edit, game.at(11, 5))
+    toolsManager.onClick(armMenu.cellOf(0))
+    assert.equals(up, board.machineAt(game.at(11, 5)).sideOf(friedPotato))
+    assert.equals("Tocá la papa", self.message().first())
+    toolsManager.onClick(armMenu.cellOf(0))
+    assert.equals("¡Listo! Ya se", self.message().first())
   }
 
   test "el brazo inteligente hay que editarlo para que deje salir la papa frita" {
@@ -744,5 +803,14 @@ describe "tests del cocinero del tutorial" {
     levelManager.continueTutorial()
     // pide la cortadora, que está en el casillero 2
     assert.equals([placeMenu.slotPosition(2)], placeMenu.hintedSlots())
+  }
+
+  test "si el paso pide la misma maquina, el casillero que titila no se vuelve a dibujar" {
+    levelManager.continueTutorial()
+    self.useTool(place, game.at(6, 5))
+    levelManager.continueTutorial()
+    const hinted = placeMenu.hintedSlots()
+    placeMenu.highlight(levelManager.tutorial().wantedMachines())
+    assert.that(hinted == placeMenu.hintedSlots())
   }
 }

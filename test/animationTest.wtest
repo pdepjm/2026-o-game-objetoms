@@ -81,7 +81,7 @@ describe "tests de MachineAnimator" {
   test "al empezar una animacion muestra el primer frame" {
     sprite.play(threeFrames, noAction)
     assert.equals("anim/0.png", sprite.image())
-    assert.that(sprite.animando())
+    assert.that(sprite.animating())
   }
   
   // play se llama fuera del tick (como desde una acción agendada): el tick siguiente no saltea el frame 0
@@ -105,7 +105,7 @@ describe "tests de MachineAnimator" {
     assert.equals(0, sprite.finished())
     self.ticks(1)
     assert.equals(1, sprite.finished())
-    assert.notThat(sprite.animando())
+    assert.notThat(sprite.animating())
   }
   
   test "una animacion terminada no sigue cambiando la imagen" {
@@ -149,7 +149,7 @@ describe "tests de MachineAnimator" {
     self.ticks(1)
     sprite.stopAnimation()
     self.ticks(10)
-    assert.notThat(sprite.animando())
+    assert.notThat(sprite.animating())
     assert.equals(0, sprite.finished())
     assert.equals("anim/0.png", sprite.image())
   }
@@ -159,13 +159,13 @@ describe "tests de MachineAnimator" {
     item.position(game.at(0, 0))
     sprite.play(threeFrames, { item.move(game.at(3, 0)) })
     self.ticks(4)
-    assert.that(item.moviendose())
+    assert.that(item.moving())
     self.ticks(14)
-    assert.that(item.moviendose())
+    assert.that(item.moving())
     self.ticks(1)
     assert.equals(3, item.position().x())
     assert.equals(0, item.position().y())
-    assert.notThat(item.moviendose())
+    assert.notThat(item.moving())
   }
 }
 
@@ -234,7 +234,7 @@ describe "tests del AutomaticArm" {
     simulationEngine.run()
     self.steps(10)
     assert.equals(self.image("left_game.png"), arm.image())
-    assert.notThat(arm.animando())
+    assert.notThat(arm.animating())
   }
   
   test "al recibir un item estando mirando a la entrada, lo agarra sin girar" {
@@ -326,7 +326,7 @@ describe "tests del AutomaticArm" {
     self.itemFrom(left)
     self.steps(catchEnd)
     assert.equals(self.image("right_game.png"), arm.image())
-    assert.notThat(arm.animando())
+    assert.notThat(arm.animating())
   }
   
   test "el item termina en la celda contraria" {
@@ -463,7 +463,7 @@ describe "tests del AutomaticArm" {
     self.steps(catchStart + 3)
     simulationEngine.stop()
     assert.equals(self.image("left_game.png"), arm.image())
-    assert.notThat(arm.animando())
+    assert.notThat(arm.animating())
     assert.that(arm.heldItems().isEmpty())
   }
 }

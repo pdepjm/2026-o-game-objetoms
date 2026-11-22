@@ -27,8 +27,6 @@
 # - cover_focus.png (440x60): la opción marcada en la portada.
 # - option_focus.png (50x50): la opción marcada en el panel de editar.
 # - book_prev.png, book_next.png (y _off) (50x80) y book_close.png (100x100): los botones del recetario.
-# - dir_pad.png (200x75) y dir_selected.png (50x50): hacia dónde mira la máquina a colocar, en el panel de
-#   colocar: ← ↑ ↓ →, una celda cada una (también se eligen con W A S D).
 #
 # Uso (desde la raíz del repositorio):   python assets/menu/makeBoardUi.py
 from pathlib import Path
@@ -206,20 +204,6 @@ def book_close():
     save(im, 'book_close.png')
 
 
-def dir_pad():
-    im = canvas(200, 75)
-    d = ImageDraw.Draw(im)
-    d.text((100 * S, 11 * S), 'HACIA DÓNDE MIRA', font=font(round(12 * S)), fill=YELLOW, anchor='mm')
-    for i, (arrow, key) in enumerate((('←', 'A'), ('↑', 'W'), ('↓', 'S'), ('→', 'D'))):
-        draw_key(im, (i * 50 + 6) * S, 30 * S, arrow, 38 * S)
-        d = ImageDraw.Draw(im)
-        d.text(((i * 50 + 39) * S, 63 * S), key, font=font(round(9 * S)), fill=WHITE, anchor='mm')
-    save(im, 'dir_pad.png')
-    sel = canvas(50, 50)
-    box(ImageDraw.Draw(sel), (2, 3, 48, 48), None, YELLOW, 4, 10)
-    save(sel, 'dir_selected.png')
-
-
 if __name__ == '__main__':
     actions('actions_all.png', [True, True, True])
     actions('actions_noedit.png', [True, False, True])
@@ -235,5 +219,4 @@ if __name__ == '__main__':
     book_arrow('book_next.png', '>', '→', True)
     book_arrow('book_next_off.png', '>', '→', False)
     book_close()
-    dir_pad()
     print('ok')

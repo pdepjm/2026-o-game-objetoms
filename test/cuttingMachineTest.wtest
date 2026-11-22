@@ -51,7 +51,7 @@ describe "tests de la cortadora en una cadena" {
   const beltAfter = new Belt()
 
   const dispenseSteps = dispenser.intervalSteps()
-  const cellSteps = animationEngine.pasosPorCelda()
+  const cellSteps = animationEngine.stepsPerCell()
 
   method initialize() {
     toolsManager.currentDirection(right)
@@ -80,7 +80,7 @@ describe "tests de la cortadora en una cadena" {
   test "mientras corta, la papa todavia esta cruda" {
     simulationEngine.run()
     self.steps(dispenseSteps + cellSteps * 2)
-    assert.that(cutter.animando())
+    assert.that(cutter.animating())
     assert.equals(potato, cutter.heldItems().first().kind())
     assert.that(beltAfter.heldItems().isEmpty())
   }
@@ -95,7 +95,7 @@ describe "tests de la cortadora en una cadena" {
     simulationEngine.run()
     self.stepsUntil({ !beltAfter.heldItems().isEmpty() })
     assert.that(cutter.heldItems().isEmpty())
-    assert.notThat(cutter.animando())
+    assert.notThat(cutter.animating())
   }
 }
 
@@ -103,7 +103,7 @@ describe "tests de la cortadora con items puestos a mano" {
 
   const beltBefore = new Belt()
   const cutter = new CuttingMachine()
-  const cellSteps = animationEngine.pasosPorCelda()
+  const cellSteps = animationEngine.stepsPerCell()
 
   method initialize() {
     toolsManager.currentDirection(right)
@@ -136,9 +136,9 @@ describe "tests de la cortadora con items puestos a mano" {
     simulationEngine.run()
     self.feed(cutter, raw)
     self.steps(cellSteps + 3)
-    assert.that(cutter.animando())
+    assert.that(cutter.animating())
     simulationEngine.stop()
-    assert.notThat(cutter.animando())
+    assert.notThat(cutter.animating())
     assert.that(cutter.heldItems().isEmpty())
     assert.equals(cutter.staticImage(), cutter.image())
     assert.equals(potato, raw.kind())

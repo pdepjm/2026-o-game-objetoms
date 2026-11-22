@@ -12,7 +12,7 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 ## `foodClasses.wlk`
 
 - **Procesos** (`cutting`, `frying`, `burning`, `cooking`): objetos vacíos que representan lo que hace cada máquina. Se comparan por identidad. `burning` no lo aplica ninguna máquina a propósito: es lo que le pasa a un item que se queda demasiado en la freidora.
-- `Item`: lo que está en el tablero. Se mueve (`Animado`, de `simulation/animationEngine.wlk`) y delega en su `kind`, que cambia cuando lo procesan. Lo crean el `Dispenser` y las recetas (`prepare()`).
+- `Item`: lo que está en el tablero. Se mueve (`Animated`, de `simulation/animationEngine.wlk`) y delega en su `kind`, que cambia cuando lo procesan. Lo crean el `Dispenser` y las recetas (`prepare()`).
 - **Kinds**: qué es un item en este momento. Hay dos clases, y `Item` no necesita saber cuál tiene:
   - `IngredientKind`: un ingrediente (papa, papa cortada...). Guarda sus transiciones: con qué proceso se convierte en qué. Cada kind concreto las carga en su `initialize()` con `turnsInto(proceso, resultado)`.
   - `DishKind`: un plato final. Ningún proceso se le puede aplicar.

@@ -20,11 +20,11 @@ import wollok.game.*
 import simulation.simulationEngine.*
 import sound.sfx.*
 import cellPosition.*
+import menu.visuals.*
 
-class RecipeBookVisual {
-	method position() = game.origin()
-	// Acordate de usar el nombre exacto de tu carpeta (recipes_book)
-	method image() = "recipes_book/recetario_page" + recipeBook.currentPage() + ".png"
+// La página que se ve: guarda su imagen, que cambia sólo al pasar de página (no se arma en cada frame)
+object recipePage inherits Picture(image = "recipes_book/recetario_page0.png", position = new CellPosition(x = 0, y = 0)) {
+	method showPage(page) { image = "recipes_book/recetario_page" + page + ".png" }
 }
 
 // El recetario es una máquina de estados: cerrado (closedBook) o abierto (openBook). Cada estado sabe
@@ -34,7 +34,6 @@ object recipeBook {
 	var property currentPage = 0
 	const maxPages = 10
 	var state = closedBook
-	const recipeBookVisual = new RecipeBookVisual()
 	var pausedByBook = false 
 
 	// Sólo para consultar (los tests): nadie decide nada con esto, los estados resuelven solos
@@ -73,14 +72,15 @@ object recipeBook {
 		state = openBook
 		pausedByBook = simulationEngine.running() && !simulationEngine.paused()
 		if (pausedByBook) simulationEngine.pause()
-		if (!game.hasVisual(recipeBookVisual)) game.addVisual(recipeBookVisual)
+		recipePage.showPage(currentPage)
+		recipePage.show()
 		bookButtons.show()
 		sfx.pageChange()
 	}
 
 	method closed() {
 		state = closedBook
-		if (game.hasVisual(recipeBookVisual)) game.removeVisual(recipeBookVisual)
+		recipePage.hide()
 		bookButtons.hide()
 		if (pausedByBook) simulationEngine.resume()
 		pausedByBook = false
@@ -103,8 +103,7 @@ object recipeBook {
 
 	// La página nueva, y los botones arriba de ella
 	method updateVisual() {
-		game.removeVisual(recipeBookVisual)
-		game.addVisual(recipeBookVisual)
+		recipePage.showPage(currentPage)
 		bookButtons.show()
 	}
 }
@@ -174,12 +173,14 @@ object bookButtons {
 	}
 }
 
-class BookButton {
-	const property position
+class BookButton inherits Picture(image = "menu/book_close.png") {
 	const name
-	var image = "menu/" + name + ".png"
 
-	method image() = image
+	override method initialize() {
+		super()
+		image = "menu/" + name + ".png"
+	}
+
 	// Apagado en la primera página (la flecha de volver) o en la última (la de avanzar)
 	method update(off) { image = "menu/" + name + (if (off) "_off" else "") + ".png" }
 }

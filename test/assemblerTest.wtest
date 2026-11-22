@@ -77,7 +77,7 @@ describe "tests de Assembler con items puestos a mano" {
 
   const assembler = new Assembler()
   const sink = new Sink()
-  const cellSteps = animationEngine.pasosPorCelda()
+  const cellSteps = animationEngine.stepsPerCell()
   // lo que tarda en llegar el último ingrediente y armarse el plato
   const dishSteps = cellSteps + burgerRecipe.assembleTime()
 

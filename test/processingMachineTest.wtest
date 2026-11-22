@@ -97,7 +97,7 @@ test "con una sola imagen todos los pasos muestran esa imagen" {
 describe "tests de la cortadora: tiempo de procesamiento" {
 
 const cutter = new CuttingMachine()
-const cellSteps = animationEngine.pasosPorCelda()
+const cellSteps = animationEngine.stepsPerCell()
 
 method initialize() {
     toolsManager.currentDirection(right)
@@ -167,7 +167,7 @@ test "al apagar la simulacion a mitad del corte no procesa nada ni da error" {
     simulationEngine.stop()
     self.steps(20)
     assert.that(cutter.heldItems().isEmpty())
-    assert.notThat(cutter.animando())
+    assert.notThat(cutter.animating())
     assert.equals(potato, piece.kind())
 }
 }
@@ -175,7 +175,7 @@ test "al apagar la simulacion a mitad del corte no procesa nada ni da error" {
 describe "tests del horno: tiempo de procesamiento" {
 
 const oven = new Oven()
-const cellSteps = animationEngine.pasosPorCelda()
+const cellSteps = animationEngine.stepsPerCell()
 
 method initialize() {
     toolsManager.currentDirection(right)
@@ -255,7 +255,7 @@ describe "tests de una ProcessingMachine sin workImages" {
 
 const processor = new DummyProcessor()
 const sink = new ReceivingSink()
-const cellSteps = animationEngine.pasosPorCelda()
+const cellSteps = animationEngine.stepsPerCell()
 
 method initialize() {
     toolsManager.currentDirection(right)

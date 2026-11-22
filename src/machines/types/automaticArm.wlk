@@ -22,6 +22,7 @@ import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import directions.*
 import board.*
+import menu.armMenu.*
 
 // Brazo automático: agarra el item que le llega por su ÚNICA entrada y lo entrega recto, a la
 // izquierda o a la derecha de su recorrido, según cómo se configure.
@@ -130,6 +131,26 @@ class AutomaticArm inherits Machine {
 
 	// Lado por el que entrega, según lo configurado (relativo al lado de entrada)
 	method outputSide() = outputSetting.value().sideFor(inputSide)
+
+	// ----------- EL PANEL DEL BRAZO (ver armMenu) -----------
+	// En lugar de "Recto / Izq. / Der." (relativos a donde agarra), el panel muestra los lados del tablero.
+
+	override method editPanel() = armMenu
+	method editTitle() = "BRAZO"
+	method editHint() = "DEJA TODO HACIA"
+	// El brazo como se ve en el tablero, en un cuadro (assets/menu/makeArmAndTicket.py)
+	method editBoxImage() = "menu/arm_box_auto_" + inputSide.name() + ".png"
+	// Las cuatro direcciones, en el orden ↑ → ↓ ← (la de donde agarra no se elige)
+	method editChoices() = [up, right, down, left].map({ side => new ArmSideChoice(arm = self, side = side) })
+
+	// Deja todo hacia ese lado del tablero: la salida (relativa a la entrada) que da a ese lado
+	method chooseOutputSide(side) {
+		outputSetting.value([straightOut, leftOut, rightOut].find({ output => output.sideFor(inputSide) == side }))
+	}
+
+	// Lo que se ve en el tablero al lado del brazo mientras se edita: por qué lados sale algo, y qué
+	method sendsTo(side) = self.outputSide() == side
+	method kindsTo(side) = []
 
 	// Lado por el que entrega ESE item. Los brazos que eligen según el item lo sobrescriben.
 	method outputSideFor(item) = self.outputSide()

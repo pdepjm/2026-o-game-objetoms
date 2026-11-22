@@ -82,7 +82,7 @@ object friesTutorialCells {
 //   fijo       JUGADOR  JUGADOR    fija   fijo         JUGADOR   JUGADOR            fijas
 //
 // El brazo inteligente hay que rotarlo para que agarre de la freidora, y editarlo para que deje salir la
-// papa frita por Recto (por defecto no deja salir nada). Como sólo agarra lo que dejó salir, espera a que la papa se fría. Antes de cada máquina que pone el jugador, un ExplainStep señala con la
+// papa frita hacia la cinta (en su panel, clic en la papa frita hasta que vaya →; por defecto no deja salir nada). Como sólo agarra lo que dejó salir, espera a que la papa se fría. Antes de cada máquina que pone el jugador, un ExplainStep señala con la
 // flecha la máquina de la que viene (pointsAt) y se sigue con Enter. Después, el paso que la pide
 // marca con el recuadro dónde va (cells), y deja colocar, borrar y rotar sólo ahí.
 object tutorialLevel inherits Level(
@@ -181,10 +181,12 @@ object tutorialLevel inherits Level(
                 condition = { machine => machine.inputSide() == left }
             ),
             new MachineStep(
-                lines = ["Elegí la papa", "frita en Recto:", "el brazo sólo", "deja salir eso."],
+                lines = ["Tocá la papa", "frita hasta que", "vaya a la cinta", "de la derecha."],
                 keys = ["edit", "choose"],
                 cells = [friesTutorialCells.smartArm()],
-                condition = { machine => machine.takes(friedPotato) }
+                // cada clic la manda a otro lado (↑, →, ↓): recién se cumple cuando sale hacia la cinta (→).
+                // Si sólo pidiera que la agarre, se cumpliría con el primer clic, que la manda hacia arriba.
+                condition = { machine => machine.sideOf(friedPotato) == right }
             ),
             new RunStep(
                 lines = ["¡Listo! Ya se", "puede cocinar"],

@@ -28,6 +28,21 @@ class ArmRoute {
 	const property filter
 
 	method accepts(item) = filter.accepts(item)
+
+	// El lado del tablero por el que sale, para un brazo que agarra de inputSide
+	method sideFor(inputSide) = output.sideFor(inputSide)
+}
+
+// "Ninguna salida": la de un ingrediente que el brazo no agarra
+object noRoute {
+	method sideFor(inputSide) = noSide
+	method filter() = noFilter
+}
+
+object noFilter {
+	method contains(kind) = false
+	method add(kind) {}
+	method remove(kind) {}
 }
 
 // Brazo inteligente: igual que el automático, pero tiene tres salidas (izquierda, recta y derecha)
@@ -79,4 +94,34 @@ class SmartRoboticArm inherits AutomaticArm {
 
 	// No toma lo que no tiene por dónde salir
 	override method canReceive(item) = super(item) && self.canTake(item)
+
+	// ----------- EL PANEL DEL BRAZO (ver armMenu) -----------
+	// Un casillero por ingrediente. Cada clic lo manda al lado siguiente del tablero. Un ingrediente sale
+	// por un solo lado: se guarda en el filtro de esa salida (los de "Recto", "Izq." y "Der." de siempre).
+
+	override method editTitle() = "BRAZO INTELIGENTE"
+	override method editHint() = "CLIC: CAMBIA HACIA DÓNDE"
+	override method editBoxImage() = "menu/arm_box_smart_" + inputSide.name() + ".png"
+	override method editChoices() = kinds.map({ kind => new ArmKindChoice(arm = self, kind = kind) })
+	// Los ingredientes del panel, en el orden de sus casilleros
+	method editKinds() = kinds
+
+	// El lado del tablero por el que sale ese ingrediente (noSide si no lo agarra)
+	method sideOf(kind) = routes.findOrDefault({ route => route.filter().contains(kind) }, noRoute).sideFor(inputSide)
+
+	// Lo manda al lado siguiente: nada → ↑ → → → ↓ → ← → nada (sin el lado de donde agarra)
+	method cycle(kind) {
+		const options = [noSide] + [up, right, down, left].filter({ side => side != inputSide })
+		const index = (0 .. options.size() - 1).find({ i => options.get(i) == self.sideOf(kind) })
+		self.sendTo(kind, options.get((index + 1).rem(options.size())))
+	}
+
+	// Que ese ingrediente salga sólo por ese lado del tablero (noSide: que no lo agarre)
+	method sendTo(kind, side) {
+		routes.forEach({ route => route.filter().remove(kind) })
+		routes.findOrDefault({ route => route.sideFor(inputSide) == side }, noRoute).filter().add(kind)
+	}
+
+	override method sendsTo(side) = !self.kindsTo(side).isEmpty()
+	override method kindsTo(side) = kinds.filter({ kind => self.sideOf(kind) == side })
 }

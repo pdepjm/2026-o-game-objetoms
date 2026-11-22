@@ -20,7 +20,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Genera en esta carpeta lo que dibuja src/menu/chefGuide.wlk y src/menu/tutorialMarks.wlk:
+Genera en esta carpeta lo que dibujan chefGuide y tutorialMarks (src/menu/tutorialGuide.wlk). Los mensajes
+del globo, ya escritos, los genera makeBubbleTexts.py:
 
 - chef_<cara>_<pose>_<lado>.png (120x160): el cocinero.
     cara: talk (habla), oops (el jugador hizo algo que no va), happy (terminó el tutorial)

@@ -21,10 +21,11 @@ import src.cellPosition.*
 import src.board.*
 import src.menu.menuManager.*
 import src.menu.editMenu.*
-import src.menu.modeBanner.*
+import src.menu.hud.*
 import src.food.foodTypes.*
 import src.menu.placeMenu.*
 import src.tools.toolsManager.*
+import src.menu.actionsMenu.*
 import src.tools.userTools.*
 import src.machines.machineManager.*
 import src.machines.types.dispenser.*
@@ -39,7 +40,7 @@ describe "tests de menuManager" {
   method slotPosition(slot) = new CellPosition(x = [18, 20, 18, 20].get(slot - 1), y = [10, 10, 8, 8].get(slot - 1))
 
   // la máquina dibujada en un casillero del panel (sin los marcos, que van en la misma celda)
-  method slotVisuals(slot) = game.getObjectsIn(self.slotPosition(slot)).filter({ visual => visual.isMenuItem() })
+  method slotVisuals(slot) = placeMenu.items().filter({ item => item.position() == self.slotPosition(slot) })
 
   method menuIsEmpty() = [1, 2, 3, 4].all({ slot => self.slotVisuals(slot).isEmpty() })
 
@@ -184,13 +185,15 @@ describe "tests de menuManager" {
     assert.equals(editMenu.slotCount() - 1, editMenu.focusIndex())
   }
 
-  test "un clic en los botones de direccion cambia hacia donde mira la maquina a colocar" {
+  test "un clic en la brujula cambia hacia donde mira la maquina a colocar" {
     menuManager.setUp()
-    toolsManager.onClick(game.at(19, 4))
+    toolsManager.onClick(game.at(20, 5))
     assert.equals(up, toolsManager.currentDirection())
-    assert.equals(new CellPosition(x = 19, y = 4), directionFrame.position())
+    assert.equals("menu/compass_up_on.png", placeMenu.compassTiles().first().image())
     toolsManager.onClick(game.at(18, 4))
     assert.equals(left, toolsManager.currentDirection())
+    toolsManager.onClick(game.at(19, 2))
+    assert.equals(down, toolsManager.currentDirection())
   }
 
   test "Q y E eligen la maquina anterior o la siguiente, y pasan de pagina" {

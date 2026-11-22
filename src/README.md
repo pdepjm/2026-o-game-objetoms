@@ -43,7 +43,7 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 
 ### `cellPosition.wlk`
 
-Wollok Game le pide a cada objeto su `position().round()` unas 60 veces por segundo. En una posición común, `round()` crea una posición nueva cada vez, y eso hacía que dibujar fuera mucho más caro. `CellPosition` devuelve la misma posición, porque una celda ya tiene coordenadas enteras. Para posiciones con decimales (ingredientes en movimiento) está `PosicionSuave`, en `simulation/animationEngine.wlk`.
+Wollok Game le pide a cada objeto su `position().round()` unas 60 veces por segundo. En una posición común, `round()` crea una posición nueva cada vez, y eso hacía que dibujar fuera mucho más caro. `CellPosition` devuelve la misma posición, porque una celda ya tiene coordenadas enteras. Para posiciones con decimales (ingredientes en movimiento) está `SmoothPosition`, en `simulation/animationEngine.wlk`.
 
 ## Cómo se conecta todo
 
@@ -62,7 +62,7 @@ teclas y clicks ─▶ input/userController
 
 ## Convenciones
 
-- **Nombres en inglés** para clases, métodos y variables nuevas; los comentarios, en español. Hay código más viejo con nombres en español (por ejemplo `animationEngine.avanzar`).
+- **Nombres en inglés** para clases, métodos y variables nuevas; los comentarios, en español. (El código más viejo, como `animationEngine`, ya se pasó al inglés.)
 - **Imports relativos a `src/`**, sin el prefijo `src.` (por ejemplo `import machines.machineClasses.*`). Los tests sí lo llevan (`import src.machines.machineClasses.*`).
 - **Rendimiento:** lo que Wollok Game le pide a un objeto en cada frame (`image()` y `position()`) tiene que ser un dato ya guardado, no algo que se calcule. Los comentarios marcados `RENDIMIENTO` explican los casos que importaron.
 - Las imágenes las busca el código por nombre: ver [`assets/README.md`](../assets/README.md).
@@ -77,7 +77,7 @@ El código no usa `null` ni lo compara. Donde "no hay nada" se usa un objeto que
 | `noItem` | item | una máquina sin nada para entregar (`itemToPush`) o para que un brazo agarre (`grabbableItem`) |
 | `placingMode` / `editingMode` | modo | COLOCANDO o EDITANDO (ver `toolsManager`) |
 | `noAnimation` / `noAction` | animación / bloque final | `MachineAnimator` |
-| `noDestino` | destino | lo que está quieto (`Animado`) |
+| `noDestination` | destino | lo que está quieto (`Animated`) |
 | `noSlot` | opción clickeada | un click afuera de las opciones (`editMenu`) |
 | `noSkipButton` | botón de saltear | niveles sin tutorial (`levelInfoMenu`) |
 | `noSound` | sonido | `musicManager` antes de arrancar la música |

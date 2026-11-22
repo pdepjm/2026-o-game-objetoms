@@ -37,6 +37,7 @@ import machines.inventory.*
 import machines.settings.*
 import food.foodClasses.*
 import cellPosition.*
+import menu.editMenu.*
 
 // Reproduce animaciones frame a frame (carpetas de PNG, ver FrameAnimation) con el animationEngine.
 class MachineAnimator {
@@ -56,7 +57,7 @@ class MachineAnimator {
 	// Al terminar se ejecuta afterBlock, que puede encadenar otra animación con play.
 	method play(anAnimation, afterBlock) {
 		// si ya se estaba animando, ya está en la lista de animados
-		if (!self.animando()) animationEngine.animar(self)
+		if (!self.animating()) animationEngine.animate(self)
 		animation = anAnimation
 		
 		// Si se llama fuera del tick (por ejemplo desde una acción agendada, que en cada paso
@@ -70,7 +71,7 @@ class MachineAnimator {
 	// Corta la animación donde esté, sin ejecutar el bloque del final
 	// (se usa al apagar la simulación).
 	method stopAnimation() {
-		if (self.animando()) animationEngine.terminar(self)
+		if (self.animating()) animationEngine.stopAnimating(self)
 		animation = noAnimation
 		onFinish = noAction
 	}
@@ -84,13 +85,13 @@ class MachineAnimator {
 
 	}
 	// ----------- CONTRATO CON EL ANIMATION ENGINE -----------
-	method animando() = animation.isRunning()
+	method animating() = animation.isRunning()
 	
 	// Un paso de animación: muestra el frame siguiente.
 	// El último frame se ve un paso entero, y recién en el paso siguiente termina.
 	// El bloque del final NO corre acá: se encola en el animationEngine para que se
 	// ejecute al final del tick, donde ya se puede mover items y encadenar animaciones.
-	method avanzar() {
+	method advance() {
 		frame += 1
 		if (frame < animation.size()) {
 			self.showFrame(animation.frames().get(frame))
@@ -98,8 +99,8 @@ class MachineAnimator {
 			const afterBlock = onFinish
 			onFinish = noAction
 			animation = noAnimation
-			animationEngine.avisarLlegada()
-			animationEngine.alTerminar(afterBlock)
+			animationEngine.notifyArrival()
+			animationEngine.atTickEnd(afterBlock)
 		}
 	}
 }
@@ -273,6 +274,9 @@ class Machine inherits MachineSprite {
 		self.showStatic()
 	}
 
+	// El panel que se abre al editarla (X): por defecto, el de sus settings. Los brazos tienen el suyo.
+	method editPanel() = editMenu
+
 	// ----------- LO QUE DIBUJA APARTE -----------
 	// board avisa cuando la agrega y cuando la saca: así una máquina puede dibujar algo más encima
 	// (el dispenser, su insignia). Por defecto no dibuja nada.
@@ -382,8 +386,8 @@ class Machine inherits MachineSprite {
 	// Qué le pasa al item que acaba de llegar. Por defecto se anima hasta la celda
 	// de la máquina y, cuando termina de llegar, llama a onArrived.
 	method onReceive(item) {
-		item.moveInSteps(self.position(), animationEngine.pasosPorCelda())
-		simulationEngine.after(animationEngine.pasosPorCelda(), { self.onArrived(item) })
+		item.moveInSteps(self.position(), animationEngine.stepsPerCell())
+		simulationEngine.after(animationEngine.stepsPerCell(), { self.onArrived(item) })
 	}
 
 	// El item terminó de llegar. Por defecto se entrega a la siguiente, como una cinta.

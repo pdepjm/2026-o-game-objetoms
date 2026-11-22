@@ -17,7 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // GENERADO por assets/menu/font/makeFont.py: no editar a mano (cambiar el script y volver a correrlo)
-import menu.spriteText.*
+import menu.texts.*
 
 // Las letras que hay, en el orden de sus imágenes (<número>.png) y de los anchos de cada estilo
 object spriteFontChars {

@@ -107,6 +107,7 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 |---|---|---|
 | `runningImage()` | la imagen quieta | se anima con GIF: `override method runningImage() = self.gifImage()` |
 | `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction`. El brazo lo sobrescribe: su `direction` es hacia dónde mira la pinza, no hacia dónde está rotado |
+| `editPanel()` | `editMenu` (el de los settings) | tiene su propio panel para editarla (los brazos: `armMenu`, ver [`menu/README.md`](../menu/README.md#armmenuwlk)) |
 | `addedToBoard()` / `removedFromBoard()` | no hacen nada | dibuja algo aparte encima de ella mientras está en el tablero (el Dispenser: la insignia con el ingrediente que larga, `DispenserBadge`). Los llama `board.push` y `board.pop` |
 | `drawOffsetX()` / `drawOffsetY()` | `0` | se dibuja corrida (el brazo, que ocupa 3x3 celdas) |
 | `rotate()` / `menuImage(dir)` | rota normalmente | rota distinto (el brazo: mueve su entrada) o el menú muestra otra cosa |

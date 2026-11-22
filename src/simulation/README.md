@@ -36,13 +36,13 @@ Avanza todo lo que se anima. No tiene reloj propio: el `simulationEngine` le avi
 
 | Qué | Para qué |
 |---|---|
-| `animationEngine` | Lista de lo que se está animando. En cada `tick()` le manda `avanzar()` a cada uno, saca a los que terminaron (`animando()` en false) y después ejecuta los bloques de fin de animación |
-| `PosicionSuave` | Una posición con decimales, para dibujar un ingrediente a mitad de camino entre dos celdas |
-| `Animado` (mixin) | Movimiento suave entre celdas: `move`, `moveInSteps`, `moverHacia`, `detener`. Lo usan los ingredientes |
+| `animationEngine` | Lista de lo que se está animando. En cada `tick()` le manda `advance()` a cada uno, saca a los que terminaron (`animating()` en false) y después ejecuta los bloques de fin de animación |
+| `SmoothPosition` | Una posición con decimales, para dibujar un ingrediente a mitad de camino entre dos celdas |
+| `Animated` (mixin) | Movimiento suave entre celdas: `move`, `moveInSteps`, `moveTowards`, `detener`. Lo usan los ingredientes |
 | `FrameAnimation` | Una animación frame a frame: la carpeta de PNG y la lista de rutas, armada una sola vez. La reproduce `MachineAnimator` (en `machines/machineClasses.wlk`) |
 | `TimedAnimation` | Una animación que dura exactamente N pasos, armada con una lista de imágenes. La usa `ProcessingMachine` para ajustar la animación al tiempo del ingrediente |
 
-- `pasosPorCelda` (5): cuántos pasos tarda un ingrediente en recorrer una celda. Las máquinas lo usan para saber cuándo termina de llegar un item.
+- `stepsPerCell` (5): cuántos pasos tarda un ingrediente en recorrer una celda. Las máquinas lo usan para saber cuándo termina de llegar un item.
 - **Bloques de fin de animación:** cuando una animación termina, su bloque no se ejecuta en ese momento: queda pendiente y se ejecuta **después de recorrer la lista**. Por eso en el bloque se puede mover items o encadenar otra animación sin romper el recorrido.
-- Un mismo objeto no puede ser `Animado` y animarse frame a frame a la vez: los dos definen `avanzar()`.
+- Un mismo objeto no puede ser `Animated` y animarse frame a frame a la vez: los dos definen `advance()`.
 

@@ -49,7 +49,7 @@ class Tutorial inherits TutorialEvents {
 
 	// ----------- SALTEAR -----------
 	// El botón de saltear que dibuja la info del nivel (noSkipButton si no hay tutorial)
-	method skipButton(menu) = menu.addSkipButton()
+	method skipButton(menu) = menu.newSkipButton()
 	// Saltearlo da por hechos todos los tutoriales (ver levelManager.skipTutorials)
 	method skip(manager) { manager.skipTutorials() }
 	// Se da por hecho: se anota como completado ese nivel, si no lo estaba

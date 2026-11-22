@@ -22,6 +22,8 @@ import machines.machineClasses.*
 import cellPosition.*
 import menu.menuManager.*
 import menu.editMenu.*
+import menu.placeMenu.*
+import menu.actionsMenu.*
 import directions.*
 import simulation.simulationEngine.*
 import tools.userTools.*
@@ -54,6 +56,9 @@ object toolsManager {
 	}
 
 	// ----------- CLICS -----------
+
+	// Para playingScreen: es el último que mira los clics, así que se queda con todos los que quedan
+	method handlesClick(pos) = true
 
 	// Un clic en el juego: en el menú de la máquina elegida, en el tablero o en la zona interactiva
 	method onClick(pos) {
@@ -135,8 +140,15 @@ object toolsManager {
 
 	// ----------- LOS MODOS -----------
 
-	// La herramienta edit abrió el panel de una máquina (ver userTools)
-	method startEditing() { self.changeMode(editingMode) }
+	// La acción edit abrió el panel de una máquina (ver userTools): el de sus settings o el de los brazos
+	method startEditing(panel) {
+		editingMode.panel(panel)
+		// el menú de la máquina se va: el panel de la derecha ya dice qué se edita (y el brazo muestra sus salidas)
+		actionsMenu.hide()
+		self.changeMode(editingMode)
+	}
+
+	method startEditing() { self.startEditing(editMenu) }
 
 	// Retroceso (o X otra vez, o tocar el tablero): se cierra el panel de editar
 	method stopEditing() { if (self.isEditing()) self.changeMode(placingMode) }
@@ -165,6 +177,7 @@ object toolsManager {
 // COLOCANDO: el panel de colocar a la derecha. Las flechas y Enter no hacen nada: el tablero es con el mouse
 object placingMode {
 	method banner() = "menu/mode_placing.png"
+	method panel() = placeMenu
 	method arrow(direction, manager) {}
 	method enter(manager) {}
 	method editKey(manager) { manager.act(edit) }
@@ -172,9 +185,14 @@ object placingMode {
 
 // EDITANDO: el panel de editar a la derecha; las flechas eligen una opción y Enter la aplica
 object editingMode {
+	// El panel de la máquina que se edita: editMenu, o armMenu para los brazos
+	var panel = editMenu
+
+	method panel() = panel
+	method panel(aPanel) { panel = aPanel }
 	method banner() = "menu/mode_editing.png"
-	method arrow(direction, manager) { editMenu.moveFocus(direction) }
-	method enter(manager) { editMenu.chooseFocused() }
+	method arrow(direction, manager) { panel.moveFocus(direction) }
+	method enter(manager) { panel.chooseFocused() }
 	method editKey(manager) { manager.stopEditing() }
 }
 
@@ -186,65 +204,4 @@ object boardCursor {
 	method cell() = cell
 	method isAt(pos) = cell.x() == pos.x() && cell.y() == pos.y()
 	method moveTo(pos) { cell = new CellPosition(x = pos.x(), y = pos.y()) }
-}
-
-// El menú de la máquina elegida: ROTAR (C), EDITAR (X) y BORRAR (V), una celda cada uno, debajo de la
-// máquina (o arriba, si está en la fila de abajo). Lo que no se puede hacer se ve apagado. Clickear una de
-// sus celdas es usar esa acción. Aparece al elegir una máquina y también al colocarla (la nueva queda elegida).
-object actionsMenu {
-	const actions = [rotate, edit, delete]
-	var machine = noMachine
-	var shown = false
-	var position = new CellPosition(x = 0, y = 0)
-	var image = "menu/actions_all.png"
-
-	method position() = position
-	method image() = image
-	method isShown() = shown
-
-	method showFor(aMachine) {
-		self.hide()
-		machine = aMachine
-		if (!machine.asList().isEmpty()) {
-			shown = true
-			self.refresh()
-		}
-	}
-
-	// Recalcula dónde va y qué se ve (la máquina pudo rotar o desaparecer), y queda arriba de todo
-	method refresh() {
-		if (shown) {
-			// sigue en el tablero si en su celda está ella (se pudo haber borrado)
-			if (board.machineAt(machine.cell()) == machine) {
-				position = self.placeFor(machine)
-				image = self.imageFor(machine)
-				if (game.hasVisual(self)) game.removeVisual(self)
-				game.addVisual(self)
-			} else self.hide()
-		}
-	}
-
-	method hide() {
-		shown = false
-		machine = noMachine
-		if (game.hasVisual(self)) game.removeVisual(self)
-	}
-
-	// Tres celdas centradas debajo de la máquina, sin salirse del tablero
-	method placeFor(aMachine) {
-		const cell = aMachine.cell()
-		const left = (cell.x() + (aMachine.width() - 1).div(2) - 1).max(5).min(14)
-		const row = if (cell.y() > 1) cell.y() - 1 else cell.y() + aMachine.height()
-		return new CellPosition(x = left, y = row)
-	}
-
-	method imageFor(aMachine) {
-		const canChange = !aMachine.locked()
-		const canEdit = !aMachine.settings().isEmpty()
-		return "menu/actions_" + (if (canChange && canEdit) "all" else if (canChange) "noedit" else if (canEdit) "editonly" else "none") + ".png"
-	}
-
-	method contains(pos) = shown && pos.y() == position.y() && pos.x().between(position.x(), position.x() + 2)
-
-	method actionAt(pos) = actions.get(pos.x() - position.x())
 }

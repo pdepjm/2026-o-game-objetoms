@@ -71,12 +71,14 @@ object edit {
 	method complaintIn(step, pos) = step.complaintFor(self, pos)
 	method canUseAnywhere() = true
 	method allowsMachine(allowedMachines) = true
-	// Abre el panel de editar de esa máquina (EDITANDO). Si no tiene nada para ajustar, no hace nada.
+	// Abre el panel de editar de esa máquina (EDITANDO): el de sus settings, o el de los brazos (cada
+	// máquina sabe cuál: editPanel). Si no tiene nada para ajustar, no hace nada.
 	method onClick(pos) {
-		if (board.machineAt(pos).settings().isEmpty()) sfx.invalid()
+		const machine = board.machineAt(pos)
+		if (machine.settings().isEmpty()) sfx.invalid()
 		else {
-			editMenu.selectMachine(pos)
-			toolsManager.startEditing()
+			machine.editPanel().selectMachine(pos)
+			toolsManager.startEditing(machine.editPanel())
 		}
 	}
 }

@@ -19,7 +19,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Genera las letras para escribir sin contorno (Wollok dibuja todos los textos con un contorno oscuro que
-# no se puede sacar, y sobre el papel de la info del nivel se ve raro). Ver src/menu/spriteText.wlk.
+# no se puede sacar, y sobre el papel de la info del nivel se ve raro). Ver spriteText en src/menu/texts.wlk.
 #
 # Por cada estilo, una carpeta con una imagen por letra (<número>.png, el número es su lugar en CHARS) y,
 # en src/menu/spriteFonts.wlk, un objeto con cuánto mide cada letra de ancho.
@@ -67,7 +67,7 @@ def main():
 
     chars = ', '.join('"' + c + '"' for c in CHARS)
     wlk = f'''// GENERADO por assets/menu/font/makeFont.py: no editar a mano (cambiar el script y volver a correrlo)
-import menu.spriteText.*
+import menu.texts.*
 
 // Las letras que hay, en el orden de sus imágenes (<número>.png) y de los anchos de cada estilo
 object spriteFontChars {{

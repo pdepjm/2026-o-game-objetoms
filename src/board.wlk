@@ -123,7 +123,7 @@ object board {
 		if (self.isThereAMachine(position)) {
 			const machine = self.machineAt(position)
 			machine.heldItems().forEach({ item =>
-				item.detener()
+				item.halt()
 				game.removeVisual(item)
 			})
 			simulationEngine.removeSimulatedObject(machine)

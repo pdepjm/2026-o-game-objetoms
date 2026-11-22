@@ -14,10 +14,23 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 | `menuManager.wlk` | `menuManager`: el que conoce a todos los menús y les reenvía los eventos. También `emptyMenu`. Las zonas de la pantalla son `Zone`, que está en `src/board.wlk` |
 | `placeMenu.wlk` | El panel de **COLOCANDO**: las máquinas para elegir, con páginas y un marco sobre la elegida, y los botones de dirección |
 | `editMenu.wlk` | El panel de **EDITANDO**: los settings de la máquina elegida, agrupados por categoría (con clic, o con las flechas y Enter) |
-| `modeBanner.wlk` | El cartel COLOCANDO / EDITANDO de arriba a la derecha |
-| `sideButtons.wlk` | Los botones de abajo a la izquierda: recetario, menú, iniciar/pausa y velocidad (`speedFrame` marca la elegida) |
+| `armMenu.wlk` | El panel de **EDITANDO** de los brazos: hacia qué lado del tablero manda cada cosa |
+| `levelComplete.wlk` | La comanda que aparece al completar un nivel, con sus botones (siguiente, repetir, menú) |
+| `actionsMenu.wlk` | El menú de la máquina elegida: ROTAR, EDITAR y BORRAR, debajo de ella |
+| `hud.wlk` | Lo que se ve siempre alrededor del tablero: el cartel COLOCANDO / EDITANDO (`modeBanner`) y los botones de abajo a la izquierda (`sideButtons`, con `speedFrame` en la velocidad elegida) |
 | `levelInfoMenu.wlk` | La información del nivel, en la zona de la izquierda: nombre, objetivos y si se ganó |
-| `menuText.wlk` | `MenuText`: un texto de los menús. Lo usan `editMenu` y `levelInfoMenu` |
+| `tutorialGuide.wlk` | Lo que el tutorial dibuja sobre el tablero: el cocinero con su globo (`chefGuide`, `bubbleMessages`) y las marcas (`tutorialMarks`) |
+| `visuals.wlk` | Lo común a todos los menús: `Picture` (una imagen fija), `CellArea` y `Button` (lo que se clickea), `noButton` y `VisualGroup` (lo dibujado, para sacarlo junto) |
+| `texts.wlk` | Los textos: `MenuText` (los de Wollok) y `spriteText` (una imagen por letra, sin contorno) |
+| `spriteFonts.wlk`, `bubbleTexts.wlk` | **Generados**: las letras (`assets/menu/font/makeFont.py`) y los mensajes del globo ya escritos (`assets/tutorial/makeBubbleTexts.py`). No se editan a mano |
+
+## `visuals.wlk`: lo común a los menús
+
+Wollok le pide `position()` e `image()` a **cada visual en cada frame**, así que todo lo que se dibuja guarda las dos cosas: la posición es una constante (`CellPosition`, que no crea nada al dibujarse) y la imagen sólo cambia cuando alguien la cambia.
+
+- `Picture(image, position)`: una imagen fija. Sabe mostrarse y sacarse (`show()`, `hide()`). Las subclases cambian la imagen asignándola (`MenuItem`, `CompassTile`, `TutorialMark`, `BookButton`, `modeBanner`...).
+- `CellArea(position, width, height, action)`: celdas que se clickean (Wollok avisa el clic por celda). `contains(pos)` y `press()`. `Button` es un `CellArea` con imagen. Los paneles buscan el botón clickeado con `findOrDefault(..., noButton).press()`: no hay `if` por fila.
+- `VisualGroup`: lo que dibujó un panel. `add(visual)` lo agrega a la pantalla; `keep(algo)` guarda algo que ya se dibujó solo (un texto de `spriteText`); `clear()` saca todo (cada cosa sabe sacarse con `hide()`).
 
 ## `menuManager.wlk`
 
@@ -33,9 +46,9 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 ## `placeMenu.wlk`
 
 - Se ve mientras el jugador está COLOCANDO (siempre, salvo mientras edita una máquina).
-- Muestra 4 máquinas por página, en casilleros de 2x2 celdas de a 2 por fila: el 1 arriba a la izquierda (x 18, y 10), el 2 a su derecha (x 20), y el 3 y el 4 abajo (y 8). Debajo va la ayuda (`menu/place_help.png`, o `place_help_pages.png` si hay más de una página). El orden sale de `machineManager` (ver [`machines/README.md`](../machines/README.md)).
+- Muestra 4 máquinas por página, en casilleros de 2x2 celdas de a 2 por fila: el 1 arriba a la izquierda (x 18, y 10), el 2 a su derecha (x 20), y el 3 y el 4 abajo (y 8). Debajo va la ayuda (`menu/place_help.png`, fila 7). El orden sale de `machineManager` (ver [`machines/README.md`](../machines/README.md)).
 - Q y E eligen la máquina anterior o la siguiente del catálogo (`chooseNext`), y pasan de página solas. Cada página muestra 4 máquinas; `prev` y `next` avanzan de a una página, sin pasarse de la primera ni de la última.
-- Abajo, en la fila 4, los botones de dirección (← ↑ ↓ →, `menu/dir_pad.png`, una celda cada uno) eligen hacia dónde mira la máquina a colocar; `directionFrame` marca la elegida.
+- Abajo, "HACIA DÓNDE MIRA" (fila 6) y la **brújula** (filas 2 a 5, `compassTiles`): arriba y abajo, botones de 2 celdas de ancho; izquierda y derecha, de 2 de alto; en el centro, la máquina elegida mirando hacia donde va a quedar (`compassMachine`). La dirección elegida va en amarillo. Las imágenes (`menu/compass_*.png`) las genera `assets/menu/makeArmAndTicket.py`.
 - `resetPage()`: vuelve a la primera página, y redibuja si el panel se está viendo. Se usa al cambiar el catálogo (`machineManager.changeCatalog`): si el nuevo tiene menos páginas, la página actual podría no existir.
 - Al hacer click en un casillero elige esa máquina (`machineManager.select`), mueve el marco amarillo encima y le avisa a `levelManager.machineSelected`: si el tutorial pide otra, el casillero se pone rojo un momento (`flashError`) y el cocinero dice cuál va.
 - `MenuItem`: cada máquina dibujada en el panel. Le pide la imagen a una máquina de muestra (`menuImage(dirección)`: la máquina en chico con su nombre abajo, ver `assets/menu/makePlaceSlots.py`), así cada tipo decide qué mostrar (el brazo, por ejemplo, por ahora siempre muestra la misma).
@@ -44,13 +57,29 @@ Los menús de la pantalla. Ocupan las columnas fuera del tablero:
 
 > **RENDIMIENTO:** las imágenes y la posición del marco se calculan sólo cuando cambia algo (dirección, página o máquina elegida), no en cada frame. `selectedSlot()` es caro porque crea máquinas para comparar nombres: no llamarlo desde algo que se dibuja.
 
-## `modeBanner.wlk`
+## `hud.wlk`
 
-Muestra `menu/mode_placing.png` (COLOCANDO) o `menu/mode_editing.png` (EDITANDO, con la tecla Retroceso para salir). Lo cambia `menuManager.modeChanged`. Las imágenes las genera `assets/menu/makeBoardUi.py`.
+- `modeBanner`: muestra `menu/mode_placing.png` (COLOCANDO) o `menu/mode_editing.png` (EDITANDO, con la tecla Retroceso para salir). Lo cambia `menuManager.modeChanged`. Las imágenes las genera `assets/menu/makeBoardUi.py`.
+- `sideButtons`: los botones de abajo a la izquierda, uno por fila de celdas: F RECETARIO (fila 3), M MENÚ (fila 2), ESPACIO INICIAR / PAUSA (fila 1) y 1, 2, 3 (fila 0, una celda cada uno). Cada uno es un `CellArea` con su acción, la misma que su tecla. La imagen (`menu/side_buttons.png`) tapa las teclas que trae dibujadas el fondo. `speedFrame` toma su posición de una lista armada una vez, según `simulationEngine.speed()`.
 
-## `sideButtons.wlk`
+## `actionsMenu.wlk`
 
-Los botones de abajo a la izquierda, uno por fila de celdas (Wollok avisa el clic por celda): F RECETARIO (fila 3), M MENÚ (fila 2), ESPACIO INICIAR / PAUSA (fila 1) y 1, 2, 3 (fila 0, una celda cada uno). Cada uno hace lo mismo que su tecla. La imagen (`menu/side_buttons.png`) tapa las teclas que trae dibujadas el fondo. `speedFrame` toma su posición de una lista armada una vez, según `simulationEngine.speed()`.
+El menú de la máquina elegida: ROTAR (C), EDITAR (X) y BORRAR (V), una celda cada uno, debajo de la máquina (o arriba, si está en la fila de abajo). Lo que no se puede hacer se ve apagado. Lo usa `toolsManager` (ver [`tools/README.md`](../tools/README.md)).
+
+## `armMenu.wlk`
+
+El panel de los brazos (X sobre un brazo: cada máquina dice qué panel abre con `editPanel()`). Muestra los lados como se ven en el tablero (↑ → ↓ ←), no "Recto / Izq. / Der.", que son relativos a donde agarra:
+
+- Fila 11, el título; filas 9 y 10, el brazo como está (`editBoxImage`) y una ficha roja "AGARRA DE ←"; fila 8, qué hacer (`editHint`).
+- Desde la fila 7, los casilleros, de a 4 por fila (`editChoices`, ver `ArmKindChoice` y `ArmSideChoice` en `machines/settings.wlk`):
+  - **brazo inteligente:** uno por ingrediente. Cada clic lo manda al lado siguiente (nada → ↑ → → → ↓ → ← → nada, sin el de donde agarra); si sale por algún lado va en amarillo con una flechita en la esquina. Un ingrediente sale por un solo lado. Por dentro se guarda en los filtros de siempre (`Recto`, `Izq.`, `Der.`), así la simulación no cambia.
+  - **brazo común:** las cuatro direcciones; la de donde agarra va en rojo y no se elige.
+- Mientras se edita, en el tablero, al lado del brazo, una flechita por cada lado por el que sale algo y las insignias de lo que sale (las del dispenser).
+- Con el teclado: las flechas mueven una marca (que aparece recién al usarlas) y Enter usa el casillero marcado.
+
+## `levelComplete.wlk`
+
+Al completar un nivel se oscurece la pantalla y aparece una **comanda**: el nombre del nivel, lo entregado, el tiempo de cocina (los pasos de la simulación desde que se prendió), la energía usada y las máquinas que puso el jugador, y los botones **SIGUIENTE NIVEL** (N), **REPETIR** (0) y **MENÚ** (M) (en el último nivel, **JUGAR DE NUEVO**). Mientras se ve, los clics van sólo a sus botones (`playingScreen`). Se va al cargar otro nivel. Las imágenes las genera `assets/menu/makeArmAndTicket.py`; los textos se escriben con las letras del papel (`spriteText`).
 
 ## `editMenu.wlk`
 
@@ -77,9 +106,9 @@ Muestra los settings de la máquina que se edita (X sobre la elegida; ver [`mach
   ...
   ```
 
-- Las opciones con `image` se dibujan con su imagen (`OptionImage`) y las otras con su `label` (`MenuText`). En columna, siempre con su imagen.
+- Las opciones con `image` se dibujan con su imagen (`Picture`) y las otras con su `label` (`MenuText`). En columna, siempre con su imagen.
 - Click en una opción: se la aplica a su setting (`setting.select(option)`). `OptionSlot` recuerda qué opción de qué setting hay en cada celda.
-- Hay una marca (`OptionMarker`) sobre cada opción elegida (`isSelected`) de **cada** setting. Un setting que permite elegir varias (`ItemSetSetting`) muestra varias marcas.
+- Hay una marca (`overlay_cell.png`) sobre cada opción elegida (`isSelected`) de **cada** setting. Un setting que permite elegir varias (`ItemSetSetting`) muestra varias marcas.
 - Se redibuja sólo cuando cambia la máquina elegida; un click sólo mueve las marcas.
 - Una máquina sin settings no muestra nada.
 
@@ -103,14 +132,14 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 11)
 | `showCompleted(hayOtro)` | `levelManager.finishLevel` | Agrega el mensaje y la tecla para seguir (`completedMessage()` devuelve lo que dicen) |
 
 - **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
-- Guarda lo dibujado en listas (el nombre, la tarjeta y el título; los objetivos; el mensaje de nivel completo; y el botón del tutorial) para reemplazar sólo lo que cambia.
+- Guarda lo dibujado en grupos (`VisualGroup`: el nombre, la tarjeta y el título; los objetivos; el mensaje de nivel completo; y la energía) para reemplazar sólo lo que cambia.
 - **El estilo lo dan las imágenes de atrás** (`assets/menu/info/`: la cinta, las tarjetas para 1 a 3 objetivos, las barras de 0 a 10 décimos y los globos para 1 a 6 líneas, que genera `makeLevelInfo.py`) **y las letras**. Las imágenes se agregan antes que los textos, porque se dibujan en ese orden.
-- **Sobre el papel (la tarjeta y el globo) los textos se escriben con sprites** (`spriteText.wlk`), porque Wollok dibuja todos sus textos con un contorno oscuro que no se puede sacar, y ahí se ve raro. El nombre del nivel y los textos sobre el azul siguen siendo textos de Wollok (`MenuText`).
+- **Sobre el papel (la tarjeta y el globo) los textos se escriben con sprites** (`spriteText`, en `texts.wlk`), porque Wollok dibuja todos sus textos con un contorno oscuro que no se puede sacar, y ahí se ve raro. El nombre del nivel y los textos sobre el azul siguen siendo textos de Wollok (`MenuText`).
 - **Las posiciones con decimales son `CellPosition`**, no `game.at`: Wollok redondea a la celda la posición de `game.at` al dibujar, y la imagen quedaría corrida.
 - Wollok no corta el texto en varias líneas: con 4 celdas de ancho, los textos tienen que ser cortos.
 - **Centrado:** Wollok dibuja cada texto centrado en su celda, y la parte azul va de x 0 a 4. Por eso los textos van en la columna 1.5: su centro cae en x = 2.
 
-### `chefGuide.wlk`
+### `tutorialGuide.wlk`: `chefGuide`
 
 El cocinero que guía los tutoriales, sobre el tablero. Se para al lado de la celda del paso (la del recuadro, o la máquina que se explica) y la señala con la cuchara: arriba de ella si hay lugar, si no abajo; a su izquierda, salvo en las primeras columnas. Al costado tiene un globo con el paso (`PASO 2 DE 12`) y el mensaje (como máximo 6 líneas de 16 caracteres: `maxLines()` y `maxLength()`, lo revisa un test).
 
@@ -119,11 +148,13 @@ El cocinero que guía los tutoriales, sobre el tablero. Se para al lado de la ce
 | `say(pasos, lineas, teclas, celdas)` | `levelManager`, con cada aviso al tutorial | Dibuja el cocinero y el globo, con las teclas del paso debajo del mensaje, una por fila (`tutorial/key_<nombre>.png`: "[ENTER] para seguir"). `message()`, `keys()` y `stepLabel()` devuelven lo que dice. Sin líneas (sin tutorial) no se ve; sin paso (`stepLabels()` vacío: terminó), festeja |
 | `complain(lineas)` | `levelManager`, cuando el jugador hizo algo que el paso no deja | Pone cara de "uy" y lo dice en un globo rojo un momento (1.7 s), y vuelve al mensaje del paso |
 
-Lo que dice al quejarse lo decide el tutorial (`complaintFor`, `complaintWithoutTool`, `complaintForMachine`: ver [`levels/README.md`](../levels/README.md)). Las imágenes (12 del cocinero: 3 caras, 2 poses y 2 lados; y los globos) las genera `assets/tutorial/makeChef.py`.
+Lo que dice al quejarse lo decide el tutorial (`complaintFor`, `complaintForMachine`: ver [`levels/README.md`](../levels/README.md)). Las imágenes (12 del cocinero: 3 caras, 2 poses y 2 lados; y los globos) las genera `assets/tutorial/makeChef.py`.
 
-### `tutorialMarks.wlk`
+> **RENDIMIENTO:** si `say` recibe lo mismo que ya está diciendo (lo más común mientras se cocina: cada entrega le avisa al tutorial), no redibuja nada. **Cada mensaje es una sola imagen** (`bubbleMessages`: `assets/tutorial/messages/<n>.png`, la lista en `bubbleTexts.wlk`), en vez de una por letra (eran unas 60 por mensaje). Las genera `assets/tutorial/makeBubbleTexts.py` con los textos de `src/levels` y `src/tools`: **si se cambia o se agrega un mensaje, hay que volver a correrlo** (un test de `levelManagerTest` avisa si falta alguno). Un mensaje sin imagen (por ejemplo, "¡Esa no! Buscá la cinta.", que se arma con el nombre de la máquina) se escribe letra por letra, como antes.
 
-Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial. Si el jugador hace algo que el paso no deja, `flashError()` pone los recuadros en rojo (`tutorial/place_error.gif`) un momento. Las imágenes se generan con `assets/tutorial/makeMarks.py` (la roja, con `makeChef.py`).
+### `tutorialGuide.wlk`: `tutorialMarks`
+
+Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial; si las marcas quedan en los mismos lugares, no hace nada. Si el jugador hace algo que el paso no deja, `flashError()` pone los recuadros en rojo (`tutorial/place_error.gif`) un momento. Las imágenes se generan con `assets/tutorial/makeMarks.py` (la roja, con `makeChef.py`).
 - `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).
 
 ## `recipeBook.wlk`
@@ -213,12 +244,12 @@ CONSEJOS
 - Si un ingrediente se queda trabado, revisá hacia dónde apunta cada máquina.
 - Empezá por una línea simple y sumá máquinas de a una.
 
-## `spriteText.wlk`
+## `texts.wlk`: `spriteText`
 
 Escribe textos con una imagen por letra, **sin el contorno** que Wollok les pone a todos sus textos. Lo usa `levelInfoMenu` para lo que va sobre el papel.
 
 - `spriteText.draw(texto, estilo, centroX, centroY)`: escribe el texto centrado en ese punto (en celdas) y devuelve una `SpriteLine`, que sabe sacarse (`hide()`) y decir qué escribió (`description()`, para los tests).
 - Los estilos (`textFont`: marrón, 14 px; `labelFont`: gris, 11 px) y las letras están en `spriteFonts.wlk`, **que se genera** con `assets/menu/font/makeFont.py` junto con las imágenes de cada letra. Para cambiar un color o un tamaño, o agregar una letra, se cambia el script y se lo vuelve a correr.
 - Una letra que no está se escribe como `?`.
-- Cada letra es un visual: usarlo para textos cortos que se redibujan poco, no en cada frame.
+- Cada letra es un visual: usarlo para textos cortos que se redibujan poco, no en cada frame. Para textos largos que no cambian (los mensajes del cocinero) conviene una imagen ya escrita, como `bubbleMessages`.
 

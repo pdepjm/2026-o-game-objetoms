@@ -34,7 +34,7 @@ import src.machines.types.deliverySlot.*
 import src.menu.menuManager.*
 import src.menu.editMenu.*
 import src.menu.levelInfoMenu.*
-import src.menu.chefGuide.*
+import src.menu.tutorialGuide.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*

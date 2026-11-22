@@ -28,6 +28,7 @@ import src.machines.types.automaticArm.*
 import src.machines.types.smartRoboticArm.*
 import src.menu.menuManager.*
 import src.menu.editMenu.*
+import src.menu.armMenu.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
 import src.food.foodClasses.*
@@ -165,7 +166,7 @@ describe "tests del panel de edit" {
 
   method panelVisuals() = (18..21).flatMap({ x => (0..11).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
 
-  method markers() = self.panelVisuals().filter({ visual => visual.className().endsWith("OptionMarker") })
+  method markers() = editMenu.markers()
 
   method texts() = self.panelVisuals().filter({ visual => visual.className().endsWith("MenuText") })
 
@@ -221,22 +222,32 @@ describe "tests del panel de edit" {
     assert.equals(potato, dispenser.product())
   }
 
-  test "el brazo muestra su unico setting, de movimiento" {
+  // El brazo abre su propio panel (armMenu): las cuatro direcciones del tablero en la fila 7,
+  // ↑ (x 18), → (x 19), ↓ (x 20) y ← (x 21). Este brazo agarra de la izquierda.
+  test "el brazo abre el panel del brazo, con las cuatro direcciones" {
     self.editAt(8, 4)
-    assert.equals("MOVIMIENTO", self.texts().find({ t => t.position().y() == 11 }).text())
-    assert.equals(1, self.markers().size())
+    assert.equals(armMenu, editingMode.panel())
+    assert.equals(4, armMenu.choices().size())
   }
 
-  test "clickear izquierda en el brazo cambia hacia donde entrega" {
+  test "clickear una direccion del brazo hace que deje todo hacia ahi" {
     self.editAt(8, 4)
-    self.clickPanel(19, 9)
+    self.clickPanel(18, 7)
     assert.equals(up, arm.outputSide())
+  }
+
+  test "clickear la direccion de donde agarra el brazo no cambia nada" {
+    self.editAt(8, 4)
+    const before = arm.outputSide()
+    self.clickPanel(21, 7)
+    assert.equals(before, arm.outputSide())
   }
 
   test "elegir otra maquina cambia lo que se muestra" {
     self.editAt(8, 8)
     self.editAt(8, 4)
-    assert.equals(1, self.markers().size())
+    assert.equals(armMenu, editingMode.panel())
+    assert.equals(0, self.markers().size())
   }
 
   test "clickear una celda vacia del tablero saca lo que se mostraba" {
@@ -245,24 +256,39 @@ describe "tests del panel de edit" {
     assert.equals(0, self.markers().size())
   }
 
-  // El brazo inteligente dibuja una columna por salida: Izq. (x 18), Recto (x 19) y Der. (x 20)
-  test "el brazo inteligente muestra una columna de ingredientes por salida" {
+  // El brazo inteligente: un casillero por ingrediente, de a 4 por fila desde (18, 7). Mira a la derecha
+  // (la dirección con la que se colocan las máquinas): agarra de la derecha y sale ↑, ↓ o ←.
+  test "el brazo inteligente muestra un casillero por ingrediente" {
     const smart = new SmartRoboticArm()
     board.push(game.at(14, 8), smart)
     self.editAt(14, 8)
-    const headers = self.texts().filter({ text => text.position().y() == 10 }).map({ text => text.text() })
-    assert.equals(3, headers.size())
+    assert.equals(smart.editKinds().size(), armMenu.choices().size())
   }
 
-  test "clickear un ingrediente de la columna lo prende en esa salida" {
+  test "cada clic en un ingrediente lo manda al lado siguiente, y al final a ningun lado" {
     const smart = new SmartRoboticArm()
     board.push(game.at(14, 8), smart)
     self.editAt(14, 8)
-    const before = self.markers().size()
-    self.clickPanel(18, 9)
-    assert.equals(1, smart.settings().find({ setting => setting.name() == "Izq." }).value().size())
-    assert.equals(before + 1, self.markers().size())
-    self.clickPanel(18, 9)
-    assert.equals(before, self.markers().size())
+    const kind = smart.editKinds().first()
+    self.clickPanel(18, 7)
+    assert.equals(up, smart.sideOf(kind))
+    assert.that(smart.takes(kind))
+    self.clickPanel(18, 7)
+    assert.equals(down, smart.sideOf(kind))
+    self.clickPanel(18, 7)
+    assert.equals(left, smart.sideOf(kind))
+    self.clickPanel(18, 7)
+    assert.equals(noSide, smart.sideOf(kind))
+    assert.notThat(smart.takes(kind))
+  }
+
+  test "un ingrediente sale por un solo lado" {
+    const smart = new SmartRoboticArm()
+    board.push(game.at(14, 8), smart)
+    self.editAt(14, 8)
+    self.clickPanel(18, 7)
+    self.clickPanel(18, 7)
+    const kind = smart.editKinds().first()
+    assert.equals(1, smart.settings().count({ setting => setting.contains(kind) }))
   }
 }

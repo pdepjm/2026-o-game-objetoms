@@ -27,24 +27,18 @@ import levels.levelManager.*
 import directions.*
 import sound.sfx.*
 import cellPosition.*
-import menu.sideButtons.*
+import menu.hud.*
 import menu.levelInfoMenu.*
-import menu.chefGuide.*
+import menu.tutorialGuide.*
+import menu.levelComplete.*
+import menu.visuals.*
 
-object startScreen {
-	method position() = game.origin()
-	method image() = "startScreen.png" 
-}
+// Las imágenes de pantalla completa del menú
+object startScreen inherits Picture(image = "startScreen.png", position = new CellPosition(x = 0, y = 0)) {}
 
-object menuControlsOverlay {
-	method position() = game.origin()
-	method image() = "menu/menu_controls.png" 
-}
+object menuControlsOverlay inherits Picture(image = "menu/menu_controls.png", position = new CellPosition(x = 0, y = 0)) {}
 
-object menuBackground {
-	method position() = game.origin()
-	method image() = "menu/menu_background.png" 
-}
+object menuBackground inherits Picture(image = "menu/menu_background.png", position = new CellPosition(x = 0, y = 0)) {}
 
 object startMenu {
 	var screen = coverScreen
@@ -57,8 +51,8 @@ object startMenu {
 
 	method show() {
 		screen = coverScreen
-		if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground)
-		if (!game.hasVisual(startScreen)) game.addVisual(startScreen)
+		menuBackground.show()
+		startScreen.show()
 		coverMenu.show()
 
 		// Dejamos SOLO las teclas exclusivas del menú
@@ -85,8 +79,8 @@ object startMenu {
 		sfx.simulationStart()
 		recipeBook.close()
 		screen = playingScreen
-		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
-		if (game.hasVisual(menuBackground)) game.removeVisual(menuBackground)
+		startScreen.hide()
+		menuBackground.hide()
 		coverMenu.hide()
 		simulationEngine.resume()
 		if (!initialized) {
@@ -100,9 +94,9 @@ object startMenu {
 	method openInstructions() {
 		sfx.menuSelect()
 		screen = instructionsScreen
-		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
+		startScreen.hide()
 		coverMenu.hide()
-		game.addVisual(menuControlsOverlay) 
+		menuControlsOverlay.show()
 	}
 
 	method backToCover() {
@@ -110,9 +104,9 @@ object startMenu {
 		recipeBook.close()
 		screen = coverScreen
 		simulationEngine.pause()
-		if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
-		if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground) 
-		if (!game.hasVisual(startScreen)) game.addVisual(startScreen)
+		menuControlsOverlay.hide()
+		menuBackground.show()
+		startScreen.show()
 		coverMenu.show()
 	}
 
@@ -123,13 +117,6 @@ object startMenu {
 
 // ----------- LAS PANTALLAS DEL MENÚ -----------
 // Cada pantalla sabe qué hace cada tecla y qué mostrar alrededor del libro de recetas.
-
-// Aseguramos que el fondo azul esté siempre presente cuando se abre el libro en el menú
-object menuScreenSupport {
-	method ensureBackground() {
-		if (!game.hasVisual(menuBackground)) game.addVisual(menuBackground)
-	}
-}
 
 // La portada: las opciones se eligen con un clic, o con las flechas (arriba y abajo) y Enter.
 // I, F y S siguen siendo atajos de CONTROLES, RECETARIO y SALIR.
@@ -142,14 +129,15 @@ object coverScreen {
 	method pressI() { startMenu.openInstructions() }
 	method pressS() { game.stop() }
 
+	// El fondo azul queda detrás del libro
 	method hideForRecipeBook() {
-		if (game.hasVisual(startScreen)) game.removeVisual(startScreen)
+		startScreen.hide()
 		coverMenu.hide()
-		menuScreenSupport.ensureBackground()
+		menuBackground.show()
 	}
 
 	method showAfterRecipeBook() {
-		game.addVisual(startScreen)
+		startScreen.show()
 		coverMenu.show()
 	}
 }
@@ -229,25 +217,24 @@ object instructionsScreen {
 	method pressS() {}
 
 	method hideForRecipeBook() {
-		if (game.hasVisual(menuControlsOverlay)) game.removeVisual(menuControlsOverlay)
-		menuScreenSupport.ensureBackground()
+		menuControlsOverlay.hide()
+		menuBackground.show()
 	}
 
-	method showAfterRecipeBook() { game.addVisual(menuControlsOverlay) }
+	method showAfterRecipeBook() { menuControlsOverlay.show() }
 }
 
-// Jugando: los botones de abajo a la izquierda, el de saltear el tutorial, el globo del cocinero, y el
-// resto va a toolsManager.
+// Jugando: cada clic es del primero que lo quiere (handlesClick), en este orden: la comanda del nivel
+// completo (mientras se ve, todos son suyos), los botones de abajo a la izquierda, el de saltear el
+// tutorial, el globo del cocinero y, si no, toolsManager (el tablero y el panel de la derecha).
 // Enter sigue el tutorial si está esperando que lo lea; si no, aplica la opción marcada si está editando.
 // En el tablero se usa sólo el mouse: las flechas sólo eligen opciones del panel de editar. Retroceso deja
 // de editar.
 object playingScreen {
-	// Mientras el cocinero explica, tocar su globo es seguir (como Enter)
+	const clickTargets = [levelComplete, sideButtons, skipTutorialButton, chefBubble, toolsManager]
+
 	method onClick(pos) {
-		if (sideButtons.contains(pos)) sideButtons.onClick(pos)
-		else if (levelInfoMenu.isSkipButton(pos)) levelManager.skipTutorial()
-		else if (levelManager.tutorial().waitsForContinue() && chefGuide.bubbleContains(pos)) levelManager.continueTutorial()
-		else toolsManager.onClick(pos)
+		clickTargets.find({ target => target.handlesClick(pos) }).onClick(pos)
 	}
 	method whenPlaying(action) { action.apply() }
 	method start() {
@@ -260,4 +247,16 @@ object playingScreen {
 	method pressS() {}
 	method hideForRecipeBook() {}
 	method showAfterRecipeBook() {}
+}
+
+// El botón de saltear el tutorial, en la info del nivel (ver levelInfoMenu)
+object skipTutorialButton {
+	method handlesClick(pos) = levelInfoMenu.isSkipButton(pos)
+	method onClick(pos) { levelManager.skipTutorial() }
+}
+
+// Mientras el cocinero explica algo y espera que el jugador siga, tocar su globo es seguir (como Enter)
+object chefBubble {
+	method handlesClick(pos) = levelManager.tutorial().waitsForContinue() && chefGuide.bubbleContains(pos)
+	method onClick(pos) { levelManager.continueTutorial() }
 }

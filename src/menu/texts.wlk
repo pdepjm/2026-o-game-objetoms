@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - textos escritos con una imagen por letra, sin contorno.
+// Buffet Albert Einstein - los textos de los menús: los de Wollok y los escritos con una imagen por letra.
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -19,13 +19,32 @@
 import wollok.game.*
 import cellPosition.*
 import menu.spriteFonts.*
+import menu.visuals.*
+
+// Un texto de los menús: el título de una categoría, el nombre de un setting, una opción sin imagen
+// o una línea de la información del nivel. Lo usan editMenu, armMenu y levelInfoMenu.
+// El texto es fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
+class MenuText {
+    const property text
+    const property position
+    const property textColor = "FFFFFFFF"
+
+    // Lo que dice (lo entiende también KeyHint, que es una imagen: así se pueden pedir las dos cosas juntas)
+    method description() = text
+
+    method textLines() = [text]
+    method barImages() = []
+
+    method hide() { if (game.hasVisual(self)) game.removeVisual(self) }
+}
 
 // Textos escritos con una imagen por letra, sin el contorno oscuro con el que Wollok dibuja todos sus
 // textos (no se puede sacar, y sobre el papel de la info del nivel se ve raro). Las letras y sus anchos
 // los genera assets/menu/font/makeFont.py (los anchos quedan en spriteFonts.wlk).
 //
 // Cada letra es un visual. Se usa sólo para textos cortos que cambian poco (los redibuja levelInfoMenu
-// cuando le avisan algo, nunca en cada frame).
+// cuando le avisan algo, nunca en cada frame). Los mensajes del cocinero, que son más largos, ya vienen
+// escritos en una sola imagen (ver bubbleMessages en tutorialGuide.wlk).
 object spriteText {
 	// Escribe el texto centrado en ese punto (en celdas: el centro de la celda x, y es x + 0.5, y + 0.5)
 	method draw(text, font, centerX, centerY) {
@@ -36,7 +55,8 @@ object spriteText {
 		const glyphs = []
 		chars.forEach({ char =>
 			if (char != " ") {
-				const glyph = new Glyph(image = font.image(char), position = new CellPosition(x = x / 50, y = bottom))
+				// una letra es una imagen sin text(): así Wollok no la dibuja con contorno
+				const glyph = new Picture(image = font.image(char), position = new CellPosition(x = x / 50, y = bottom))
 				game.addVisual(glyph)
 				glyphs.add(glyph)
 			}
@@ -75,12 +95,6 @@ class SpriteLine {
 	method barImages() = []
 
 	method hide() {
-		glyphs.forEach({ glyph => game.removeVisual(glyph) })
+		glyphs.forEach({ glyph => glyph.hide() })
 	}
-}
-
-// Una letra. No tiene text(): Wollok la dibujaría con contorno, que es justo lo que se evita.
-class Glyph {
-	const property image
-	const property position
 }

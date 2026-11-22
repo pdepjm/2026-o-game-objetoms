@@ -24,9 +24,9 @@ import board.*
 import tools.toolsManager.*
 import machines.machineManager.*
 import menu.levelInfoMenu.*
-import menu.tutorialMarks.*
+import menu.tutorialGuide.*
 import menu.recipeBook.*
-import menu.chefGuide.*
+import menu.levelComplete.*
 
 object levelManager {
     // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
@@ -37,11 +37,14 @@ object levelManager {
     // Arranca en el modo libre (y no en null): así entregar algo o apretar 5 antes de start() no rompe
     var currentLevel = freePlay
     var completed = false   // Si se cumplio el nivel actual
+    // El paso de la simulación en el que se prendió por última vez: para el tiempo de cocina de la comanda
+    var cookStartStep = 0
 
     method _clear() {
         // Hoy las teclas no dejan cambiar de nivel con el libro abierto: es por si algún día pasa
         menu.recipeBook.recipeBook.close()
         simulationEngine.reset()
+        levelComplete.hide()
         board.clear()
         toolsManager.reset()
     }
@@ -112,6 +115,7 @@ object levelManager {
         // Prender necesita energía de sobra; apagar siempre se puede
         if (!completed && self.tutorial().allowsSimulationToggle() && (simulationEngine.running() || self.hasEnergy())) {
 	    	simulationEngine.toggle()
+	    	if (simulationEngine.running()) cookStartStep = simulationEngine.currentStep()
 	    	// Al apagar se borran los items: el progreso vuelve a cero
 	    	if (!simulationEngine.running()) {
 	    		currentLevel.resetGoals()
@@ -161,6 +165,8 @@ object levelManager {
     	simulationEngine.stop()                                // directo al engine: el progreso NO se borra
     	self._cookingChanged()                                 // vuelve el cocinero, a festejar
     	levelInfoMenu.showCompleted(self.hasNext())
+    	// la comanda: lo entregado, el tiempo de cocina (10 pasos por segundo) y los botones para seguir
+    	levelComplete.show(currentLevel, self.hasNext(), (simulationEngine.currentStep() - cookStartStep).div(10))
     }
 
     // ----------- TUTORIAL -----------

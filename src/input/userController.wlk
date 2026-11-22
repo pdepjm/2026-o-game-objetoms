@@ -30,7 +30,7 @@ import simulation.simulationEngine.*
 import levels.levelManager.*
 import menu.levelInfoMenu.*
 import sound.sfx.*
-import menu.sideButtons.*
+import menu.hud.*
 
 object userController {
 	method setUp() {

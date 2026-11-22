@@ -152,6 +152,10 @@ Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assem
 1. Crear la carpeta `machines/<MachineName>/` con `_menu.png` y `_game.png` para cada dirección, y su animación: `.gif` o carpetas de frames, según el tipo.
 2. Crear la clase y agregarla al catálogo siguiendo [`src/machines/README.md`](../src/machines/README.md#agregar-una-máquina-nueva), que tiene el contrato de qué métodos sobrescribir.
 
+## El panel del brazo, la brújula de colocar y la comanda
+
+`menu/makeArmAndTicket.py` genera, todo alineado a celdas de 50 px (Wollok avisa el clic por celda): la brújula de "hacia dónde mira" (`compass_*.png`, `compass_center.png`, `dir_label.png`), el panel de los brazos (`arm_box_*`, `arm_grab_*`, `arm_item*.png`, `arm_chip_*`, `arm_dir_*`, `arm_tag_*`) y la comanda del nivel completo (`dim.png`, `ticket.png`, `btn_*.png`). Los ingredientes del panel usan sus imágenes de siempre: no hace falta una imagen nueva por ingrediente.
+
 ## La insignia del dispenser
 
 El dispenser muestra en una esquina de arriba el ingrediente que larga: un círculo crema con el ingrediente centrado, **una sola imagen de 30x30 por ingrediente**. Las genera `machines/Dispenser/makeBadges.py` a partir de las imágenes de `food/Ingredients/` (recorta lo dibujado y lo centra), con la misma ruta adentro de `machines/Dispenser/badge/`. Si se agrega un ingrediente, hay que volver a correrlo.
@@ -241,7 +245,7 @@ Al arrancar, Wollok Game le pide al navegador **todas** las imágenes y sonidos 
 vuelve a pedir cada vez, sin caché). Si son demasiadas, el navegador corta las últimas con
 `ERR_INSUFFICIENT_RESOURCES` y en su lugar se ve el logo de Wollok, o nada. Como se piden en orden
 alfabético, las primeras en fallar son `menu/`, `recipes_book/`, `startScreen.png` y `tutorial/`:
-el juego arranca sin portada ni tutorial. Con unas 1470 ya fallaba; hoy son unas 950.
+el juego arranca sin portada ni tutorial. Con unas 1470 ya fallaba; hoy son unas 1050 (los mensajes del cocinero, `tutorial/messages/`, son 34).
 
 Por eso:
 

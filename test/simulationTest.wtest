@@ -36,7 +36,7 @@ describe "tests de simulacion" {
   const dispenseSteps = dispenser.intervalSteps()
 
   // pasos que tarda un item en recorrer una celda
-  const cellSteps = animationEngine.pasosPorCelda()
+  const cellSteps = animationEngine.stepsPerCell()
 
   method initialize() {
     toolsManager.currentDirection(right)

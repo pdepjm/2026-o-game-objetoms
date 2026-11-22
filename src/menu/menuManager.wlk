@@ -19,8 +19,7 @@
 import src.cellPosition.CellPosition
 import menu.placeMenu.*
 import menu.editMenu.*
-import menu.modeBanner.*
-import menu.sideButtons.*
+import menu.hud.*
 import tools.toolsManager.*
 import sound.sfx.*
 import wollok.game.*
@@ -58,14 +57,6 @@ object menuManager {
 
     // Panel que se ve en la zona interactiva
     var activePanel = emptyMenu
-
-    // Qué panel le toca a cada modo: colocando, el de colocar; editando, el de editar
-    const panels = new Dictionary()
-
-    method initialize() {
-        panels.put(placingMode, placeMenu)
-        panels.put(editingMode, editMenu)
-    }
 
     // Lo llama startMenu al empezar a jugar: el cartel, los botones de abajo a la izquierda y el panel
     // del modo
@@ -105,7 +96,8 @@ object menuManager {
         activePanel.onClick(pos)
     }
 
-    method panelFor(mode) = panels.getOrElse(mode, { => emptyMenu })
+    // Qué panel le toca a cada modo: colocando, el de colocar; editando, el de la máquina (editMenu o armMenu)
+    method panelFor(mode) = mode.panel()
 
     // Metodo para saber si se clickeo en la zona interactiva
     method inInteractiveMenu(pos) = interactiveZone.contains(pos)

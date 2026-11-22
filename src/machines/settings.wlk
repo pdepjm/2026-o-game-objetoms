@@ -28,8 +28,8 @@
 
 import directions.*
 import food.recipes.*
-import menu.editMenu.*
-import menu.menuText.*
+import menu.visuals.*
+import menu.texts.*
 // ----------- CATEGORIAS -----------
 // Sólo sirven para agrupar los settings en el menú
 
@@ -55,7 +55,7 @@ class SettingOption {
 class ImageOption inherits SettingOption {
 	const property image
 
-	override method visualAt(position) = new OptionImage(image = image, position = position)
+	override method visualAt(position) = new Picture(image = image, position = position)
 }
 
 class LabelOption inherits SettingOption {
@@ -164,7 +164,7 @@ class ItemSetSetting inherits Setting {
 	override method isColumned() = true
 	method column() = columnIndex
 
-	override method options() = kinds.map({ 
+	override method options() = kinds.map({
 		kind => new ImageOption(value = kind, image = kind.image()) })
 
 	// Prende o apaga ese kind. Arma una lista nueva: la inicial puede estar compartida con otra salida.
@@ -175,4 +175,46 @@ class ItemSetSetting inherits Setting {
 	override method isSelected(option) = value.contains(option.value())
 
 	method accepts(item) = value.any({ kind => kind.accepts(item) })
+
+	// Para el panel del brazo (ver SmartRoboticArm.sendTo): sumar o sacar un kind. Arman listas nuevas
+	// (la inicial puede estar compartida con otra salida).
+	method contains(kind) = value.contains(kind)
+	method add(kind) { if (!value.contains(kind)) value = value + [kind] }
+	method remove(kind) { value = value.filter({ each => each != kind }) }
+}
+
+// ----------- LOS CASILLEROS DEL PANEL DEL BRAZO (ver armMenu) -----------
+// Cada casillero ocupa una celda y se dibuja con una o más imágenes, una encima de la otra (images()).
+// El panel no sabe de qué brazo se trata: le pide los casilleros (editChoices) y les avisa el clic (choose).
+
+// Brazo inteligente: un ingrediente. Cada clic lo manda al lado siguiente (ver SmartRoboticArm.cycle).
+// Si sale por algún lado, el casillero va en amarillo y una flechita en la esquina dice hacia dónde.
+class ArmKindChoice {
+	const arm
+	const kind
+
+	method images() {
+		const side = arm.sideOf(kind)
+		return if (side == noSide) ["menu/arm_item.png", kind.image()]
+			else ["menu/arm_item_on.png", kind.image(), "menu/arm_chip_" + side.name() + ".png"]
+	}
+
+	method choose() { arm.cycle(kind) }
+}
+
+// Brazo común: una dirección (↑ → ↓ ←). La de donde agarra va en rojo y no se elige; la elegida, en amarillo.
+class ArmSideChoice {
+	const arm
+	const side
+
+	method images() = ["menu/arm_dir_" + side.name() + self.state() + ".png"]
+
+	method state() = if (side == arm.inputSide()) "_grab" else if (side == arm.outputSide()) "_on" else ""
+
+	method choose() { if (side != arm.inputSide()) arm.chooseOutputSide(side) }
+}
+
+// "Por ningún lado": el lado de un ingrediente que el brazo inteligente no agarra
+object noSide {
+	method name() = "none"
 }

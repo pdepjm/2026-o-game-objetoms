@@ -19,10 +19,12 @@
 import machines.machineClasses.*
 import wollok.game.*
 import menu.menuManager.*
-import menu.menuText.*
+import menu.texts.*
 import board.*
 import levels.levelManager.*
 import sound.sfx.*
+import cellPosition.*
+import menu.visuals.*
 
 // Panel de la zona interactiva mientras el jugador está EDITANDO una máquina (X sobre la elegida).
 // Responde a show, hide y onClick, igual que el resto de los paneles (ver menuManager).
@@ -32,11 +34,11 @@ import sound.sfx.*
 object editMenu{
     var selectedMachine = noMachine
 
-    // Todo lo que hay dibujado en el panel (títulos, nombres de settings, opciones y marcas)
-    var renderedItems = []
+    // Todo lo que hay dibujado en el panel (títulos, nombres de settings y opciones), y las marcas de las elegidas
+    const drawn = new VisualGroup()
+    const markers = new VisualGroup()
     // Cada opción dibujada, para saber qué se clickeó
     var slots = []
-    var markers = []
     // La opción marcada para el teclado (flechas y Enter): su índice en slots
     var focusIndex = 0
 
@@ -53,7 +55,7 @@ object editMenu{
     method hide() {
         visible = false
         selectedMachine = noMachine
-        self.vaciarRenders()
+        self.clear()
     }
 
     // Lo llama la acción edit (X sobre la máquina elegida): elige la máquina y muestra sus settings
@@ -107,18 +109,18 @@ object editMenu{
 
     // Dibuja las categorías con sus settings. Se llama sólo cuando cambia la máquina elegida.
     method render() {
-        self.vaciarRenders()
+        self.clear()
 
         var row = self.topRow()
 
         self.categories().forEach({ category =>
-            self.addCategoryTitle(category.name().toUpperCase(), row)
+            self.addText(category.name().toUpperCase(), row, 1.5, "FFD700FF")
             row -= 1
 
             const inCategory = self.settings().filter({ setting => setting.category() == category })
 
             inCategory.filter({ setting => !setting.isColumned() }).forEach({ setting =>
-                self.addSettingTitle(setting.name(), row)
+                self.addText(setting.name(), row)
                 row -= 1
                 row = self.renderOptions(setting, row)
             })
@@ -149,8 +151,9 @@ object editMenu{
     }
 
     method focusIndex() = focusIndex
-    // Cuántas opciones hay dibujadas (para los tests)
+    // Cuántas opciones hay dibujadas, y las marcas de las elegidas (para los tests)
     method slotCount() = slots.size()
+    method markers() = markers.visuals()
 
     // La marca va sobre la opción marcada (y arriba de todo). Sólo se llama cuando cambia.
     method updateFocus() {
@@ -168,10 +171,7 @@ object editMenu{
 
         setting.options().forEach({ option =>
             const position = menuManager.interactiveZone().at(index.rem(self.columns()), firstRow - index.div(self.columns()))
-            const visual = option.visualAt(position)
-
-            game.addVisual(visual)
-            renderedItems.add(visual)
+            drawn.add(option.visualAt(position))
             slots.add(new OptionSlot(setting = setting, option = option, position = position))
             index += 1
         })
@@ -191,10 +191,7 @@ object editMenu{
 
             setting.options().forEach({ option =>
                 const position = menuManager.interactiveZone().at(setting.column(), firstRow - 1 - index)
-                const visual = option.visualAt(position)
-
-                game.addVisual(visual)
-                renderedItems.add(visual)
+                drawn.add(option.visualAt(position))
                 slots.add(new OptionSlot(setting = setting, option = option, position = position))
                 index += 1
             })
@@ -204,56 +201,24 @@ object editMenu{
         return lastRow
     }
 
-    // Título principal de la categoría (ej: "PRODUCCION", "MOVIMIENTO").
-    // Se ubica en column = 1.5 para quedar centrado en el panel (que mide 4 columnas: 0 a 3)
-    // y se destaca con color dorado (FFD700FF).
-    method addCategoryTitle(text, row) {
-        const label = new MenuText(
-            text = text,
-            position = menuManager.interactiveZone().at(1.5, row),
-            textColor = "FFD700FF"
-        )
-        game.addVisual(label)
-        renderedItems.add(label)
+    // Los textos del panel. Wollok distingue los métodos por cantidad de parámetros: las versiones cortas
+    // completan lo que falta. Por defecto, centrado en el panel (column 1.5: mide 4 columnas, 0 a 3) y en blanco;
+    // los títulos de las categorías ("PRODUCCION", "MOVIMIENTO") van en dorado (FFD700FF), y los nombres de
+    // los settings en columna ("Izq.", "Recto", "Der.") sobre su columna.
+    method addText(text, row) { self.addText(text, row, 1.5) }
+
+    method addText(text, row, column) { self.addText(text, row, column, "FFFFFFFF") }
+
+    method addText(text, row, column, color) {
+        drawn.add(new MenuText(text = text, position = menuManager.interactiveZone().at(column, row), textColor = color))
     }
 
-    // Título de un setting específico (ej: "Ingrediente", "Velocidad", "Salida").
-    // También centrado en column = 1.5, en color blanco para distinguirlo de la categoría.
-    method addSettingTitle(text, row) {
-        const label = new MenuText(
-            text = text,
-            position = menuManager.interactiveZone().at(1.5, row),
-            textColor = "FFFFFF"
-        )
-        game.addVisual(label)
-        renderedItems.add(label)
-    }
-
-    // SOBRECARGA DE MÉTODOS POR ARIDAD (distinta cantidad de parámetros):
-    // Wollok distingue métodos por su nombre y cantidad de argumentos. No es un error tener dos 'addText';
-    // es un patrón clásico de delegación con valor por defecto:
-    
-    // 1) Versión de 2 parámetros: atajo conveniente para dibujar un texto centrado (columna 1.5 por defecto).
-    // En lugar de duplicar código, delega en la versión de 3 parámetros.
-    method addText(text, row) {
-        self.addText(text, row, 1.5)
-    }
-
-    // 2) Versión de 3 parámetros: método general que recibe explícitamente la columna (ej: en renderColumns
-    // para ubicar "Izq.", "Recto" y "Der." exactamente sobre sus columnas 0, 1 y 2).
-    method addText(text, row, column) {
-        const label = new MenuText(text = text, position = menuManager.interactiveZone().at(column, row))
-
-        game.addVisual(label)
-        renderedItems.add(label)
-    }
-
-    // Una marca sobre la opción elegida de cada setting. Se llama sólo cuando cambia algo.
+    // Una marca sobre la opción elegida de cada setting (un recuadro del tamaño de una celda). Se llama sólo
+    // cuando cambia algo.
     method updateMarkers() {
-        markers.forEach({ marker => game.removeVisual(marker) })
-        markers = slots.filter({ slot => slot.setting().isSelected(slot.option()) })
-            .map({ slot => new OptionMarker(position = slot.position()) })
-        markers.forEach({ marker => game.addVisual(marker) })
+        markers.clear()
+        slots.filter({ slot => slot.setting().isSelected(slot.option()) })
+            .forEach({ slot => markers.add(new Picture(image = "overlay_cell.png", position = slot.position())) })
         // la marca del teclado, arriba de las marcas
         if (game.hasVisual(optionFocus)) {
             game.removeVisual(optionFocus)
@@ -261,12 +226,10 @@ object editMenu{
         }
     }
 
-    // Remueve de la pantalla todo lo dibujado hasta ese momento
-    method vaciarRenders() {
-        renderedItems.forEach({ item => game.removeVisual(item) })
-        markers.forEach({ marker => game.removeVisual(marker) })
-        renderedItems = []
-        markers = []
+    // Saca de la pantalla todo lo dibujado
+    method clear() {
+        drawn.clear()
+        markers.clear()
         slots = []
         if (game.hasVisual(optionFocus)) game.removeVisual(optionFocus)
     }
@@ -278,17 +241,11 @@ object editMenu{
 
 // La marca de la opción elegida con el teclado. Guarda su posición: se mueve sólo con las flechas.
 object optionFocus {
-    var position = game.origin()
+    var position = new CellPosition(x = 0, y = 0)
 
     method position() = position
     method image() = "menu/option_focus.png"
     method moveTo(aPosition) { position = aPosition }
-}
-
-// Una opción dibujada con su imagen
-class OptionImage {
-    const property image
-    const property position
 }
 
 // Qué opción de qué setting hay dibujada en una posición
@@ -308,9 +265,3 @@ object noSlot {
     method selectIn(menu) {}
 }
 
-// Marca la opción elegida: un recuadro del tamaño de una celda (el overlay de place mide 4x4)
-class OptionMarker {
-    const property position
-
-    method image() = "overlay_cell.png"
-}

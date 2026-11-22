@@ -30,7 +30,7 @@ import wollok.game.*
 // Con decimales también sirve, y es la forma de dibujar algo fijo entre dos celdas (los textos y las
 // imágenes de los menús, la flecha del tutorial sobre una máquina de 2x2): como round() devuelve self,
 // la posición se respeta, mientras que la de game.at se redondea a la celda. Para lo que se mueve está
-// PosicionSuave (animationEngine.wlk). Sus vecinas (right, up, etc.) suman de a una celda, sin redondear.
+// SmoothPosition (animationEngine.wlk). Sus vecinas (right, up, etc.) suman de a una celda, sin redondear.
 class CellPosition inherits Position {
 	override method round() = self
 	// las posiciones vecinas (right, up, etc.) también son de celda

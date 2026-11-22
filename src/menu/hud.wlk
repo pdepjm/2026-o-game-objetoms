@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - los botones de abajo a la izquierda: recetario, menú, iniciar y velocidad.
+// Buffet Albert Einstein - el cartel COLOCANDO / EDITANDO y los botones de abajo a la izquierda.
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -18,10 +18,19 @@
 
 import wollok.game.*
 import cellPosition.*
+import menu.visuals.*
 import menu.startMenu.*
 import levels.levelManager.*
 import simulation.simulationEngine.*
 import sound.sfx.*
+
+// Lo que se ve siempre mientras se juega, alrededor del tablero (lo muestra menuManager.setUp).
+
+// El cartel de arriba a la derecha (x 18, fila 12): dice si el jugador está COLOCANDO o EDITANDO.
+// Guarda la imagen: sólo cambia cuando cambia el modo (menuManager.modeChanged).
+object modeBanner inherits Picture(image = "menu/mode_placing.png", position = new CellPosition(x = 18, y = 12)) {
+    method change(mode) { image = mode.banner() }
+}
 
 // Los botones de abajo a la izquierda (x 0 a 3, y 0 a 3), uno por fila de celdas para que se puedan
 // clickear (Wollok avisa el clic por celda). Cada uno hace lo mismo que su tecla:
@@ -31,23 +40,26 @@ import sound.sfx.*
 //   [ESPACIO] INICIAR/PAUSA ← fila 1
 //   [1][2][3] VEL.          ← fila 0: una celda por velocidad, con un marco en la elegida (speedFrame)
 //
-// La imagen (assets/menu/side_buttons.png, ver makeBoardUi.py) tapa las teclas que trae dibujadas el fondo.
-object sideButtons {
-	method position() = game.origin()
-	method image() = "menu/side_buttons.png"
+// La imagen (assets/menu/side_buttons.png, ver makeBoardUi.py) tapa las teclas que trae dibujadas el fondo
+// y ya tiene dibujados los botones: cada uno es sólo un lugar que se clickea (CellArea).
+object sideButtons inherits Picture(image = "menu/side_buttons.png", position = new CellPosition(x = 0, y = 0)) {
+	const buttons = [
+		new CellArea(position = new CellPosition(x = 0, y = 3), width = 4, action = { startMenu.toggleRecipeBook() }),
+		new CellArea(position = new CellPosition(x = 0, y = 2), width = 4, action = { startMenu.backToCover() }),
+		new CellArea(position = new CellPosition(x = 0, y = 1), width = 4, action = { levelManager.toggleSimulation() })
+	] + [1, 2, 3].map({ speed => new CellArea(position = new CellPosition(x = speed - 1, y = 0), action = { sideButtons.speed(speed) }) })
 
-	method show() {
-		if (!game.hasVisual(self)) game.addVisual(self)
-		if (!game.hasVisual(speedFrame)) game.addVisual(speedFrame)
+	override method show() {
+		super()
+		speedFrame.show()
 	}
 
-	method contains(pos) = pos.x().between(0, 3) && pos.y().between(0, 3)
+	// Para playingScreen: un clic en estas celdas es de los botones (aunque caiga en la celda libre de la
+	// fila de abajo)
+	method handlesClick(pos) = pos.x().between(0, 3) && pos.y().between(0, 3)
 
 	method onClick(pos) {
-		if (pos.y() == 3) startMenu.toggleRecipeBook()
-		else if (pos.y() == 2) startMenu.backToCover()
-		else if (pos.y() == 1) levelManager.toggleSimulation()
-		else if (pos.x() <= 2) self.speed(pos.x() + 1)
+		buttons.findOrDefault({ button => button.contains(pos) }, noButton).press()
 	}
 
 	// Las teclas 1, 2 y 3 y los botones de la fila de abajo
@@ -63,4 +75,5 @@ object speedFrame {
 
 	method position() = positions.get(simulationEngine.speed() - 1)
 	method image() = "menu/speed_selected.png"
+	method show() { if (!game.hasVisual(self)) game.addVisual(self) }
 }

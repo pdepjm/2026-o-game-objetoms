@@ -4,7 +4,7 @@ Lo que el jugador le hace al tablero: colocar, rotar, editar y borrar máquinas,
 
 | Archivo | Qué tiene |
 |---|---|
-| `toolsManager.wlk` | `toolsManager` (a dónde va cada clic y cada tecla del tablero), los modos `placingMode` (COLOCANDO) y `editingMode` (EDITANDO), la celda elegida (`boardCursor`, que no se dibuja) y el menú de la máquina elegida (`actionsMenu`) |
+| `toolsManager.wlk` | `toolsManager` (a dónde va cada clic y cada tecla del tablero), los modos `placingMode` (COLOCANDO) y `editingMode` (EDITANDO), y la celda elegida (`boardCursor`, que no se dibuja). El menú de la máquina elegida (`actionsMenu`) está en `src/menu/actionsMenu.wlk` |
 | `userTools.wlk` | Las acciones: `place`, `delete`, `edit` y `rotate` |
 
 ## Cómo se juega

@@ -26,7 +26,7 @@ import src.machines.types.deliverySlot.*
 import src.menu.menuManager.*
 import src.menu.placeMenu.*
 import src.menu.levelInfoMenu.*
-import src.menu.chefGuide.*
+import src.menu.tutorialGuide.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
@@ -294,6 +294,15 @@ describe "tests de todos los niveles" {
       })
     })
     assert.equals([], self.namesOf(wrong))
+  }
+
+  // El globo dibuja cada mensaje con una sola imagen (assets/tutorial/messages/): si se cambia o se agrega un
+  // mensaje, hay que volver a correr assets/tutorial/makeBubbleTexts.py
+  test "cada mensaje de los tutoriales ya esta escrito en una imagen" {
+    const missing = self.allLevels().flatMap({ level =>
+      level.tutorial().allMessages().filter({ message => !bubbleMessages.has(message.lines()) }).map({ message => message.lines().join(" ") })
+    })
+    assert.equals([], missing)
   }
 
   // availableRecipes lleva recetas (cheeseBurgerRecipe), no platos (cheeseBurger) ni noRecipe
