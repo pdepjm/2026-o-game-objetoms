@@ -1,14 +1,6 @@
-// src/sound/sfx.wlk
 import wollok.game.*
 
 // Efectos de sonido de las interacciones del jugador (UI).
-//
-// OJO: los tests NO abren el juego, y un game.sound().play() sin juego abierto
-// tira excepción. Por eso "enabled" arranca en false y sólo el juego lo prende
-// (ver main.wpgm): así los tests corren en silencio sin romperse.
-//
-// Cada sonido se crea nuevo en cada reproducción: los sonidos de Wollok Game
-// suenan UNA sola vez (ver musicManager para la música, que sí loopea).
 object sfx {
 	var enabled = false
 

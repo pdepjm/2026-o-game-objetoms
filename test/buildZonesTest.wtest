@@ -24,7 +24,11 @@ import src.machines.types.belt.*
 import src.machines.types.dispenser.*
 import src.machines.types.assembler.*
 import src.machines.types.deliverySlot.*
-import src.menu.menuManager.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
 import src.food.foodTypes.*
@@ -37,7 +41,7 @@ const zonedLayer = new BlockedLayer(image = "levels/blocked_tutorial.png")
 
 // Un nivel sólo para estos tests: se puede construir en dos franjas, x 5 a 8 y x 9 a 10 (pegadas),
 // todo el alto; y trae un Dispenser fijo FUERA de esas zonas, en (15, 7)
-object zonedLevel inherits Level(
+const zonedLevel = new Level(
   name = "Zonas",
   availableMachines = [{ => new Belt() }, { => new Assembler() }],
   availableRecipes = [],
@@ -45,7 +49,7 @@ object zonedLevel inherits Level(
   blockedLayer = zonedLayer,
   fixedMachines = [new Placement(position = game.at(15, 7), factory = { => new Dispenser(direction = left) })],
   goals = [noGoal]
-) {}
+)
 
 describe "tests de las zonas donde se puede construir" {
 
@@ -130,7 +134,7 @@ describe "tests de las zonas de un nivel" {
   method layerOnScreen(layer) = game.hasVisual(layer)
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(zonedLevel)
   }

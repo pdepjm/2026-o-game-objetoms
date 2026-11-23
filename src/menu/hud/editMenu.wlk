@@ -18,23 +18,20 @@
 
 import machines.machineClasses.*
 import wollok.game.*
-import menu.menuManager.*
-import menu.texts.*
+import menu.hud.hud.*
+import input.clickManager.*
+import menu.drawing.texts.*
 import board.*
 import levels.levelManager.*
 import sound.sfx.*
 import cellPosition.*
-import menu.visuals.*
+import menu.drawing.visuals.*
 
 // Panel de la zona interactiva mientras el jugador está EDITANDO una máquina (X sobre la elegida).
-// Responde a show, hide y onClick, igual que el resto de los paneles (ver menuManager).
-// Muestra los settings de la máquina elegida (la del cursor), agrupados por categoría,
-// y al clickear una opción se la aplica al setting. No sabe de qué máquina se trata: sólo le pide
-// settings() y trabaja con lo que devuelve (ver machines/settings.wlk).
-object editMenu{
+object editMenu inherits ClickTargets {
     var selectedMachine = noMachine
 
-    // Todo lo que hay dibujado en el panel (títulos, nombres de settings y opciones), y las marcas de las elegidas
+    // Todo lo que hay dibujado en el panel (títulos, nombres de settings y opciones)
     const drawn = new VisualGroup()
     const markers = new VisualGroup()
     // Cada opción dibujada, para saber qué se clickeó
@@ -45,7 +42,7 @@ object editMenu{
     // Sólo se dibuja mientras es el panel activo (EDITANDO)
     var visible = false
 
-    // Mensajes que le manda menuManager
+    // Mensajes que le manda rightPanel
 
     method show() {
         visible = true
@@ -58,19 +55,18 @@ object editMenu{
         self.clear()
     }
 
-    // Lo llama la acción edit (X sobre la máquina elegida): elige la máquina y muestra sus settings
-    method selectMachine(pos) {
-        selectedMachine = board.machineAt(pos)
+    // Lo llama rightPanel cuando una máquina con ajustes pide que la editen
+    method selectMachine(machine) {
+        selectedMachine = machine
         if (visible) self.render()
         sfx.menuSelect()
     }
 
-    // Aplica la opción clickeada a su setting, si se clickeó una
-    method onClick(pos) {
-        self.slotAt(pos).selectIn(self)
-    }
+    // Los clics del panel: cada opción dibujada tiene su celda
+    override method zones() = [hud.interactiveZone()]
+    override method clickTargets() = slots
 
-    // Aplica esa opción a su setting (lo llama la opción clickeada, ver OptionSlot)
+    // Aplica esa opción a su setting
     method choose(slot) {
         slot.setting().select(slot.option())
         self.updateMarkers()
@@ -78,22 +74,11 @@ object editMenu{
         sfx.menuSelect()
     }
 
-    // DISTRIBUCION
-    /*
-        De arriba hacia abajo, una línea por vez. Por cada categoría:
-            CATEGORIA              ← título
-            Nombre del setting     ← uno por cada setting de la categoría
-            [op][op][op][op]       ← sus opciones, de a 4 por fila (el ancho de la zona)
-            [op]
-    */
     method columns() = 4
     method topRow() = 11
 
-    // La opción dibujada en esa posición (noSlot si el click cayó afuera de todas).
-    // Como las opciones se alinean con las celdas enteras de la cuadrícula de Wollok (x: 18 a 21),
-    // la comparación exacta x == pos.x() e y == pos.y() garantiza que cualquier click dentro del
-    // casillero de 50x50 px active la opción correcta sin importar si se clickea a la izquierda o derecha.
-    method slotAt(pos) = slots.findOrDefault({ slot => slot.position().x() == pos.x() && slot.position().y() == pos.y() }, noSlot)
+    // La opción dibujada en esa celda (noSlot si no hay ninguna).
+    method slotAt(pos) = slots.findOrDefault({ slot => slot.handlesClick(pos) }, noSlot)
 
     // Los settings de la máquina elegida (ninguno si no hay máquina elegida)
     method settings() = selectedMachine.settings()
@@ -107,7 +92,7 @@ object editMenu{
 
     // -------------------------------------------------------------
 
-    // Dibuja las categorías con sus settings. Se llama sólo cuando cambia la máquina elegida.
+    // Dibuja las categorías con sus settings.
     method render() {
         self.clear()
 
@@ -155,7 +140,7 @@ object editMenu{
     method slotCount() = slots.size()
     method markers() = markers.visuals()
 
-    // La marca va sobre la opción marcada (y arriba de todo). Sólo se llama cuando cambia.
+    // La marca va sobre la opción marcada (y arriba de todo).
     method updateFocus() {
         if (game.hasVisual(optionFocus)) game.removeVisual(optionFocus)
         if (!slots.isEmpty()) {
@@ -165,12 +150,11 @@ object editMenu{
     }
 
     // Dibuja las opciones del setting de a self.columns() por fila, empezando en esa fila.
-    // Devuelve la primera fila que queda libre.
     method renderOptions(setting, firstRow) {
         var index = 0
 
         setting.options().forEach({ option =>
-            const position = menuManager.interactiveZone().at(index.rem(self.columns()), firstRow - index.div(self.columns()))
+            const position = hud.interactiveZone().at(index.rem(self.columns()), firstRow - index.div(self.columns()))
             drawn.add(option.visualAt(position))
             slots.add(new OptionSlot(setting = setting, option = option, position = position))
             index += 1
@@ -180,7 +164,6 @@ object editMenu{
     }
 
     // Dibuja los settings que van en columna: el nombre arriba y sus opciones una debajo de la otra.
-    // Devuelve la primera fila que queda libre.
     method renderColumns(settings, firstRow) {
         var lastRow = firstRow
 
@@ -190,7 +173,7 @@ object editMenu{
             var index = 0
 
             setting.options().forEach({ option =>
-                const position = menuManager.interactiveZone().at(setting.column(), firstRow - 1 - index)
+                const position = hud.interactiveZone().at(setting.column(), firstRow - 1 - index)
                 drawn.add(option.visualAt(position))
                 slots.add(new OptionSlot(setting = setting, option = option, position = position))
                 index += 1
@@ -201,20 +184,16 @@ object editMenu{
         return lastRow
     }
 
-    // Los textos del panel. Wollok distingue los métodos por cantidad de parámetros: las versiones cortas
-    // completan lo que falta. Por defecto, centrado en el panel (column 1.5: mide 4 columnas, 0 a 3) y en blanco;
-    // los títulos de las categorías ("PRODUCCION", "MOVIMIENTO") van en dorado (FFD700FF), y los nombres de
-    // los settings en columna ("Izq.", "Recto", "Der.") sobre su columna.
+    // Los textos del panel.
     method addText(text, row) { self.addText(text, row, 1.5) }
 
     method addText(text, row, column) { self.addText(text, row, column, "FFFFFFFF") }
 
     method addText(text, row, column, color) {
-        drawn.add(new MenuText(text = text, position = menuManager.interactiveZone().at(column, row), textColor = color))
+        drawn.add(new MenuText(text = text, position = hud.interactiveZone().at(column, row), textColor = color))
     }
 
-    // Una marca sobre la opción elegida de cada setting (un recuadro del tamaño de una celda). Se llama sólo
-    // cuando cambia algo.
+    // Una marca sobre la opción elegida de cada setting (un recuadro del tamaño de una celda).
     method updateMarkers() {
         markers.clear()
         slots.filter({ slot => slot.setting().isSelected(slot.option()) })
@@ -239,7 +218,7 @@ object editMenu{
 
 }
 
-// La marca de la opción elegida con el teclado. Guarda su posición: se mueve sólo con las flechas.
+// La marca de la opción elegida con el teclado.
 object optionFocus {
     var position = new CellPosition(x = 0, y = 0)
 
@@ -248,20 +227,28 @@ object optionFocus {
     method moveTo(aPosition) { position = aPosition }
 }
 
-// Qué opción de qué setting hay dibujada en una posición
+// Qué opción de qué setting hay dibujada en una celda.
 class OptionSlot {
     const property setting
     const property option
     const property position
+    var zone = nowhere
+
+    override method initialize() {
+        super()
+        zone = rectangle.cell(position)
+    }
+
+    method handlesClick(pos) = zone.contains(pos)
+    method onClick(pos) { editMenu.choose(self) }
 
     // ¿Es la opción con ese valor de ese setting?
     method matches(aSetting, value) = setting == aSetting && option.value() == value
-    method selectIn(menu) { menu.choose(self) }
 }
 
 // "No hay opción ahí": lo que hay en una posición donde se clickeó afuera de todas las opciones
 object noSlot {
     method matches(aSetting, value) = false
-    method selectIn(menu) {}
+    method handlesClick(pos) = false
+    method onClick(pos) {}
 }
-

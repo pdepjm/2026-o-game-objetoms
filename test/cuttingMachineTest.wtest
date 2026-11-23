@@ -19,7 +19,7 @@
 import wollok.game.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
-import src.machines.types.cuttingMachine.*
+import src.machines.types.processing.*
 import src.tools.toolsManager.*
 import src.directions.*
 import src.board.*

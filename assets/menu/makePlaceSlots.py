@@ -20,7 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Genera lo que dibuja src/menu/placeMenu.wlk (los casilleros miden 2x2 celdas, 100x100):
+Genera lo que dibuja src/menu/hud/placeMenu.wlk (los casilleros miden 2x2 celdas, 100x100):
 
 - machines/<Máquina>/<dirección>_menu.png: el casillero con la máquina en chico y su nombre abajo
   (Machine.menuImage). El dibujo sale de la imagen de menú original (100x100, la máquina sola), que se

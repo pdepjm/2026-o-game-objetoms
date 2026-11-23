@@ -18,21 +18,41 @@
 
 import wollok.game.*
 
-// Posición fija en una celda (coordenadas enteras), para las cosas que no se mueven:
-// máquinas, items del menú, overlay.
-//
-// POR QUÉ EXISTE
-// Wollok Game dibuja ~60 veces por segundo, y en cada frame le pide a cada visual
-// position().round(). En una Position común, round() crea una posición nueva cada vez,
-// y eso hacía que dibujar una máquina costara ~2.5 veces más.
-// Como las coordenadas ya son enteras, redondear no cambia nada: se devuelve self.
-//
-// Con decimales también sirve, y es la forma de dibujar algo fijo entre dos celdas (los textos y las
-// imágenes de los menús, la flecha del tutorial sobre una máquina de 2x2): como round() devuelve self,
-// la posición se respeta, mientras que la de game.at se redondea a la celda. Para lo que se mueve está
-// SmoothPosition (animationEngine.wlk). Sus vecinas (right, up, etc.) suman de a una celda, sin redondear.
+// Posición fija en una celda (coordenadas enteras), para las cosas que no se mueven
 class CellPosition inherits Position {
 	override method round() = self
 	// las posiciones vecinas (right, up, etc.) también son de celda
 	override method createPosition(_x, _y) = new CellPosition(x = _x, y = _y)
+}
+
+// Un rectángulo de celdas, de (minX, minY) a (maxX, maxY), con los bordes incluidos.
+class Zone {
+	const minX
+	const maxX
+	const minY
+	const maxY
+
+	method contains(pos) = pos.x().between(minX, maxX) && pos.y().between(minY, maxY)
+
+	// Posición relativa desde la esquina inferior izquierda
+	method at(dx, dy) = new CellPosition(x = minX + dx, y = minY + dy)
+
+	// La esquina inferior izquierda
+	method origin() = self.at(0, 0)
+}
+
+// Para armar una zona desde su esquina de abajo a la izquierda y su tamaño en celdas
+object rectangle {
+	method of(x, y, width, height) = new Zone(minX = x, maxX = x + width - 1, minY = y, maxY = y + height - 1)
+	method cell(position) = self.of(position.x(), position.y(), 1, 1)
+}
+
+// Toda la pantalla: la zona de una pantalla del menú, que recibe todos los clics
+object wholeScreen {
+	method contains(pos) = true
+}
+
+// Ningún lugar: la zona de algo que hoy no se ve
+object nowhere {
+	method contains(pos) = false
 }

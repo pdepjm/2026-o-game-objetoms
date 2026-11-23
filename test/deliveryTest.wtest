@@ -21,7 +21,7 @@ import src.machines.machineClasses.*
 import src.board.*
 import src.directions.*
 import src.machines.types.belt.*
-import src.machines.types.automaticArm.*
+import src.machines.types.arms.*
 import src.machines.types.deliverySlot.*
 import src.simulation.simulationEngine.*
 import src.food.foodClasses.*

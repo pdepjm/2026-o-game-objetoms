@@ -16,9 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Los kinds concretos. Cada uno hereda de IngredientKind (si se puede procesar)
-// o de DishKind (si es un plato) y siempre define image().
-// Cada kind sabe cuál es su imagen (la ruta dentro de assets/, ver la convención en assets/README.md)
+// Los kinds concretos.
 import food.foodClasses.*
 
 // --------------------------------- POTATOES --------------------------------------------

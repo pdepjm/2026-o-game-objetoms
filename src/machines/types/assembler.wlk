@@ -25,21 +25,21 @@ import machines.settings.*
 import food.foodClasses.*
 
 // Ensamblador: junta los ingredientes que pide su receta y entrega el plato armado.
-// Sólo acepta lo que la receta todavía necesita, así que nunca tiene items de más:
-// cuando la receta se puede armar, lo que tiene es justo lo que hace falta y se consume todo.
 class Assembler inherits Machine {
-	// La receta que eligió el jugador. Arranca con la primera del nivel (noRecipe si el nivel no tiene).
+	// La receta que eligió el jugador.
 	const recipeSetting = new RecipeSetting(value = recipeBook.firstAvailable())
 
 	var recipe = recipeSetting.value()
 
 	var dish = noItem
 	
-
 	// Qué tan rápido arma el plato (se cambia con X, editando la máquina)
 	const speedSetting = new SpeedSetting(value = 1)
 
 	override method settings() = [recipeSetting, speedSetting]
+
+	// Se edita por sus ajustes (la receta y la velocidad)
+	override method openEditorIn(panel) { panel.editSettings(self) }
 
 	override method speed() = speedSetting.value()
 

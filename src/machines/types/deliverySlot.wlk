@@ -36,7 +36,7 @@ class DeliverySlot inherits Machine {
 	}
 }
 
-// Los platitos del fondo. Sus posiciones están sólo acá.
+// Los platitos del fondo.
 object deliveryPoints {
 	const property slots = [
 		new DeliverySlot(position = game.at(13, 11), direction = down),

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Las clases de las recetas. Las recetas concretas están en recipes.wlk
+// Las clases de las recetas.
 import food.foodClasses.*
 
 // Un requisito de una receta: un kind y cuántos hacen falta.

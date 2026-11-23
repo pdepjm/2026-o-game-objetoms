@@ -17,22 +17,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Las configuraciones de las máquinas (lo que se cambia editando la máquina, con X).
-//
-// Cada máquina declara los settings que acepta en settings() (por defecto, ninguno).
-// Un Setting guarda el valor elegido para ESA máquina y sabe qué opciones ofrece, en qué
-// categoría va (para agrupar en el menú) y cuánta energía suma. Es configuración, no estado
-// de la simulación: apagar la simulación no la toca.
-//
-// Las opciones se calculan cuando se piden (options()), no se guardan. Lo que identifica
-// a la elegida es su value, así que se compara por value y no por objeto.
 
 import directions.*
 import food.recipes.*
-import menu.visuals.*
-import menu.texts.*
+import menu.drawing.visuals.*
+import menu.drawing.texts.*
 // ----------- CATEGORIAS -----------
-// Sólo sirven para agrupar los settings en el menú
-
 object production {
 	method name() = "Produccion"
 }
@@ -42,7 +32,6 @@ object movement {
 }
 
 // ----------- OPCIONES -----------
-// Una opción de un setting. Se dibuja con su imagen (ImageOption) o con su texto (LabelOption).
 class SettingOption {
 	const property value
 	// energía que suma a la máquina mientras esta opción esté elegida
@@ -73,8 +62,7 @@ class Setting {
 	method category()
 	method options()
 
-	// ¿Va en una columna del panel (con sus opciones una debajo de la otra, ver column() y editMenu) o se dibuja
-	// con los demás, de a 4 opciones por fila?
+	// ¿Va en una columna del panel (con sus opciones una debajo de la otra) y editMenu) o se dibuja con los demás, de a 4 opciones por fila?
 	method isColumned() = false
 
 	// ----------- ELECCION -----------
@@ -85,11 +73,10 @@ class Setting {
 	method isSelected(option) = option.value() == value
 
 	// ----------- ENERGIA -----------
-	// La de la opción elegida (0 si el valor no es una de las opciones)
 	method energyCost() = self.options().filter({ option => self.isSelected(option) }).sum({ option => option.energyCost() })
 }
 
-// Qué ingrediente produce una máquina. kinds son los que se ofrecen en el menú.
+// Qué ingrediente produce una máquina.
 class ProductSetting inherits Setting {
 	const kinds = []
 
@@ -99,9 +86,6 @@ class ProductSetting inherits Setting {
 }
 
 // Qué tan rápido trabaja una máquina, como multiplicador de su ritmo normal.
-// Más rápido consume más energía.
-// Se utilizan etiquetas concisas ("x0.5", "x1", "x2") para que entren holgadas
-// en los 50 px de cada casilla del menú sin desbordar el texto.
 class SpeedSetting inherits Setting {
 	override method name() = "Velocidad"
 	override method category() = production
@@ -113,9 +97,6 @@ class SpeedSetting inherits Setting {
 }
 
 // Hacia dónde entrega una máquina, RELATIVO al lado por el que recibe.
-// Las opciones son straightOut, leftOut y rightOut.
-// Se usan abreviaturas ("Recto", "Izq.", "Der.") para evitar que palabras largas
-// como "Izquierda" y "Derecha" desborden los 50 px y se superpongan entre sí.
 class OutputSideSetting inherits Setting {
 	override method name() = "Salida"
 	override method category() = movement
@@ -126,8 +107,7 @@ class OutputSideSetting inherits Setting {
 	]
 }
 
-
-// Qué plato arma un Assembler. Las opciones son las recetas del nivel (recipeBook), con la imagen de su plato.
+// Qué plato arma un Assembler.
 class RecipeSetting inherits Setting {
 	override method name() = "Receta"
 	override method category() = production
@@ -136,8 +116,7 @@ class RecipeSetting inherits Setting {
 	})
 }
 
-// El lado por el que entrega una máquina que recibió por inputSide. Si el item entra por la
-// izquierda viaja hacia la derecha, y desde ahí "izquierda" y "derecha" son las del recorrido.
+// El lado por el que entrega una máquina que recibió por inputSide.
 object straightOut {
 	method sideFor(inputSide) = inputSide.invert()
 }
@@ -151,9 +130,6 @@ object rightOut {
 }
 
 // ----------- FILTROS DE ITEMS -----------
-// Qué items deja salir una máquina por una de sus salidas: los de los kinds elegidos (un kind es un
-// filtro de sí mismo, ver accepts en foodClasses.wlk). Cada opción prende o apaga un kind, y sin
-// ninguno elegido no sale nada por esa salida. Se dibuja en una columna del panel (ver column()).
 class ItemSetSetting inherits Setting {
 	const outputName
 	const columnIndex
@@ -167,7 +143,7 @@ class ItemSetSetting inherits Setting {
 	override method options() = kinds.map({
 		kind => new ImageOption(value = kind, image = kind.image()) })
 
-	// Prende o apaga ese kind. Arma una lista nueva: la inicial puede estar compartida con otra salida.
+	// Prende o apaga ese kind.
 	override method select(option) {
 		value = if (self.isSelected(option)) value.filter({ kind => kind != option.value() }) else value + [option.value()]
 	}
@@ -176,45 +152,8 @@ class ItemSetSetting inherits Setting {
 
 	method accepts(item) = value.any({ kind => kind.accepts(item) })
 
-	// Para el panel del brazo (ver SmartRoboticArm.sendTo): sumar o sacar un kind. Arman listas nuevas
-	// (la inicial puede estar compartida con otra salida).
+	// Para el panel del brazo: sumar o sacar un kind.
 	method contains(kind) = value.contains(kind)
 	method add(kind) { if (!value.contains(kind)) value = value + [kind] }
 	method remove(kind) { value = value.filter({ each => each != kind }) }
-}
-
-// ----------- LOS CASILLEROS DEL PANEL DEL BRAZO (ver armMenu) -----------
-// Cada casillero ocupa una celda y se dibuja con una o más imágenes, una encima de la otra (images()).
-// El panel no sabe de qué brazo se trata: le pide los casilleros (editChoices) y les avisa el clic (choose).
-
-// Brazo inteligente: un ingrediente. Cada clic lo manda al lado siguiente (ver SmartRoboticArm.cycle).
-// Si sale por algún lado, el casillero va en amarillo y una flechita en la esquina dice hacia dónde.
-class ArmKindChoice {
-	const arm
-	const kind
-
-	method images() {
-		const side = arm.sideOf(kind)
-		return if (side == noSide) ["menu/arm_item.png", kind.image()]
-			else ["menu/arm_item_on.png", kind.image(), "menu/arm_chip_" + side.name() + ".png"]
-	}
-
-	method choose() { arm.cycle(kind) }
-}
-
-// Brazo común: una dirección (↑ → ↓ ←). La de donde agarra va en rojo y no se elige; la elegida, en amarillo.
-class ArmSideChoice {
-	const arm
-	const side
-
-	method images() = ["menu/arm_dir_" + side.name() + self.state() + ".png"]
-
-	method state() = if (side == arm.inputSide()) "_grab" else if (side == arm.outputSide()) "_on" else ""
-
-	method choose() { if (side != arm.inputSide()) arm.chooseOutputSide(side) }
-}
-
-// "Por ningún lado": el lado de un ingrediente que el brazo inteligente no agarra
-object noSide {
-	method name() = "none"
 }

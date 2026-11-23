@@ -24,17 +24,18 @@ import src.directions.*
 import src.machines.machineManager.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
-import src.machines.types.cuttingMachine.*
-import src.machines.types.oven.*
-import src.machines.types.fryer.*
-import src.machines.types.automaticArm.*
-import src.machines.types.smartRoboticArm.*
+import src.machines.types.processing.*
+import src.machines.types.arms.*
 import src.machines.types.assembler.*
 import src.machines.types.deliverySlot.*
-import src.menu.menuManager.*
-import src.menu.editMenu.*
-import src.menu.levelInfoMenu.*
-import src.menu.tutorialGuide.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.levelInfoMenu.*
+import src.menu.overBoard.tutorialGuide.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
@@ -44,14 +45,14 @@ import src.levels.levelsTypes.*
 import src.levels.levelManager.*
 
 // Un nivel sólo para estos tests: con una cinta fija y un límite de 3 de energía
-object limitedLevel inherits Level(
+const limitedLevel = new Level(
   name = "Limitado",
   availableMachines = [{ => new Belt() }, { => new Oven() }],
   availableRecipes = [],
   goals = [noGoal],
   energyLimit = new EnergyLimit(max = 3),
   fixedMachines = [new Placement(position = new CellPosition(x = 5, y = 5), factory = { => new Belt(direction = right) })]
-) {}
+)
 
 describe "tests del consumo de energia de las maquinas" {
 
@@ -133,7 +134,7 @@ describe "tests del consumo de energia de las maquinas" {
 describe "tests del limite de energia" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
   }
 
@@ -240,7 +241,7 @@ describe "tests del limite de energia" {
 describe "tests del tutorial de energia" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(energyTutorialLevel)
   }
@@ -263,7 +264,7 @@ describe "tests del tutorial de energia" {
       const slot = editMenu.slotAt(pos)
       return slot.matches(setting, value)
     })
-    toolsManager.onClick(pos)
+    playingScreen.onClick(pos)
   }
 
   method message() = chefGuide.message()

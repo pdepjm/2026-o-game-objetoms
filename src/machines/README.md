@@ -7,7 +7,7 @@ Las máquinas del juego: qué hacen, cómo se dibujan, qué tipos hay y cuáles 
 | `machineClasses.wlk` | Las clases base de todas las máquinas: `MachineAnimator`, `MachineSprite` y `Machine` |
 | `settings.wlk` | Las configuraciones de las máquinas: `Setting`, sus opciones y categorías (ver [Configuración](#configuración-settings)) |
 | `inventory.wlk` | `Inventory`: los items que guarda una máquina y los que esperan que se libere lugar |
-| `types/` | Las máquinas concretas, **una por archivo** con el nombre de su clase: `belt.wlk`, `dispenser.wlk`, `automaticArm.wlk`, `smartRoboticArm.wlk`, `assembler.wlk`, `oven.wlk`, `cuttingMachine.wlk`, `fryer.wlk`, `deliverySlot.wlk` |
+| `types/` | Las máquinas concretas, **un archivo por familia**: `processing.wlk` (`ProcessingMachine` y sus hijas `Oven`, `CuttingMachine` y `Fryer`), `arms.wlk` (`AutomaticArm` y `SmartRoboticArm`, con sus filtros y los casilleros del panel de los brazos: `ArmKindChoice`, `ArmSideChoice`), y las que son únicas en su archivo: `belt.wlk`, `dispenser.wlk`, `assembler.wlk`, `deliverySlot.wlk`. Se juntan los archivos, no las clases: cada máquina sigue siendo su propia subclase |
 | `machineManager.wlk` | El catálogo de máquinas del menú y cuál está elegida para colocar |
 
 > **Quién conoce las máquinas concretas:** sólo `machineManager` (para el catálogo), `main.wpgm` (para crear los puntos de entrega con `deliveryPoints.setUp()`), `levels/levelsTypes.wlk` (cada nivel arma su catálogo) y los tests. El resto del juego (tablero, simulación, herramientas, menú) trabaja con cualquier `Machine` sin saber cuál es. Mantenerlo así: si otra parte necesita algo de una máquina, agregarlo como método de `Machine` y que cada tipo lo sobrescriba.
@@ -107,7 +107,8 @@ Una máquina nueva sobrescribe **sólo lo que la hace distinta**. Todo lo demás
 |---|---|---|
 | `runningImage()` | la imagen quieta | se anima con GIF: `override method runningImage() = self.gifImage()` |
 | `staticImage()` | `<direction>_game.png` | su imagen no depende de `direction`. El brazo lo sobrescribe: su `direction` es hacia dónde mira la pinza, no hacia dónde está rotado |
-| `editPanel()` | `editMenu` (el de los settings) | tiene su propio panel para editarla (los brazos: `armMenu`, ver [`menu/README.md`](../menu/README.md#armmenuwlk)) |
+| `openEditorIn(panel)` | `panel.nothingToEdit()`: no tiene nada para ajustar | tiene ajustes (`panel.editSettings(self)`: las procesadoras, el dispenser, el ensamblador) o se edita como brazo (`panel.editArm(self)`). La máquina sólo dice qué es: el panel decide qué mostrar (ver `rightPanel` en [`menu/README.md`](../menu/README.md#hud-el-hud)) |
+| `clickedAt(pos, manager)` | `manager.pick(pos)`: queda elegida | (no hace falta: `noMachine` lo redefine para colocar en una celda vacía) |
 | `addedToBoard()` / `removedFromBoard()` | no hacen nada | dibuja algo aparte encima de ella mientras está en el tablero (el Dispenser: la insignia con el ingrediente que larga, `DispenserBadge`). Los llama `board.push` y `board.pop` |
 | `drawOffsetX()` / `drawOffsetY()` | `0` | se dibuja corrida (el brazo, que ocupa 3x3 celdas) |
 | `rotate()` / `menuImage(dir)` | rota normalmente | rota distinto (el brazo: mueve su entrada) o el menú muestra otra cosa |
@@ -162,7 +163,7 @@ Para que una máquina acepte una configuración:
 
 ## Máquinas que procesan
 
-Las que transforman un ingrediente (cortadora, horno, freidora) heredan de `ProcessingMachine`, que ya sabe aceptar lo que puede procesar, trabajar el tiempo que dice el item (`processTime()`), transformarlo y entregarlo. Cada subclase sólo dice:
+Las que transforman un ingrediente (cortadora, horno, freidora) heredan de `ProcessingMachine` (todas en `types/processing.wlk`), que ya sabe aceptar lo que puede procesar, trabajar el tiempo que dice el item (`processTime()`), transformarlo y entregarlo. Cada subclase sólo dice:
 
 | Método | Para qué |
 |---|---|
@@ -290,6 +291,6 @@ Por defecto una máquina es **frame a frame**: con la simulación prendida se ve
 2. La clase en su propio archivo, `types/<nombre>.wlk` (el nombre de la clase empezando en minúscula), heredando de `Machine`, con `override method name() = "<Nombre>"` (el mismo nombre que la carpeta de imágenes). Importar sólo lo que use: como mínimo `machines.machineClasses.*`.
 3. Si usa GIF: `override method runningImage() = self.gifImage()`.
 4. Su comportamiento: partir del ejemplo más parecido (cinta, dispenser o cortadora) y sobrescribir sólo lo que cambia, según [el contrato](#el-contrato-de-machine).
-5. Importar su archivo en `machineManager.wlk` (`import machines.types.<nombre>.*`) y agregarla a la lista. Si cambia la cantidad de máquinas, revisar los tests de páginas de `test/menuManagerTest.wtest`.
+5. Ponerla en el archivo de su familia (por ejemplo, una que procesa va en `types/processing.wlk`) o, si no tiene familia, en un archivo propio, e importarlo en `machineManager.wlk` (`import machines.types.<archivo>.*`) y agregarla a la lista. Si cambia la cantidad de máquinas, revisar los tests de páginas del menú de colocar.
 6. Documentarla: agregarla a la tabla de [`types/`](#types-las-máquinas) y a la lista de archivos de arriba, y su carpeta a la tabla de [`assets/README.md`](../../assets/README.md#machines).
 

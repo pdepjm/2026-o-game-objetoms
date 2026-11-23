@@ -17,14 +17,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Las clases de la comida y los procesos que puede sufrir.
-// Un Item es lo que circula por el tablero; su kind dice qué es:
-// un ingrediente (IngredientKind), que se puede procesar, o un plato (DishKind), que no.
-// Los kinds concretos (potato, cutPotato, burger...) están en foodTypes.wlk
 import simulation.animationEngine.*
 
 // Objetos de transformación: sirven para definir los procesos que pueden sufrir los ingredientes.
-// Actualmente están vacíos, pero podrían tener el tiempo de procesamiento.
-
 object cutting {}
 object frying {}
 // Quemarse por quedarse demasiado tiempo en la freidora
@@ -39,23 +34,19 @@ class IngredientKind{
 
     method image()
 
-    // La insignia del dispenser: el ingrediente centrado en un círculo (assets/machines/Dispenser/makeBadges.py
-    // la genera con la misma ruta que la imagen, adentro de badge/)
+    // La insignia del dispenser: el ingrediente centrado en un círculo
     method badgeImage() {
         if (badgeImage.isEmpty()) badgeImage = "machines/Dispenser/badge/" + self.image()
         return badgeImage
     }
 
-    // Un kind también es un filtro de items: deja pasar a los que son de ese kind (ver settings.wlk)
+    // Un kind también es un filtro de items: deja pasar a los que son de ese kind
     method accepts(item) = item.kind() == self
 
-    // Pasos de simulación que tarda en procesarse. Sobrescribirlo sólo si tarda distinto.
+    // Pasos de simulación que tarda en procesarse.
     method processTime() = 5
 
-
-    // Agrega un proceso como 'cutting' junto al objeto ya convertido
-    // Ejemplo:
-    // (cutting, cutPotato)
+    // Agrega un proceso (como cutting) y en qué se convierte el ingrediente
     method turnsInto(aProcess, aKind) {
         transitions.put(aProcess, aKind)
     }
@@ -63,10 +54,7 @@ class IngredientKind{
     // Verifica si al ingrediente se le puede aplicar un proceso, por ejemplo, freírlo
     method canProcess(aProcess) = transitions.containsKey(aProcess)
 
-
-
     // Aplica el proceso y devuelve el objeto ya convertido.
-    // Las máquinas preguntan canProcess antes, así que el error solo salta si hay un bug.
     method process(aProcess) =
         transitions.getOrElse(aProcess, { self.error("No se le puede aplicar " + aProcess) })
 }
@@ -78,7 +66,7 @@ class DishKind {
     method canProcess(_) = false
 }
 
-// Lo que circula por el tablero. Delega en su kind, que cambia cuando lo procesan
+// Lo que circula por el tablero.
 class Item inherits Animated {
     var kind
 
@@ -94,7 +82,7 @@ class Item inherits Animated {
         kind = kind.process(aProcess)
     }
 
-    // Las máquinas le piden a su item que se entregue (ver Machine.deliver) o que un brazo lo agarre
+    // Las máquinas le piden a su item que se entregue o que un brazo lo agarre
     method asList() = [self]
     method deliverFrom(machine, target) { machine.deliver(self, target) }
     method grabbedBy(arm, source) {
@@ -106,7 +94,6 @@ class Item inherits Animated {
 }
 
 // "No hay item": lo que devuelve una máquina que no tiene nada para entregar o para que un brazo agarre.
-// Se deja entregar y agarrar sin hacer nada, así nadie tiene que preguntar si hay algo.
 object noItem {
     method asList() = []
     method deliverFrom(machine, target) {}

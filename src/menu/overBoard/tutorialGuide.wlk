@@ -19,41 +19,30 @@
 import wollok.game.*
 import cellPosition.*
 import board.*
-import menu.visuals.*
-import menu.texts.*
-import menu.spriteFonts.*
-import menu.bubbleTexts.*
+import menu.drawing.visuals.*
+import menu.drawing.texts.*
+import menu.drawing.spriteFonts.*
+import menu.overBoard.bubbleTexts.*
+import levels.levelManager.*
 
-// Lo que dice el tutorial lo decide levels/tutorial.wlk: acá sólo se dibuja. Lo llama levelManager con
-// cada aviso al tutorial. RENDIMIENTO: si el aviso no cambia nada (lo más común mientras se cocina: cada
-// entrega avisa), no se redibuja nada.
+// Lo que dice el tutorial lo decide levels/tutorial.wlk: acá sólo se dibuja.
 
 // ----------- EL COCINERO -----------
 
-// El cocinero del tutorial, sobre el tablero. Se para al lado de la celda que importa en el paso (la del
-// recuadro, o la máquina que se explica) y la señala con la cuchara; al lado tiene un globo con el paso
-// ("PASO 2 DE 12"), el mensaje y, debajo, las teclas que hay que apretar ("[ENTER] para seguir"). Si el
-// jugador hace algo que el paso no deja, pone cara de "uy" y lo dice en un globo rojo un momento
-// (complain), y después vuelve al mensaje del paso.
-//
-// Dónde se para (todo en celdas, con decimales: CellPosition no redondea):
-// - Arriba de la celda, señalando hacia abajo ("down"), si hay lugar; si no (las filas de arriba y los
-//   platitos), abajo de ella, señalando hacia arriba ("up").
-// - A la izquierda de la celda, mirando a la derecha ("right"); en las primeras columnas no entra, y se
-//   para a la derecha, mirando a la izquierda ("left").
-// - El globo, al costado del cocinero: a la derecha, o a la izquierda si ahí no entra.
-// Las imágenes (assets/tutorial/) las genera assets/tutorial/makeChef.py: si cambia una medida acá
-// (el tamaño del cocinero o el del globo), cambiarla allá y volver a correrlo.
+// El globo del cocinero, como parte clickeable de playingScreen
+object chefBubble {
+	method handlesClick(pos) = levelManager.tutorial().waitsForContinue() && chefGuide.bubbleContains(pos)
+	method onClick(pos) { levelManager.continueTutorial() }
+}
 object chefGuide {
-	// Lo que entra en el globo (no se controla al dibujar: lo revisan los tests). Cada tecla ocupa el
-	// lugar de una línea.
+	// Lo que entra en el globo (no se controla al dibujar: lo revisan los tests).
 	const property maxLines = 6
 	const property maxLength = 16
 
-	// El cocinero mide 120x160 px; la punta de la cuchara queda 25 px adentro de su borde (ver makeChef.py)
+	// El cocinero mide 120x160 px; la punta de la cuchara queda 25 px adentro de su borde
 	const chefWidth = 2.4
 	const chefHeight = 3.2
-	// El globo: 200 px de ancho más la cola (14 px). Las líneas van cada 0.55 filas.
+	// El globo: 200 px de ancho más la cola (14 px).
 	const bubbleWidth = 4.28
 	const lineHeight = 0.55
 	// Hasta dónde puede llegar el globo a la derecha: el borde del panel de la derecha
@@ -61,33 +50,27 @@ object chefGuide {
 	const topLimit = 12.95
 	const errorMillis = 1700
 
-	// Lo que dice el paso (para los tests), y la celda que señala. Antes del primer paso con celda,
-	// una del medio del tablero.
+	// Lo que dice el paso (para los tests), y la celda que señala.
 	var lines = []
 	var stepLabel = ""
 	var keys = []
 	var focus = new CellPosition(x = 9, y = 5)
-	// Lo que dice al quejarse ([] si no se está quejando)
 	var complaint = []
 	// Cada queja tiene un número: la que vence sólo borra la queja si no vino otra después
 	var complaintId = 0
 	const drawn = new VisualGroup()
-	// Mientras se cocina, el cocinero no se ve (ver levelManager._cookingChanged): sigue sabiendo qué
-	// dice, y vuelve a aparecer al apagar la simulación
+	// Mientras se cocina, el cocinero no se ve: sigue sabiendo qué dice
 	var silenced = false
 
 	method message() = lines
 	method stepLabel() = stepLabel
-	// Las teclas que dice, por nombre ("continue", "place"...: ver Tutorial.messageKeys)
+	// Las teclas que dice, por nombre
 	method keys() = keys
 	method complaint() = complaint
 	// Lo que tiene dibujado (para los tests de rendimiento)
 	method drawnVisuals() = drawn.visuals()
 
-	// El mensaje del paso: stepLabels vacío es que el tutorial terminó (lo festeja); lines vacío, que no hay
-	// tutorial (no se ve nada). newKeys son las teclas que se dicen debajo del mensaje (las imágenes
-	// tutorial/key_<nombre>.png). La primera de cells es la que señala; sin celdas se queda donde estaba.
-	// Si dice lo mismo que ya está diciendo (y no se está quejando), no redibuja nada.
+	// El mensaje del paso. Si dice lo mismo que ya está diciendo, no redibuja nada
 	method say(stepLabels, newLines, newKeys, cells) {
 		const newLabel = stepLabels.join("")
 		const shownLines = newLines.take(maxLines)
@@ -141,15 +124,16 @@ object chefGuide {
 		}
 	}
 
-	// ¿El clic cayó en una celda que toca el globo? (con el mouse, tocar el globo es como apretar Enter
-	// para seguir: ver playingScreen). Sin mensaje no hay globo.
-	method bubbleContains(pos) {
+	// ¿El clic cayó en una celda que toca el globo?
+	method bubbleContains(pos) = !lines.isEmpty() && !silenced && self.bubbleZone().contains(pos)
+
+	// Las celdas que toca el globo (tiene decimales: se cuentan las celdas que pisa aunque sea un poco)
+	method bubbleZone() {
 		const rows = lines.size() + keys.size()
 		const top = self.bubbleTop(rows)
 		const left = self.bubbleLeft()
-		const inColumns = pos.x() + 1 > left && pos.x() < left + bubbleWidth
-		const inRows = pos.y() + 1 > top - self.bubbleHeight(rows) && pos.y() < top
-		return !lines.isEmpty() && !silenced && inColumns && inRows
+		const bottom = top - self.bubbleHeight(rows)
+		return new Zone(minX = left.truncate(0), maxX = (left + bubbleWidth).roundUp() - 1, minY = bottom.truncate(0), maxY = top.roundUp() - 1)
 	}
 
 	// ----------- DIBUJO -----------
@@ -165,7 +149,7 @@ object chefGuide {
 
 	method mood() = if (self.isComplaining()) "oops" else if (stepLabel.isEmpty()) "happy" else "talk"
 
-	// ¿Hay lugar arriba de la celda? Si no, se para abajo
+	// ¿Hay lugar arriba de la celda?
 	method pose() = if (focus.y() + 1 + chefHeight <= topLimit) "down" else "up"
 
 	// En las primeras columnas no entra a la izquierda de la celda: se para a su derecha
@@ -180,13 +164,12 @@ object chefGuide {
 
 	method chefTop() = self.chefBottom() + chefHeight
 
-	// ¿El globo va a la derecha del cocinero? Si ahí se sale, a la izquierda
+	// ¿El globo va a la derecha del cocinero?
 	method bubbleOnRight() = self.chefLeft() + chefWidth + 0.05 + bubbleWidth <= rightLimit
 
 	method bubbleLeft() = if (self.bubbleOnRight()) self.chefLeft() + chefWidth + 0.05 else self.chefLeft() - bubbleWidth - 0.05
 
-	// El alto del globo, como en makeChef.py: 16 px arriba de la etiqueta del paso, 25 hasta la primera línea,
-	// 27.5 por línea y 18 abajo
+	// El alto del globo, como en makeChef.py: 16 px arriba de la etiqueta del paso
 	method bubbleHeight(lineCount) = (16 + 25 + (lineCount - 1) * lineHeight * 50 + 18) / 50
 
 	// El globo arranca a la altura de la cabeza del cocinero, sin salirse de la pantalla
@@ -196,7 +179,7 @@ object chefGuide {
 	method drawBubble(shown, shownKeys) {
 		const rows = shown.size() + shownKeys.size()
 		const top = self.bubbleTop(rows)
-		const side = if (self.bubbleOnRight()) "left" else "right"   // de qué lado va la cola: hacia el cocinero
+		const side = if (self.bubbleOnRight()) "left" else "right"
 		const kind = if (self.isComplaining()) "error_" else ""
 		drawn.add(new Picture(
 			image = "tutorial/bubble_" + side + "_" + kind + rows + ".png",
@@ -217,27 +200,20 @@ object chefGuide {
 	}
 }
 
-// Los mensajes del globo ya escritos, una imagen por mensaje (assets/tutorial/messages/<número>.png): así un
-// mensaje es un solo visual, y no uno por letra. Las imágenes y la lista de mensajes (bubbleTexts.wlk) las
-// genera assets/tutorial/makeBubbleTexts.py con las letras de textFont, a partir de los textos de
-// src/levels y src/tools: si se cambia un mensaje, volver a correrlo (un test avisa si falta alguno).
-// Un mensaje que no está (por ejemplo, uno que se arma con el nombre de una máquina) se escribe letra por
-// letra, como antes.
+// Los mensajes del globo ya escritos, una imagen por mensaje (assets/tutorial/messages/<número>.png)
 object bubbleMessages {
 	// El número de imagen de cada mensaje (sus líneas unidas con "|")
 	const indexes = new Dictionary()
 
 	override method initialize() {
-		const messages = bubbleTexts.messages()
-		(0 .. messages.size() - 1).forEach({ index => indexes.put(messages.get(index), index) })
+		(0 .. bubbleTexts.size() - 1).forEach({ index => indexes.put(bubbleTexts.get(index), index) })
 	}
 
 	method has(lines) = indexes.containsKey(lines.join("|"))
 
 	method imageOf(lines) = "tutorial/messages/" + indexes.get(lines.join("|")) + ".png"
 
-	// Las líneas, centradas en centerX, con la primera centrada en firstLineY. La imagen mide 200 px de ancho
-	// y, de alto, 20 px por la primera línea más 27.5 por cada una de las otras (redondeado para arriba).
+	// Las líneas, centradas en centerX, con la primera centrada en firstLineY.
 	method draw(lines, centerX, firstLineY, lineHeight, group) {
 		if (self.has(lines)) {
 			const height = ((lines.size() - 1) * lineHeight * 50).roundUp() + 20
@@ -254,16 +230,11 @@ object bubbleMessages {
 
 // ----------- LAS MARCAS SOBRE EL TABLERO -----------
 
-// Los indicadores del tutorial sobre el tablero (las imágenes están en assets/tutorial/):
-// - un recuadro que late en las celdas donde el jugador tiene que hacer algo (colocar, rotar, editar)
-// - una flecha que rebota arriba de la máquina que explica el mensaje ("las papas salen de acá")
-// Sin tutorial no hay ninguno. Si el jugador hace algo que el paso no deja, el recuadro se pone rojo un
-// momento (flashError).
+// Los indicadores del tutorial sobre el tablero (las imágenes están en assets/tutorial/)
 object tutorialMarks {
 	var marks = []
 	const errorMillis = 600
-	// Mientras se cocina no se ven (ver levelManager._cookingChanged): se siguen anotando, y vuelven a
-	// aparecer al apagar la simulación
+	// Mientras se cocina no se ven: se siguen anotando, y vuelven a aparecer al apagar la simulación
 	var hidden = false
 
 	method marks() = marks
@@ -298,12 +269,10 @@ object tutorialMarks {
 		marks.forEach({ mark => mark.hide() })
 	}
 
-	// Arriba de la máquina de esa celda, centrada sobre ella: con una de 2x2, arriba de su fila de
-	// arriba y entre sus dos columnas. Si no hay máquina, arriba de la celda.
+	// Arriba de la máquina de esa celda, centrada sobre ella: con una de 2x2
 	method arrowPosition(cell) = board.machineAt(cell).arrowPosition(cell)
 
 	// Los recuadros que se ven se ponen rojos y, un momento después, vuelven a la normalidad
-	// (si para entonces ya son otros, éstos ya no se ven y no pasa nada)
 	method flashError() {
 		const flashed = marks
 		flashed.forEach({ mark => mark.showError() })

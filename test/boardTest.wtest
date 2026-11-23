@@ -20,15 +20,19 @@ import wollok.game.*
 import src.machines.machineClasses.*
 import src.board.*
 import src.machines.types.belt.*
-import src.machines.types.oven.*
+import src.machines.types.processing.*
 import src.machines.types.assembler.*
 import src.machines.types.dispenser.*
 import src.machines.machineManager.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
-import src.menu.menuManager.*
-import src.menu.placeMenu.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.placeMenu.*
 import src.directions.*
 
 describe "tests de board" {
@@ -165,7 +169,7 @@ describe "tests de reiniciar todo" {
   }
 
   test "despues de reiniciar, el juego queda como recien abierto" {
-    menuManager.setUp()
+    playingScreen.show()
     board.push(game.at(5, 5), new Dispenser(direction = right))
     board.push(game.at(6, 5), new Belt(direction = right))
     simulationEngine.run()

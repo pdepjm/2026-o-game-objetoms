@@ -19,7 +19,8 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 | Archivo | Qué hace |
 |---|---|
 | `main.wpgm` | El programa que arranca el juego: arma la ventana (22x13 celdas de 50 px), el fondo, los controles, los menús, los puntos de entrega (`deliveryPoints.setUp()`), el primer nivel (`levelManager.start()`) y el reloj de la simulación |
-| `board.wlk` | El tablero (`board`): qué máquina hay en cada celda, colocar o quitar máquinas, los puntos de entrega de afuera del tablero y dónde se puede construir. También `Zone`, un rectángulo de celdas (lo usan también los menús) |
+| `cellPosition.wlk` | `CellPosition` (una posición que no crea nada al dibujarse) y `Zone`, un rectángulo de celdas: la única forma de decir "esta parte de la pantalla" (dónde se construye, dónde está cada cosa que se clickea) |
+| `board.wlk` | El tablero (`board`): qué máquina hay en cada celda, colocar o quitar máquinas, los puntos de entrega de afuera del tablero y dónde se puede construir. Su zona (`board.zone()`) dice qué celdas son del tablero |
 | `directions.wlk` | Las 4 direcciones (`up`, `down`, `left`, `right`): su nombre, cuál sigue al rotar, cuál es la opuesta y cómo moverse una celda hacia ellas |
 | `cellPosition.wlk` | `CellPosition`: una posición de celda que se dibuja más rápido que una común (ver más abajo) |
 
@@ -48,9 +49,8 @@ Wollok Game le pide a cada objeto su `position().round()` unas 60 veces por segu
 ## Cómo se conecta todo
 
 ```
-teclas y clicks ─▶ input/userController
-                     ├─▶ tools/toolsManager ─▶ tools/userTools ─▶ board ─▶ machines
-                     │                       └─▶ menu/menuManager (paneles del menú)
+teclas y clicks ─▶ input/userController ─▶ menu/screenManager ─▶ la pantalla activa (menu/screens)
+                     jugando:  playingScreen ─▶ menu/hud, el tablero ─▶ tools/toolsManager ─▶ tools/userTools ─▶ board ─▶ machines
                      └─▶ simulation/simulationEngine ─▶ machines (start / acciones agendadas / reset)
                                                      └─▶ simulation/animationEngine
 ```

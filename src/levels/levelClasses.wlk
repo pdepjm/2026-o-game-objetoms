@@ -47,8 +47,7 @@ object noGoal{
     method reset() {}
 }
 
-// Cuánta energía deja gastar un nivel entre todas sus máquinas (las fijas también). Se puede gastar
-// hasta el máximo inclusive; si se pasa, no se puede prender la simulación.
+// Cuánta energía deja gastar un nivel entre todas sus máquinas (las fijas también).
 class EnergyLimit {
 	const property max
 
@@ -59,7 +58,7 @@ class EnergyLimit {
 		menu.showEnergy(self.text(total), row, self.allows(total))
 	}
 	method text(total) = if (self.allows(total)) "Energía: " + total + "/" + max else "SIN ENERGÍA: " + total + "/" + max
-	// Lo que dice la comanda del nivel completo (ver levelComplete)
+	// Lo que dice la comanda del nivel completo
 	method usedText(total) = "Energía usada: " + total + "/" + max
 }
 
@@ -76,28 +75,27 @@ class Level {
 	const property name
 	const property availableMachines          // Las maquinas disponibles para colocar
 	const property availableRecipes			  // Las recetas disponibles para configurar 
-	const property fixedMachines = []         // Maquinas colocadas desde el comienzo (No se pueden mover)
-	const property goals                      // Lo que hay que cumplir para ganar: TODOS los objetivos
-	const property buildZones = [wholeBoard]  // Dónde puede construir el jugador: Zones (ver board.wlk). Por defecto, todo el tablero
-	const property blockedLayer = noBlockedLayer  // La capa que oscurece esas celdas (ver BlockedLayer). La del nivel, hecha con makeBlockedOverlays.py
-	const property tutorial = noTutorial      // El que acompaña al nivel (ver tutorial.wlk). Por defecto, ninguno
-	const property energyLimit = unlimitedEnergy  // Cuánta energía puede gastar el jugador: un EnergyLimit. Por defecto, sin límite
+	const property fixedMachines = []
+	const property goals
+	const property buildZones = [wholeBoard]
+	const property blockedLayer = noBlockedLayer
+	const property tutorial = noTutorial
+	const property energyLimit = unlimitedEnergy
 
-	// Lo que la info del nivel muestra al cargarlo, además de lo de siempre (el modo libre explica cómo volver)
+	// Lo que la info del nivel muestra al cargarlo, además de lo de siempre
 	method showHints(menu) {}
 
-	// La tecla L en este nivel: ir al modo libre (el modo libre la sobrescribe para volver al nivel que toca jugar)
+	// La tecla L en este nivel: ir al modo libre
 	method toggleFreePlay(manager) {
 		manager.loadFreePlay()
 	}
 
-	// Coloca las máquinas que trae el nivel. Con fixedMachines vacío no hace nada.
+	// Coloca las máquinas que trae el nivel.
 	method placeFixedMachines() {
 		fixedMachines.forEach({ placement => board.push(placement.position(), placement.create()) })
 	}
 
 	// ----------- OBJETIVOS -----------
-	// levelManager habla con el nivel y el nivel con cada uno de sus objetivos
 
 	method delivered(item) {
 		goals.forEach({ goal => goal.delivered(item) })
@@ -127,4 +125,37 @@ class Placement {
 		machine.locked(locked)
 		return machine
 	}
+}
+// Cómo le fue al jugador en el nivel que ganó: lo que dice el ticket
+class LevelResult {
+	const property level
+	const cookSeconds
+	const property ending
+
+	method lines() = level.progressLines() + [
+		"Tiempo de cocina: " + self.clock(),
+		level.energyLimit().usedText(board.totalEnergy()),
+		"Máquinas: " + board.machines().count({ machine => !machine.locked() }),
+		ending.title()
+	]
+
+	// Los segundos como minutos:segundos (0:38)
+	method clock() {
+		const rest = cookSeconds.rem(60)
+		return cookSeconds.div(60).toString() + ":" + (if (rest < 10) "0" else "") + rest.toString()
+	}
+}
+
+// Hay otro nivel después del que se ganó
+object nextLevelEnding {
+	method title() = "PEDIDO COMPLETO"
+	method showButtonsIn(ticket) { ticket.showNextLevelButtons() }
+	method showIn(levelInfo) { levelInfo.showNextLevelHint() }
+}
+
+// Se ganó el último nivel
+object lastLevelEnding {
+	method title() = "¡FIN DEL JUEGO!"
+	method showButtonsIn(ticket) { ticket.showPlayAgainButtons() }
+	method showIn(levelInfo) { levelInfo.showGameOverHint() }
 }

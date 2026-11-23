@@ -94,7 +94,7 @@ Los GIFs originales ya no están en el repo: **las carpetas de frames son la fue
 Si cambia la cantidad de frames:
 
 1. **Todas las direcciones de un mismo tipo tienen que tener la misma cantidad** (el código usa un solo número para todos los `_rotate` y otro para todos los `_catch`).
-2. Actualizar `rotateFrames` / `catchFrames` en la clase `AutomaticArm` (`src/machines/types/automaticArm.wlk`) y las mismas constantes en `test/animationTest.wtest`.
+2. Actualizar `rotateFrames` / `catchFrames` en la clase `AutomaticArm` (`src/machines/types/arms.wlk`) y las mismas constantes en `test/animationTest.wtest`.
 3. Correr los tests:
    ```bash
    wollok test --skipValidations -p ./

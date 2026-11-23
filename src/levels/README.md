@@ -117,16 +117,16 @@ new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction =
 
 ## Agregar un nivel
 
-1. En `levelsTypes.wlk`, un objeto que herede de `Level`, con la misma forma que `level1`:
+1. En `levelsTypes.wlk`, una constante con un `Level` nuevo, con la misma forma que `level1` (un nivel no tiene métodos propios: sólo se le dan sus atributos, así que es `const ... = new Level(...)` y no un `object`):
 
    ```wollok
-   object level2 inherits Level(
+   const level2 = new Level(
    	name = "Nivel 2",
    	availableMachines = [{ => new Belt() }, { => new Oven() }],
    	availableRecipes = [],
    	fixedMachines = [new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction = right, availableKinds = [meat]) })],
    	goals = [new DeliveryGoal(kind = cookedMeat, amount = 2, label = "Carnes")]
-   ) {}
+   )
    ```
 
 2. Importar las máquinas que use (`levelsTypes.wlk` es el único archivo de niveles que conoce las máquinas concretas).
@@ -139,6 +139,14 @@ new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction =
    - **no carga**: una máquina fija fuera del tablero (las de 2x2, como el Assembler, ocupan una celda más a la derecha y una más arriba de su posición) o encima de otra. En el juego, eso hace fallar el nivel al cargarlo;
    - **sus máquinas fijas no quedan en su lugar**;
    - **`availableRecipes` tiene algo que no es una receta del juego**: por ejemplo un plato (`cheeseBurger` en vez de `cheeseBurgerRecipe`) o `noRecipe`.
+
+## Al ganar: el resultado y el final
+
+Cuando se cumplen los objetivos, `levelManager.finishLevel` arma un **`LevelResult`** (en `levelClasses.wlk`) con el nivel, los segundos de cocina y **cómo termina** (`ending`), y se lo da al ticket (`screenManager.showLevelComplete`) y a la info del nivel. Ellos sólo dibujan.
+
+- `LevelResult.lines()`: lo que dice el ticket. Los objetivos, el tiempo de cocina (`clock()`, minutos:segundos), la energía usada, las máquinas que puso el jugador y el título del final.
+- **El final es un objeto, no un `if`**: `nextLevelEnding` (hay otro nivel: "PEDIDO COMPLETO", botones SIGUIENTE / REPETIR / MENÚ, y en la info "¡Nivel completo!" con la tecla N) o `lastLevelEnding` ("¡FIN DEL JUEGO!", JUGAR DE NUEVO / MENÚ, y "¡Fin del juego!" con la tecla 0). Cada uno le dice al ticket (`showButtonsIn`) y a la info del nivel (`showIn`) qué mostrar.
+- El único que decide cuál toca es `levelManager.ending()`, porque es el único que sabe si hay otro nivel (`hasNext()`).
 
 ## Tutorial
 

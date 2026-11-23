@@ -18,8 +18,7 @@
 
 import wollok.game.*
 import src.machines.machineClasses.*
-import src.machines.types.cuttingMachine.*
-import src.machines.types.oven.*
+import src.machines.types.processing.*
 import src.tools.toolsManager.*
 import src.directions.*
 import src.board.*

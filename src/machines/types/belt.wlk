@@ -37,8 +37,6 @@ class Belt inherits Machine {
 		const myCell = self.cell()
 		const myOutput = self.direction()
 		
-		// 1. Primero buscamos al vecino que está justo de frente (el inverso a nuestra salida).
-		// Si existe, es una cinta recta.
 		const oppositeDirection = myOutput.invert()
 		const oppositeNeighbour = board.machineAt(oppositeDirection.move(myCell))
 		
@@ -46,7 +44,7 @@ class Belt inherits Machine {
 			return oppositeDirection
 		}
 		
-		// 2. Si no hay nadie de frente, buscamos a la izquierda (curva left).
+		// Si no hay nadie de frente, a la izquierda (curva left)
 		const leftDirection = myOutput.previous()
 		const leftNeighbour = board.machineAt(leftDirection.move(myCell))
 		
@@ -54,7 +52,7 @@ class Belt inherits Machine {
 			return leftDirection
 		}
 		
-		// 3. Si no, buscamos a la derecha (curva right).
+		// Si no, a la derecha (curva right)
 		const rightDirection = myOutput.next()
 		const rightNeighbour = board.machineAt(rightDirection.move(myCell))
 		
@@ -113,7 +111,7 @@ class Belt inherits Machine {
 	override method gifImage() = "machines/" + self.name() + "/" + self.direction().name() + shape.imageSuffix() + ".gif"
 }
 
-// Las formas que puede tener una cinta. Cada una sabe cómo se llama su imagen.
+// Las formas que puede tener una cinta.
 object straightShape {
 	method imageSuffix() = ""
 }

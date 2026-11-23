@@ -18,10 +18,9 @@
 
 // test/smartArmTest.wtest
 import wollok.game.*
-import src.machines.types.smartRoboticArm.*
-import src.machines.types.fryer.*
+import src.machines.types.arms.*
+import src.machines.types.processing.*
 import src.machines.types.belt.*
-import src.machines.types.automaticArm.*
 import src.machines.settings.*
 import src.directions.*
 import src.tools.toolsManager.*

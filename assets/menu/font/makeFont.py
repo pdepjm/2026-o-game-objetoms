@@ -19,10 +19,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Genera las letras para escribir sin contorno (Wollok dibuja todos los textos con un contorno oscuro que
-# no se puede sacar, y sobre el papel de la info del nivel se ve raro). Ver spriteText en src/menu/texts.wlk.
+# no se puede sacar, y sobre el papel de la info del nivel se ve raro). Ver spriteText en src/menu/drawing/texts.wlk.
 #
 # Por cada estilo, una carpeta con una imagen por letra (<número>.png, el número es su lugar en CHARS) y,
-# en src/menu/spriteFonts.wlk, un objeto con cuánto mide cada letra de ancho.
+# en src/menu/drawing/spriteFonts.wlk, un objeto con cuánto mide cada letra de ancho.
 #
 # Uso: python makeFont.py (desde esta carpeta). Para una letra nueva, agregarla a CHARS y volver a correrlo.
 from PIL import Image, ImageDraw, ImageFont
@@ -40,7 +40,7 @@ STYLES = [
     ('labelFont', 'label', 'segoeuib.ttf', 11, (154, 147, 135, 255)),  # gris: OBJETIVO, PASO 2 DE 8
 ]
 
-WLK = '../../../src/menu/spriteFonts.wlk'
+WLK = '../../../src/menu/drawing/spriteFonts.wlk'
 
 
 def glyph(font, char, color):
@@ -63,16 +63,14 @@ def main():
             widths.append(width)
             if char != ' ':
                 im.save(os.path.join(folder, str(i) + '.png'))
-        objects.append(f'object {name} inherits SpriteFont(folder = "menu/font/{folder}/", widths = [{", ".join(str(w) for w in widths)}]) {{}}')
+        objects.append(f'const {name} = new SpriteFont(folder = "menu/font/{folder}/", widths = [{", ".join(str(w) for w in widths)}])')
 
     chars = ', '.join('"' + c + '"' for c in CHARS)
     wlk = f'''// GENERADO por assets/menu/font/makeFont.py: no editar a mano (cambiar el script y volver a correrlo)
-import menu.texts.*
+import menu.drawing.texts.*
 
 // Las letras que hay, en el orden de sus imágenes (<número>.png) y de los anchos de cada estilo
-object spriteFontChars {{
-	const property chars = [{chars}]
-}}
+const spriteFontChars = [{chars}]
 
 {chr(10).join(objects)}
 '''

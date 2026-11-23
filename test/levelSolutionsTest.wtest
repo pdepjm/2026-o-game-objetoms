@@ -21,14 +21,15 @@ import src.board.*
 import src.directions.*
 import src.cellPosition.*
 import src.machines.types.belt.*
-import src.machines.types.cuttingMachine.*
-import src.machines.types.oven.*
-import src.machines.types.fryer.*
-import src.machines.types.automaticArm.*
-import src.machines.types.smartRoboticArm.*
+import src.machines.types.processing.*
+import src.machines.types.arms.*
 import src.machines.types.assembler.*
 import src.machines.types.deliverySlot.*
-import src.menu.menuManager.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
 import src.simulation.simulationEngine.*
 import src.food.foodTypes.*
 import src.food.recipes.*
@@ -41,7 +42,7 @@ import src.levels.levelManager.*
 describe "tests de que los niveles se pueden ganar" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
   }
 

@@ -24,11 +24,14 @@ import src.machines.settings.*
 import src.machines.machineClasses.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
-import src.machines.types.automaticArm.*
-import src.machines.types.smartRoboticArm.*
-import src.menu.menuManager.*
-import src.menu.editMenu.*
-import src.menu.armMenu.*
+import src.machines.types.arms.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.armMenu.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
 import src.food.foodClasses.*
@@ -147,7 +150,7 @@ describe "tests del panel de edit" {
   const arm = new AutomaticArm()
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     board.push(game.at(8, 8), dispenser)
     4.times({ _ => if (arm.inputSide() != left) arm.rotate() })
     board.push(game.at(8, 4), arm)
@@ -155,13 +158,13 @@ describe "tests del panel de edit" {
 
   // Elige la máquina de esa celda con un clic y aprieta X: se abre su panel
   method editAt(x, y) {
-    toolsManager.onClick(game.at(x, y))
+    playingScreen.onClick(game.at(x, y))
     toolsManager.editKey()
   }
 
   // un click en una celda de la zona interactiva
   method clickPanel(x, y) {
-    toolsManager.onClick(game.at(x, y))
+    playingScreen.onClick(game.at(x, y))
   }
 
   method panelVisuals() = (18..21).flatMap({ x => (0..11).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
@@ -226,7 +229,7 @@ describe "tests del panel de edit" {
   // ↑ (x 18), → (x 19), ↓ (x 20) y ← (x 21). Este brazo agarra de la izquierda.
   test "el brazo abre el panel del brazo, con las cuatro direcciones" {
     self.editAt(8, 4)
-    assert.equals(armMenu, editingMode.panel())
+    assert.equals(armMenu, rightPanel.editor())
     assert.equals(4, armMenu.choices().size())
   }
 
@@ -246,13 +249,13 @@ describe "tests del panel de edit" {
   test "elegir otra maquina cambia lo que se muestra" {
     self.editAt(8, 8)
     self.editAt(8, 4)
-    assert.equals(armMenu, editingMode.panel())
+    assert.equals(armMenu, rightPanel.editor())
     assert.equals(0, self.markers().size())
   }
 
   test "clickear una celda vacia del tablero saca lo que se mostraba" {
     self.editAt(8, 8)
-    toolsManager.onClick(game.at(15, 3))
+    playingScreen.onClick(game.at(15, 3))
     assert.equals(0, self.markers().size())
   }
 

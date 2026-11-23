@@ -28,7 +28,11 @@ import src.food.foodClasses.*
 import src.food.foodTypes.*
 import src.food.recipes.*
 import src.machines.machineManager.*
-import src.menu.menuManager.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
 import src.tools.userTools.*
 
 // Una maquina de prueba para recibir lo que entrega el ensamblador: se le controla si acepta o no
@@ -173,7 +177,7 @@ describe "tests de Assembler sin recetas disponibles" {
   // El menú de place crea una máquina de muestra de cada una del catálogo para dibujarla
   test "un catalogo con Assembler y sin recetas se puede mostrar en el menu" {
     machineManager.changeCatalog([{ => new Assembler() }])
-    menuManager.setUp()
+    playingScreen.show()
     assert.equals("Assembler", machineManager.selectedName())
   }
 }

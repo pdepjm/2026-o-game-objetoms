@@ -26,19 +26,17 @@ import food.foodTypes.*
 import cellPosition.*
 
 // Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
-// Se configura qué ingrediente larga y a qué velocidad (ver settings.wlk).
 class Dispenser inherits Machine {
 	// Todos los ingredientes que puede dispensar
 	const availableKinds = [lettuce, bun, friedPotato, potato, tomato, meat, cheese, bacon, pizzaDough, egg, salami, sausage, ham]
 	
 	// Por defecto papa (o, si no la ofrece, el primero de los suyos) y velocidad normal.
-	// Los ingredientes son los que ofrece el menú.
 	const productSetting = new ProductSetting(
 		value = if (availableKinds.contains(potato)) potato else availableKinds.first(),
 		kinds = availableKinds
 	)
 	const speedSetting = new SpeedSetting(value = 1)
-	// Una insignia con el ingrediente que larga, en una esquina de arriba (ver DispenserBadge)
+	// Una insignia con el ingrediente que larga, en una esquina de arriba
 	const badge = new DispenserBadge(dispenser = self)
 
 	override method name() = "Dispenser"
@@ -56,6 +54,9 @@ class Dispenser inherits Machine {
 	}
 
 	override method settings() = [productSetting, speedSetting]
+
+	// Se edita por sus ajustes (el producto y la velocidad)
+	override method openEditorIn(panel) { panel.editSettings(self) }
 
 	method badge() = badge
 
@@ -87,9 +88,6 @@ class Dispenser inherits Machine {
 	}
 
 	// Intenta crear un item y pasarlo a la de adelante.
-	// Pregunta ANTES de crear: si la de adelante está llena no se crea ningún item
-	// (el item recién se hace cuando hay a dónde mandarlo). Si está llena, se anota
-	// para reintentar apenas se libere: no espera al próximo intervalo.
 	method tryDispense() {
 		const target = next
 		const item = new Item(kind = self.product())
@@ -112,11 +110,7 @@ class Dispenser inherits Machine {
 	}
 }
 
-// La insignia del dispenser: un círculo con el ingrediente que larga (assets/machines/Dispenser/badge/,
-// ver makeBadges.py), en la esquina de arriba del lado contrario a la salida, así no tapa la flecha.
-// Mide 30x30 px y sobresale un poco de la celda.
-// RENDIMIENTO: la posición se calcula sólo al colocarlo o rotarlo; la imagen es la del ingrediente elegido,
-// que la arma una vez (IngredientKind.badgeImage).
+// La insignia del dispenser: un círculo con el ingrediente que larga
 class DispenserBadge {
 	const dispenser
 	var position = new CellPosition(x = 0, y = 0)

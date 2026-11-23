@@ -21,12 +21,16 @@ import src.board.*
 import src.directions.*
 import src.machines.machineManager.*
 import src.machines.types.belt.*
-import src.machines.types.oven.*
+import src.machines.types.processing.*
 import src.machines.types.deliverySlot.*
-import src.menu.menuManager.*
-import src.menu.placeMenu.*
-import src.menu.levelInfoMenu.*
-import src.menu.tutorialGuide.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.placeMenu.*
+import src.menu.hud.levelInfoMenu.*
+import src.menu.overBoard.tutorialGuide.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
@@ -39,23 +43,23 @@ import src.levels.levelManager.*
 
 // Un nivel sólo para los tests: así no se rompen cada vez que cambia el diseño de level1.
 // Cinta y horno, sin máquinas fijas ni recetas; hay que entregar 3 papas fritas.
-object testLevel inherits Level(
+const testLevel = new Level(
   name = "Prueba",
   availableMachines = [{ => new Belt() }, { => new Oven() }],
   availableRecipes = [],
   goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")]
-) {}
+)
 
 // Tres niveles iguales para los tests del progreso (la tecla L y "siguiente"): con tres se ve si
 // "siguiente" se desfasa después de llegar a un nivel con la L
-object levelA inherits Level(name = "A", availableMachines = [{ => new Belt() }], availableRecipes = [], goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")]) {}
-object levelB inherits Level(name = "B", availableMachines = [{ => new Belt() }], availableRecipes = [], goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")]) {}
-object levelC inherits Level(name = "C", availableMachines = [{ => new Belt() }], availableRecipes = [], goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")]) {}
+const levelA = new Level(name = "A", availableMachines = [{ => new Belt() }], availableRecipes = [], goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")])
+const levelB = new Level(name = "B", availableMachines = [{ => new Belt() }], availableRecipes = [], goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")])
+const levelC = new Level(name = "C", availableMachines = [{ => new Belt() }], availableRecipes = [], goals = [new DeliveryGoal(kind = friedPotato, amount = 3, label = "Papas Fritas")])
 
 describe "tests de levelManager" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(testLevel)
   }
@@ -195,7 +199,7 @@ describe "tests de levelManager" {
 describe "tests de levelInfoMenu" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(testLevel)
   }
@@ -254,7 +258,7 @@ describe "tests de levelInfoMenu" {
 describe "tests de todos los niveles" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
   }
 
@@ -318,7 +322,7 @@ describe "tests de todos los niveles" {
 describe "tests del progreso y la tecla L" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.changeLevels([levelA, levelB, levelC])
     levelManager.start()

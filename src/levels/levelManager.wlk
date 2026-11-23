@@ -17,22 +17,21 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import src.food.recipes.*
-import src.menu.placeMenu.*
+import src.menu.hud.placeMenu.*
 import levels.levelsTypes.*
+import levels.levelClasses.*
 import simulation.simulationEngine.*
 import board.*
 import tools.toolsManager.*
 import machines.machineManager.*
-import menu.levelInfoMenu.*
-import menu.tutorialGuide.*
-import menu.recipeBook.*
-import menu.levelComplete.*
+import menu.hud.levelInfoMenu.*
+import menu.overBoard.tutorialGuide.*
+import menu.screenManager.*
 
 object levelManager {
-    // Los niveles en el orden en que se juegan. Es var sólo para que los tests usen sus propios niveles (changeLevels)
+    // Los niveles en el orden en que se juegan.
     var levels = [tutorialLevel, hotDogTutorialLevel, energyTutorialLevel, level1, level2, level3, level4]
     // Los que ya se ganaron, para saber a cuál volver desde el modo libre (levelToPlay).
-    // Se guardan mientras el juego está abierto: al cerrarlo se pierden.
     const completedLevels = []
     // Arranca en el modo libre (y no en null): así entregar algo o apretar 5 antes de start() no rompe
     var currentLevel = freePlay
@@ -41,18 +40,14 @@ object levelManager {
     var cookStartStep = 0
 
     method _clear() {
-        // Hoy las teclas no dejan cambiar de nivel con el libro abierto: es por si algún día pasa
-        menu.recipeBook.recipeBook.close()
         simulationEngine.reset()
-        levelComplete.hide()
         board.clear()
         toolsManager.reset()
     }
 
-
     method currentLevel() = currentLevel
     method completed() = completed
-    // Los niveles en el orden en que se juegan (lo usan los tests, para cargarlos todos)
+    // Los niveles en el orden en que se juegan
     method levels() = levels
     method completedLevels() = completedLevels
 
@@ -75,7 +70,6 @@ object levelManager {
         machineManager.changeCatalog(level.availableMachines())
         recipeBook.changeAvailable(level.availableRecipes())
         placeMenu.resetPage()
-        // Antes de las máquinas fijas, así las marcas de las celdas bloqueadas quedan debajo de ellas
         board.buildZones(level.buildZones(), level.blockedLayer())
         level.placeFixedMachines()
         level.resetGoals()
@@ -93,15 +87,13 @@ object levelManager {
     method loadFreePlay() {self.load(freePlay)}
 
     // Tecla L: del nivel al modo libre, y del modo libre de vuelta al nivel que le toca jugar.
-    // Con la simulación prendida no hace nada.
     method toggleFreePlay() {
         if (!simulationEngine.running()) {
             currentLevel.toggleFreePlay(self)
         }
     }
 
-    // La posición del nivel actual en levels. Se busca cada vez (y no se guarda un índice), así no
-    // se desfasa cuando se llega a un nivel por otro camino (start, la tecla L, load).
+    // La posición del nivel actual en levels.
     method currentIndex() = (0 .. levels.size() - 1).find({ index => levels.get(index) == currentLevel })
     method hasNext() = levels.contains(currentLevel) && levels.last() != currentLevel
     
@@ -126,14 +118,14 @@ object levelManager {
 	    }
     }
 
-    // Mientras se cocina queda todo limpio: sin el panel de editar, el menú de la máquina, el cocinero
-    // ni las marcas del tutorial (las insignias de los dispensers quedan). Al apagar, vuelven.
+    // Mientras se cocina queda todo limpio: sin el panel de editar, el menú de la máquina
     method _cookingChanged() {
         if (simulationEngine.running()) {
             toolsManager.cookingStarted()
             chefGuide.silence()
             tutorialMarks.hide()
         } else {
+            toolsManager.cookingStopped()
             chefGuide.speak()
             tutorialMarks.reveal()
         }
@@ -162,17 +154,18 @@ object levelManager {
     }
 
     method finishLevel() {
-    	simulationEngine.stop()                                // directo al engine: el progreso NO se borra
+    	simulationEngine.stop()
     	self._cookingChanged()                                 // vuelve el cocinero, a festejar
-    	levelInfoMenu.showCompleted(self.hasNext())
-    	// la comanda: lo entregado, el tiempo de cocina (10 pasos por segundo) y los botones para seguir
-    	levelComplete.show(currentLevel, self.hasNext(), (simulationEngine.currentStep() - cookStartStep).div(10))
+    	// el tiempo de cocina: 10 pasos por segundo
+    	const result = new LevelResult(level = currentLevel, cookSeconds = (simulationEngine.currentStep() - cookStartStep).div(10), ending = self.ending())
+    	levelInfoMenu.showCompleted(result.ending())
+    	screenManager.showLevelComplete(result)
     }
 
+    // Cómo termina el nivel que se ganó: con otro nivel después, o fin del juego
+    method ending() = if (self.hasNext()) nextLevelEnding else lastLevelEnding
+
     // ----------- TUTORIAL -----------
-    // Lo que pasa en el juego le llega al tutorial del nivel actual (ver tutorial.wlk). Estos métodos
-    // sólo reenvían: los llaman las acciones (userTools), toolsManager y editMenu. board y simulationEngine
-    // no avisan nada, así los tests que los usan directo no dependen de los niveles.
 
     method tutorial() = currentLevel.tutorial()
 
@@ -191,31 +184,29 @@ object levelManager {
         if (simulationEngine.running() && !self.hasEnergy()) self.toggleSimulation()
         self._notifyTutorial({ tutorial => tutorial.onSettingChanged(machine, setting) })
     }
-    // Enter: seguir después de una explicación. Sin tutorial no hace nada.
+    // Enter: seguir después de una explicación.
     method continueTutorial() { self._notifyTutorial({ tutorial => tutorial.onContinue() }) }
 
-    // La tecla T o el botón SALTEAR TUTORIAL: da por hechos todos los tutoriales y carga el primer nivel
-    // que toca jugar. Fuera de un tutorial no hace nada.
+    // La tecla T o el botón SALTEAR TUTORIAL
     method skipTutorial() {
         currentLevel.tutorial().skip(self)
     }
 
-    // Da por hechos todos los tutoriales y carga el primer nivel que toca jugar (lo llama un tutorial al saltearlo)
+    // Da por hechos todos los tutoriales y carga el primer nivel que toca jugar
     method skipTutorials() {
         levels.forEach({ level => level.tutorial().completeIn(completedLevels, level) })
         self.load(self.levelToPlay())
     }
 
-    // ¿Deja usar esa acción en esa celda? Lo pregunta toolsManager antes de colocar, rotar, editar o borrar
+    // ¿Deja usar esa acción en esa celda?
     method allowsTool(tool, pos) = self.tutorial().allowsTool(tool, pos)
 
     // ----------- CUANDO ALGO NO VA -----------
-    // El cocinero dice qué estuvo mal y el recuadro se pone rojo un momento (sin tutorial no pasa nada)
 
     // El tutorial no dejó usar esa acción en esa celda (toolsManager)
     method toolRejected(tool, pos) { self._complain(self.tutorial().complaintFor(tool, pos)) }
 
-    // Se eligió una máquina en el menú de colocar (placeMenu): si no es la que pide el paso, se marca en rojo
+    // Se eligió una máquina en el menú de colocar (placeMenu): si no es la que pide el paso
     method machineSelected(factory) {
         const complaint = self.tutorial().complaintForMachine(factory)
         if (!complaint.isEmpty()) placeMenu.flashError(factory)
@@ -229,9 +220,7 @@ object levelManager {
         }
     }
 
-    // Le avisa al tutorial y muestra su mensaje (lo dice el cocinero), sus teclas, sus indicadores y la
-    // máquina que pide, que pueden haber cambiado. El cocinero va después de los indicadores: queda arriba.
-    // Si el paso pide algo en otro lugar, esa celda queda elegida (así C o X actúan sobre ella).
+    // Le avisa al tutorial y muestra su mensaje (lo dice el cocinero), sus teclas
     method _notifyTutorial(event) {
         const before = self.tutorial().targetCells()
         event.apply(self.tutorial())

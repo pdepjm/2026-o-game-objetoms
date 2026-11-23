@@ -24,7 +24,7 @@ import src.tools.userTools.*
 import src.machines.machineManager.*
 import src.machines.types.belt.*
 import src.machines.types.assembler.*
-import src.machines.types.automaticArm.*
+import src.machines.types.arms.*
 
 // Las celdas del 2x2 de un ensamblador colocado en (10, 5)
 //

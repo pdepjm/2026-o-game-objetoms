@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Genera los fondos de la info del nivel (ver src/menu/levelInfoMenu.wlk). Los textos los escribe el juego
+# Genera los fondos de la info del nivel (ver src/menu/hud/levelInfoMenu.wlk). Los textos los escribe el juego
 # encima: acá van sólo las formas.
 #
 # - ribbon.png: la cinta roja del nombre del nivel (como el título del juego)

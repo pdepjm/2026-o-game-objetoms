@@ -23,12 +23,14 @@ El menú de la máquina aparece al **elegirla** y también **al colocarla**: la 
 
 ## `toolsManager.wlk`
 
-- **Clics (`onClick`):** en el menú de la máquina elegida usa esa acción; en el tablero, `clickCell` (coloca o elige); en la zona interactiva, se lo pasa a `menuManager`.
+- **Clics en el tablero (`clickCell`):** los manda `playingScreen` (el menú de la máquina y el panel de la derecha reciben sus propios clics: ver [`menu/README.md`](../menu/README.md#los-clics)). Le avisa a lo que hay en la celda (`clickedAt`): una máquina queda elegida (`pick`), y una celda vacía (`noMachine`) coloca ahí (`placeAt`). No hay `if`: cada uno sabe qué hacer.
 - **Teclas:** `arrow(dirección)`, `enter()` y `editKey()` se los delega al modo actual: COLOCANDO sólo edita (las flechas y Enter no hacen nada: el tablero es sólo con el mouse); EDITANDO mueve la marca del panel de editar, aplica la opción marcada y cierra el panel. `act(acción)` es C y V.
-- **`useAt(acción, celda)`:** el único lugar que usa una acción en el tablero. **Sólo con la simulación apagada**, y si el tutorial no la deja (`levelManager.allowsTool`), el cocinero dice por qué (`levelManager.toolRejected`).
+- **`useAt(acción, celda)`:** el único lugar que usa una acción en el tablero. Si el tutorial no la deja (`levelManager.allowsTool`), el cocinero dice por qué (`levelManager.toolRejected`).
+- **Construyendo o cocinando (`kitchen`):** los clics en el tablero, las acciones y `boardChanged()` se los pasa a la cocina: `buildingKitchen` hace lo de siempre y `cookingKitchen` no hace nada (con la simulación prendida no se toca el tablero). Cambia con `cookingStarted()` / `cookingStopped()`, que avisa `levelManager._cookingChanged()`, por donde pasan todos los caminos que prenden o apagan la simulación.
 - **La celda del recuadro queda elegida sola** en cada paso del tutorial (`jumpTo`, lo llama `levelManager`): así C o X actúan ahí sin clickearla.
-- **Dirección para colocar:** `currentDirection` (W/A/S/D o los botones del panel de colocar). Las máquinas nuevas nacen mirando hacia ahí. Cada cambio se le avisa a `menuManager`, para actualizar las imágenes del menú.
-- **`reset()`:** vuelve a como arranca un nivel: COLOCANDO, dirección `right` y sin máquina elegida. Al cerrarse el panel de edit, `editMenu` olvida la máquina: por eso, al reiniciar, se llama después de `board.clear()`.
+- **Dirección para colocar:** `currentDirection` (W/A/S/D o los botones del panel de colocar). Las máquinas nuevas nacen mirando hacia ahí. Cada cambio se le avisa a `rightPanel`, para actualizar las imágenes del menú.
+- **Editar:** `startEditing()` pasa a EDITANDO cuando una máquina pidió que la editen (ver `rightPanel.edit` en [`menu/README.md`](../menu/README.md#hud-el-hud)). El modo EDITANDO no guarda ningún panel: `rightPanel` sabe cuál se está viendo.
+- **`reset()`:** vuelve a como arranca un nivel: COLOCANDO, construyendo, dirección `right` y sin máquina elegida. Al cerrarse el panel de edit, `editMenu` olvida la máquina: por eso, al reiniciar, se llama después de `board.clear()`.
 - **Rendimiento:** el menú de la máquina guarda su posición y su imagen; se recalculan sólo cuando pasa algo (un clic, una tecla, un cambio en el tablero), nunca al dibujarse. `boardChanged()` lo vuelve a agregar para que quede arriba de las máquinas (Wollok dibuja en el orden en que se agregan los visuales).
 
 ## `userTools.wlk`

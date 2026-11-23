@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - el horno que cocina los ingredientes.
+// Buffet Albert Einstein - la columna izquierda del HUD: la info del nivel y los botones.
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -16,22 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import machines.machineClasses.*
-import food.foodClasses.*
+import input.clickManager.*
+import menu.hud.hud.*
+import menu.hud.levelInfoMenu.*
 
-// Horno: quieto cuando está vacío, el GIF sólo mientras cocina
+// La columna de la izquierda (x 0 a 4): arriba la info del nivel
+object leftPanel inherits ClickTargets {
+	override method zones() = [hud.leftZone()]
+	override method clickTargets() = [skipTutorialButton, sideButtons]
 
-class Oven inherits ProcessingMachine {
-
-	override method name() = "Oven"
-	override method label() = "Horno"
-	override method article() = "el"
-	override method baseEnergy() = 2
-
-	override method foodProcess() = cooking
-
-	override method animateWork(steps, afterBlock) {
-
-		self.holdImage(self.gifImage(), steps, afterBlock)
-	}
+	method show() { sideButtons.show() }
 }

@@ -18,7 +18,7 @@
 
 // test/animationTest.wtest
 import wollok.game.*
-import src.machines.types.automaticArm.*
+import src.machines.types.arms.*
 import src.machines.settings.*
 import src.machines.types.belt.*
 import src.tools.toolsManager.*

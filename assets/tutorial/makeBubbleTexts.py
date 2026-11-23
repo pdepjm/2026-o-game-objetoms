@@ -22,13 +22,13 @@
 """
 Antes, el globo del cocinero escribía cada mensaje con una imagen por letra (unas 60 por mensaje), y Wollok
 dibuja todos los visuals en cada frame. Ahora cada mensaje es UNA imagen (ver bubbleMessages en
-src/menu/tutorialGuide.wlk).
+src/menu/overBoard/tutorialGuide.wlk).
 
 Busca los mensajes en src/levels y src/tools: toda lista de textos de Wollok (["...", "..."]) cuyas líneas
 entren en el globo (16 letras como máximo). Por cada uno:
 - messages/<número>.png: 200 px de ancho y 20 + 27.5 por línea extra de alto (redondeado para arriba),
   cada línea centrada y escrita con las mismas letras que spriteText (assets/menu/font/text/).
-- src/menu/bubbleTexts.wlk: la lista de mensajes (sus líneas unidas con "|"), en el orden de los números.
+- src/menu/overBoard/bubbleTexts.wlk: la lista de mensajes (sus líneas unidas con "|"), en el orden de los números.
 
 Uso: python makeBubbleTexts.py (desde esta carpeta), cada vez que se cambia o se agrega un mensaje (un test
 de tutorialTest avisa si a algún mensaje de un tutorial le falta su imagen). Antes, si cambiaron las letras,
@@ -44,9 +44,9 @@ from PIL import Image
 ROOT = os.path.join('..', '..')
 SRC = os.path.join(ROOT, 'src')
 FONT_DIR = os.path.join(ROOT, 'assets', 'menu', 'font', 'text')
-FONTS_WLK = os.path.join(SRC, 'menu', 'spriteFonts.wlk')
+FONTS_WLK = os.path.join(SRC, 'menu', 'drawing', 'spriteFonts.wlk')
 OUT_DIR = 'messages'
-WLK = os.path.join(SRC, 'menu', 'bubbleTexts.wlk')
+WLK = os.path.join(SRC, 'menu', 'overBoard', 'bubbleTexts.wlk')
 
 WIDTH = 200
 LINE_STEP = 27.5   # chefGuide.lineHeight (0.55 celdas)
@@ -59,8 +59,8 @@ STRING_LIST = re.compile(r'\[\s*(' + STRING + r'(?:\s*,\s*' + STRING + r')*)\s*\
 
 def font():
     text = open(FONTS_WLK, encoding='utf-8').read()
-    chars = re.findall(r'"(.)"', re.search(r'chars = \[(.*?)\]', text).group(1))
-    widths = [float(w) for w in re.search(r'object textFont .*?widths = \[(.*?)\]', text).group(1).split(',')]
+    chars = re.findall(r'"(.)"', re.search(r'spriteFontChars = \[(.*?)\]', text).group(1))
+    widths = [float(w) for w in re.search(r'const textFont = .*?widths = \[(.*?)\]', text).group(1).split(',')]
     return {char: i for i, char in enumerate(chars)}, widths
 
 
@@ -101,16 +101,13 @@ def main():
         os.remove(old)
     for number, lines in enumerate(found):
         render(lines, indexes, widths).save(os.path.join(OUT_DIR, f'{number}.png'))
-    texts = ',\n\t\t'.join('"' + '|'.join(lines) + '"' for lines in found)
+    texts = ',\n\t'.join('"' + '|'.join(lines) + '"' for lines in found)
     wlk = f'''// GENERADO por assets/tutorial/makeBubbleTexts.py: no editar a mano (cambiar los mensajes y volver a correrlo)
 
-// Los mensajes del globo del cocinero que ya están escritos en una imagen: cada uno con sus líneas unidas con
-// "|". La imagen de cada uno es tutorial/messages/<su lugar en la lista>.png (ver bubbleMessages).
-object bubbleTexts {{
-	const property messages = [
-		{texts}
-	]
-}}
+// Los mensajes del globo que ya tienen imagen: tutorial/messages/<su lugar en la lista>.png
+const bubbleTexts = [
+	{texts}
+]
 '''
     with open(WLK, 'w', encoding='utf-8') as f:
         f.write(wlk)

@@ -18,7 +18,7 @@
 
 import wollok.game.*
 import input.userController.*
-import menu.startMenu.*
+import menu.screenManager.*
 import simulation.simulationEngine.*
 import sound.musicManager.*
 import sound.sfx.*
@@ -31,8 +31,8 @@ program BuffetAlbertEinstein {
 	game.boardGround("background.gif")
 
 	userController.setUp() 
-	// La portada. El juego (los menús, los platitos y el primer nivel) se arma al apretar Enter (ver startMenu.start)
-	startMenu.show()
+	// La portada. El juego (los platitos y el primer nivel) se arma al elegir INICIAR
+	screenManager.showCover()
 
 	// Engancha el reloj de la simulación (arranca apagada, en modo construcción)
 	simulationEngine.start()

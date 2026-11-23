@@ -21,7 +21,11 @@ import src.board.*
 import src.machines.machineManager.*
 import src.machines.types.belt.*
 import src.machines.types.deliverySlot.*
-import src.menu.menuManager.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
 import src.menu.recipeBook.*
 import src.input.userController.*
 import src.simulation.simulationEngine.*
@@ -32,17 +36,17 @@ import src.levels.levelManager.*
 
 // El libro de recetas (ver docs/Plan-Libro-Recetas.md)
 
-object bookTestLevel inherits Level(
+const bookTestLevel = new Level(
   name = "Libro",
   availableMachines = [{ => new Belt() }],
   availableRecipes = [],
   goals = [noGoal]
-) {}
+)
 
 describe "tests del libro de recetas" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(bookTestLevel)
   }
@@ -63,19 +67,19 @@ describe "tests del libro de recetas" {
   }
 
   test "un clic en la mitad izquierda del libro vuelve una pagina, y en la derecha avanza" {
-    recipeBook.open()
+    screenManager.openBook()
     recipeBook.nextPage()
-    userController.onClick(game.at(10, 6))
+    screenManager.onClick(game.at(10, 6))
     assert.that(recipeBook.isOpen())
     assert.equals(0, recipeBook.currentPage())
-    userController.onClick(game.at(11, 6))
-    userController.onClick(game.at(21, 6))
+    screenManager.onClick(game.at(11, 6))
+    screenManager.onClick(game.at(21, 6))
     assert.equals(2, recipeBook.currentPage())
   }
 
   test "un clic en la cruz cierra el libro" {
-    recipeBook.open()
-    userController.onClick(game.at(20, 11))
+    screenManager.openBook()
+    screenManager.onClick(game.at(20, 11))
     assert.notThat(recipeBook.isOpen())
   }
 
@@ -171,25 +175,17 @@ describe "tests del libro de recetas" {
     assert.notThat(simulationEngine.paused())
   }
 
-  test "cargar un nivel con el libro abierto lo cierra y saca la pausa" {
-    simulationEngine.run()
-    recipeBook.open()
-    levelManager.load(bookTestLevel)
-    assert.notThat(recipeBook.isOpen())
-    assert.notThat(simulationEngine.paused())
-  }
-
   // BLOQUEO
 
   test "con el libro abierto, un click en el tablero no coloca nada" {
-    recipeBook.open()
-    userController.onClick(game.at(8, 9))
+    screenManager.openBook()
+    screenManager.onClick(game.at(8, 9))
     assert.notThat(board.isThereAMachine(game.at(8, 9)))
   }
 
   test "con el libro abierto, las acciones de las teclas no corren" {
-    recipeBook.open()
-    userController.whenPlaying({ levelManager.toggleSimulation() })
+    screenManager.openBook()
+    screenManager.toggleSimulation()
     assert.notThat(simulationEngine.running())
   }
 

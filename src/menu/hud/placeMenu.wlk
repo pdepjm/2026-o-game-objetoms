@@ -19,30 +19,15 @@
 import wollok.game.*
 import tools.toolsManager.*
 import machines.machineManager.*
-import menu.menuManager.*
+import menu.hud.hud.*
+import input.clickManager.*
 import levels.levelManager.*
 import cellPosition.*
 import sound.sfx.*
 import directions.*
-import menu.visuals.*
+import menu.drawing.visuals.*
 
-// El menú de colocar, en la zona interactiva (x 18 a 21, y 0 a 11) mientras el jugador está COLOCANDO
-// (ver toolsManager: se va mientras edita una máquina).
-//
-//   [ cinta  ][cortadora]   ← filas 10 y 11: los casilleros 1 y 2
-//   [freidora][  brazo  ]   ← filas 8 y 9: los casilleros 3 y 4
-//   Clic: elegir ...        ← fila 7: la ayuda (place_help.png)
-//   HACIA DÓNDE MIRA        ← fila 6 (dir_label.png)
-//         [  ↑  ]           ← filas 2 a 5: la brújula (compassTiles). Arriba y abajo, 2 celdas de ancho;
-//   [←] [máquina] [→]          izquierda y derecha, 2 de alto; en el centro, la máquina elegida mirando
-//         [  ↓  ]              hacia donde va a quedar (compassMachine). También con W A S D.
-//
-// Cada casillero mide 2x2 celdas: es una imagen con la máquina en chico y su nombre abajo
-// (Machine.menuImage, las genera assets/menu/makePlaceSlots.py). Encima van los marcos: amarillo en la
-// elegida (selectionFrame), uno que titila en la que pide el tutorial (highlight) y uno rojo un momento
-// en la que eligió el jugador si no es la que pide (flashError).
-// Lo que se clickea (los casilleros y la brújula) son botones (CellArea): cada uno sabe qué hace.
-object placeMenu{
+object placeMenu inherits ClickTargets {
     var currentPage = 0
     // Todo lo dibujado en el panel (menos los marcos)
     const drawn = new VisualGroup()
@@ -61,16 +46,16 @@ object placeMenu{
     const firstRow = 10
     // La brújula de "hacia dónde mira": un botón por dirección (x 18 a 21, filas 2 a 5)
     const compassTiles = [
-        new CompassTile(direction = up, position = new CellPosition(x = 19, y = 5), width = 2),
-        new CompassTile(direction = down, position = new CellPosition(x = 19, y = 2), width = 2),
-        new CompassTile(direction = left, position = new CellPosition(x = 18, y = 3), height = 2),
-        new CompassTile(direction = right, position = new CellPosition(x = 21, y = 3), height = 2)
+        new CompassTile(direction = up, zone = rectangle.of(19, 5, 2, 1)),
+        new CompassTile(direction = down, zone = rectangle.of(19, 2, 2, 1)),
+        new CompassTile(direction = left, zone = rectangle.of(18, 3, 1, 2)),
+        new CompassTile(direction = right, zone = rectangle.of(21, 3, 1, 2))
     ]
     const errorMillis = 600
 
     method currentPage() = currentPage
 
-    // Mensajes que le manda menuManager
+    // Mensajes que le manda rightPanel
 
     method show() {
         visible = true
@@ -83,10 +68,9 @@ object placeMenu{
         self.removeFrames()
     }
 
-    // Lo que hay en la celda clickeada: elige la máquina de ese casillero o esa dirección de la brújula
-    method onClick(pos) {
-        (slotAreas + compassTiles).findOrDefault({ each => each.contains(pos) }, noButton).press()
-    }
+    // Los clics del panel: los casilleros de las máquinas y la brújula (cada uno sabe qué hace)
+    override method zones() = [hud.interactiveZone()]
+    override method clickTargets() = slotAreas + compassTiles
 
     // Q y E: la máquina anterior o la siguiente del catálogo (pasa de página si hace falta)
     method chooseNext(step) {
@@ -95,8 +79,7 @@ object placeMenu{
         self.choose(catalog.get((index + step + catalog.size()).rem(catalog.size())))
     }
 
-    // Elige esa máquina (fábrica), en la página donde está. Le avisa a levelManager: si no es la que pide el
-    // tutorial, el cocinero lo dice.
+    // Elige esa máquina (fábrica), en la página donde está.
     method choose(factory) {
         machineManager.select(factory)
         const page = machineManager.pageOf(factory)
@@ -109,8 +92,7 @@ object placeMenu{
         levelManager.machineSelected(factory)
     }
 
-    // Cambiar de página sólo redibuja si el panel se está viendo
-    // Avanzan o retroceden de a una página, sin pasarse de la primera ni de la última
+    // Avanzan o retroceden de a una página (sólo redibujan si el panel se está viendo)
     method prev(){
         currentPage = (currentPage - 1).max(0)
         if (visible) self.renderItems()
@@ -128,15 +110,8 @@ object placeMenu{
 
     // ----------- DÓNDE VA CADA CASILLERO -----------
 
-    // La celda de abajo a la izquierda del casillero (1 a 4): de a 2 por fila, el primero arriba a la izquierda
-    method slotPosition(slot) = menuManager.interactiveZone().at((slot - 1).rem(2) * 2, firstRow - (slot - 1).div(2) * 2)
-
-    // El casillero (1 a 4) en el que cayó el click, o 0 si no cayó en ninguno
-    method slotAt(pos) {
-        const dx = pos.x() - menuManager.interactiveZone().origin().x()
-        const row = if (pos.y().between(firstRow, firstRow + 1)) 0 else if (pos.y().between(firstRow - 2, firstRow - 1)) 1 else -1
-        return if (row >= 0 && dx.between(0, 3)) row * 2 + dx.div(2) + 1 else 0
-    }
+    // La celda de abajo a la izquierda del casillero (1 a 4): de a 2 por fila
+    method slotPosition(slot) = hud.interactiveZone().at((slot - 1).rem(2) * 2, firstRow - (slot - 1).div(2) * 2)
 
     // El casillero de esa máquina (fábrica) en la página que se ve, o 0 si no está en esta página
     method slotOf(factory) {
@@ -151,7 +126,7 @@ object placeMenu{
         return slot
     }
 
-    // ¿En qué casillero está la máquina que tengo elegida? (0 si no está en la página que se ve)
+    // ¿En qué casillero está la máquina que tengo elegida?
     method selectedSlot() {
         var slot = 0
         var position = 0
@@ -166,8 +141,7 @@ object placeMenu{
 
     // ----------- MARCOS -----------
 
-    // Las máquinas que pide el tutorial (lo avisa levelManager con cada paso): su casillero titila
-    // Si el paso pide las mismas que antes (por ejemplo, con cada entrega mientras se cocina), no hace nada
+    // Las máquinas que pide el tutorial (lo avisa levelManager con cada paso)
     method highlight(factories) {
         if (factories != wanted) {
             wanted = factories
@@ -196,9 +170,7 @@ object placeMenu{
     // Los casilleros que titilan (para los tests)
     method hintedSlots() = hintFrames.visuals().map({ frame => frame.position() })
 
-    // El marco amarillo va en la elegida (si está en la página que se ve) y el que titila en las que pide el
-    // tutorial, menos la elegida. Se llama sólo cuando cambia algo (al elegir, cambiar de página o de paso).
-    // selectedSlot() es caro (crea máquinas para comparar nombres), así que NO hay que llamarlo desde algo que se dibuja.
+    // El marco amarillo va en la elegida
     method updateFrames() {
         self.removeFrames()
         const slot = self.selectedSlot()
@@ -227,8 +199,7 @@ object placeMenu{
         slotAreas = []
     }
 
-    // Renderiza en pantalla las maquinas que pertenecen a la pagina, y la ayuda debajo
-    // Para cambiar el orden de las maquinas, modificar el orden de la lista "machines" (machineManager).
+    // Renderiza en pantalla las maquinas que pertenecen a la pagina
     method renderItems() {
         self.clear()
 
@@ -242,12 +213,12 @@ object placeMenu{
             item.updateImage()
             items.add(drawn.add(item))
             // el casillero ocupa 2x2 celdas: clickearlo elige esa máquina
-            slotAreas.add(new CellArea(position = item.position(), width = 2, height = 2, action = { self.choose(factory) }))
+            slotAreas.add(new CellArea(zone = rectangle.of(item.position().x(), item.position().y(), 2, 2), action = { self.choose(factory) }))
         })
 
         // la ayuda, debajo de los casilleros, y el título de la brújula
-        drawn.add(new Picture(image = "menu/place_help.png", position = menuManager.interactiveZone().at(0, firstRow - 3)))
-        drawn.add(new Picture(image = "menu/dir_label.png", position = menuManager.interactiveZone().at(0, firstRow - 4)))
+        drawn.add(new Picture(image = "menu/place_help.png", position = hud.interactiveZone().at(0, firstRow - 3)))
+        drawn.add(new Picture(image = "menu/dir_label.png", position = hud.interactiveZone().at(0, firstRow - 4)))
         drawn.add(new Picture(image = "menu/compass_center.png", position = compassMachine.position()))
 
         // la brújula: un botón por dirección (la elegida, en amarillo) y la máquina en el centro
@@ -260,8 +231,7 @@ object placeMenu{
         self.updateFrames()
     }
 
-    // Actualiza las imágenes que muestran hacia dónde mira la máquina a colocar. Lo llama toolsManager
-    // cuando cambia la dirección (W/A/S/D o la brújula), que es lo único que las cambia.
+    // Actualiza las imágenes que muestran hacia dónde mira la máquina a colocar.
     method updateImages() {
         (items + compassTiles + [compassMachine]).forEach({ visual => visual.updateImage() })
     }
@@ -273,13 +243,10 @@ object placeMenu{
 
 }
 
-
-// Un casillero: la máquina en chico, con su nombre. La imagen se guarda y se recalcula sólo cuando cambia
-// la dirección (ver updateImage).
+// Un casillero: la máquina en chico, con su nombre.
 class MenuItem inherits Picture(image = "no_texture.png") {
     const property name
     // Una máquina del tipo que muestra: es la que sabe qué imagen va en el menú
-    // (por ejemplo, el brazo automático no rota y muestra siempre la misma).
     const machine
 
     method updateImage() {
@@ -287,8 +254,7 @@ class MenuItem inherits Picture(image = "no_texture.png") {
     }
 }
 
-// Un botón de la brújula de "hacia dónde mira" (assets/menu/compass_*.png, ver makeArmAndTicket.py). Guarda
-// su imagen: la cambia updateImage, que se llama sólo cuando cambia la dirección.
+// Un botón de la brújula de "hacia dónde mira" (assets/menu/compass_*.png).
 class CompassTile inherits Button(image = "menu/compass_right.png") {
     const property direction
 
@@ -299,16 +265,13 @@ class CompassTile inherits Button(image = "menu/compass_right.png") {
     }
 }
 
-// La máquina elegida, en el centro de la brújula, mirando hacia donde va a quedar. Se recalcula sólo al
-// cambiar la dirección o la máquina (crea una máquina de muestra: no hay que llamarlo al dibujar).
+// La máquina elegida, en el centro de la brújula, mirando hacia donde va a quedar.
 object compassMachine inherits Picture(image = "no_texture.png", position = new CellPosition(x = 19, y = 3)) {
     method updateImage() { image = machineManager.createMachine().menuImage(toolsManager.currentDirection()) }
 }
 
 object selectionFrame {
-    // EL MARCO AMARILLO DE LA MÁQUINA ELEGIDA
-    // La posición se guarda y placeMenu.updateFrames() la cambia cuando hace falta (no se calcula en cada frame).
-    // Sin setter: desde afuera sólo se lo puede mover a un casillero (moveToSlot).
+    // El marco amarillo de la máquina elegida
     var position = placeMenu.slotPosition(1)
 
     method position() = position

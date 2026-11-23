@@ -22,18 +22,12 @@ import src.food.foodTypes.*
 
 import machines.types.belt.*
 import machines.types.dispenser.*
-import machines.types.automaticArm.*
-import machines.types.smartRoboticArm.*
+import machines.types.arms.*
 import machines.types.assembler.*
-import machines.types.oven.*
-import machines.types.cuttingMachine.*
-import machines.types.fryer.*
+import machines.types.processing.*
 
-// Maneja cual es la Machine Seleccionada actual
 object machineManager{
 	// El orden de la lista define el orden en el menú.
-	// Cada elemento es una lambda que crea una máquina nueva.
-	// Las fábricas tienen nombre para que los niveles y los tutoriales usen LA MISMA (ver selects)
 	const property beltFactory = { => new Belt() }
 	const property assemblerFactory = { => new Assembler() }
 	const property cuttingMachineFactory = { => new CuttingMachine() }
@@ -48,7 +42,6 @@ object machineManager{
 		dispenserFactory, automaticArmFactory, smartRoboticArmFactory, fryerFactory
 	]
 	var machines = allMachines
-
 
 	var selectedMachine = machines.first()
 
@@ -78,7 +71,7 @@ object machineManager{
 	// Cuántas páginas ocupa el catálogo en el menú
 	method pageCount() = (machines.size() / 4).roundUp()
 
-	// ¿Es ésta la máquina seleccionada? (se compara la fábrica, no el nombre de la máquina)
+	// ¿Es ésta la máquina seleccionada?
 	method selects(factory) = selectedMachine == factory
 
 	// Selecciona una máquina del catálogo (una de las lambdas de machines)

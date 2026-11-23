@@ -18,25 +18,21 @@
 
 import board.*
 import machines.machineManager.*
-import menu.editMenu.*
+import menu.hud.rightPanel.*
 import levels.levelManager.*
 import sound.sfx.*
 import tools.toolsManager.*
 
-// LAS ACCIONES (antes, herramientas que se elegían con una tecla)
-// place: clic en una celda vacía. rotate, edit y delete: C, X y V sobre la máquina elegida
-// (ver toolsManager). Todas entienden onClick(celda); el tutorial pregunta por ellas (allowsTool).
-
+// Las acciones sobre el tablero: colocar, borrar, editar y rotar
 object place {
 	method name() = "place"
-	// ¿Cambia el circuito? Las que no (edit) se pueden usar en cualquier celda aunque un tutorial no las pida
+	// ¿Cambia el circuito?
 	method canUseAnywhere() = false
-	// ¿Le sirve esta máquina a un paso que sólo deja construir las de esa lista? (vacía: cualquiera)
+	// ¿Le sirve esta máquina a un paso que sólo deja construir las de esa lista?
 	method allowsMachine(allowedMachines) = allowedMachines.isEmpty() || allowedMachines.any({ factory => machineManager.selects(factory) })
-	// Lo que dice el cocinero si el paso del tutorial no la deja usar ahí (ver Tutorial.complaintFor)
+	// Lo que dice el cocinero si el paso del tutorial no la deja usar ahí
 	method complaintIn(step, pos) = step.complaintFor(self, pos)
-    // Si no entra (celda ocupada, parte fuera del tablero o fuera de las zonas donde el nivel deja construir),
-    // no coloca nada
+    // Si no entra (celda ocupada, parte fuera del tablero o fuera de las zonas donde el nivel deja construir), no coloca nada
     method onClick(pos) {
 		const machine = machineManager.createMachine()
 		if (board.canBuild(pos, machine)) {
@@ -54,7 +50,6 @@ object delete {
 	method canUseAnywhere() = false
 	method allowsMachine(allowedMachines) = true
 	// Las máquinas bloqueadas (las fijas de un nivel) no se pueden borrar.
-	// Se avisa después de sacarla (así el tutorial ve el tablero sin ella), con la máquina que se guardó antes.
     method onClick(pos) {
         if (board.isThereAMachineUnlocked(pos)) {
         	const machine = board.machineAt(pos)
@@ -71,16 +66,8 @@ object edit {
 	method complaintIn(step, pos) = step.complaintFor(self, pos)
 	method canUseAnywhere() = true
 	method allowsMachine(allowedMachines) = true
-	// Abre el panel de editar de esa máquina (EDITANDO): el de sus settings, o el de los brazos (cada
-	// máquina sabe cuál: editPanel). Si no tiene nada para ajustar, no hace nada.
-	method onClick(pos) {
-		const machine = board.machineAt(pos)
-		if (machine.settings().isEmpty()) sfx.invalid()
-		else {
-			machine.editPanel().selectMachine(pos)
-			toolsManager.startEditing(machine.editPanel())
-		}
-	}
+	// Abre el panel de editar de esa máquina (EDITANDO).
+	method onClick(pos) { rightPanel.edit(board.machineAt(pos)) }
 }
 object rotate {
 	method name() = "rotate"

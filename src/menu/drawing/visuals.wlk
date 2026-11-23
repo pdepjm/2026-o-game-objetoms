@@ -17,12 +17,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import wollok.game.*
+import cellPosition.*
+import input.clickManager.*
 
-// Wollok le pide position() e image() a cada visual en cada frame: por eso acá la posición es una
-// constante (se arma una vez, al crearla) y la imagen se guarda (sólo cambia cuando alguien la cambia).
-// Las posiciones son CellPosition: no crean nada al dibujarse (ver cellPosition.wlk).
+// Wollok le pide position() e image() a cada visual en cada frame
 
-// Una imagen en un lugar fijo de la pantalla. Las subclases pueden cambiar la imagen (image = ...).
+// Una imagen en un lugar fijo de la pantalla.
 class Picture {
 	var image
 	const property position
@@ -32,37 +32,23 @@ class Picture {
 	method hide() { if (game.hasVisual(self)) game.removeVisual(self) }
 }
 
-// Un lugar que se clickea: celdas enteras, porque Wollok avisa el clic por celda. Al clickearlo hace su
-// acción (action). No se dibuja: para eso está Button.
-class CellArea {
-	// La celda de abajo a la izquierda
-	const property position
-	const width = 1
-	const height = 1
-	const action = {}
-
-	method contains(pos) =
-		pos.x().between(position.x(), position.x() + width - 1) && pos.y().between(position.y(), position.y() + height - 1)
-	method press() { action.apply() }
-}
-
-// Un botón: un lugar que se clickea, con su imagen. Las subclases pueden cambiar la imagen (image = ...).
+// Un botón: un lugar que se clickea (CellArea, input/clickManager.wlk), con su imagen.
 class Button inherits CellArea {
 	var image
+	var position = new CellPosition(x = 0, y = 0)
 
+	override method initialize() {
+		super()
+		position = zone.origin()
+	}
+
+	method position() = position
 	method image() = image
 	method show() { if (!game.hasVisual(self)) game.addVisual(self) }
 	method hide() { if (game.hasVisual(self)) game.removeVisual(self) }
 }
 
-// "Ningún botón": lo que se clickeó cuando el clic no cayó en ninguno
-object noButton {
-	method contains(pos) = false
-	method press() {}
-}
-
-// Lo que dibujó un panel, para poder sacarlo todo junto. Cada cosa sabe sacarse (hide): una imagen, un
-// texto de Wollok o un texto escrito con una imagen por letra (SpriteLine).
+// Lo que dibujó un panel, para poder sacarlo todo junto.
 class VisualGroup {
 	var visuals = []
 

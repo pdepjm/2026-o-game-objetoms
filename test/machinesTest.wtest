@@ -16,13 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import src.machines.types.automaticArm.*
+import src.machines.types.arms.*
 import src.machines.types.belt.*
 import src.machines.types.dispenser.*
 import src.machines.types.assembler.*
-import src.machines.types.oven.*
-import src.machines.types.cuttingMachine.*
-import src.machines.types.fryer.*
+import src.machines.types.processing.*
 import src.tools.toolsManager.*
 import src.directions.*
 import wollok.game.*

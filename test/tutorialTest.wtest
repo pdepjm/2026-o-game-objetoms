@@ -24,13 +24,17 @@ import src.machines.types.belt.*
 import src.machines.types.dispenser.*
 import src.food.recipes.*
 import src.machines.types.assembler.*
-import src.machines.types.smartRoboticArm.*
+import src.machines.types.arms.*
 import src.machines.types.deliverySlot.*
-import src.menu.menuManager.*
-import src.menu.editMenu.*
-import src.menu.levelInfoMenu.*
-import src.menu.tutorialGuide.*
-import src.menu.placeMenu.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.levelInfoMenu.*
+import src.menu.overBoard.tutorialGuide.*
+import src.menu.hud.placeMenu.*
 import src.simulation.simulationEngine.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
@@ -41,11 +45,10 @@ import src.levels.levelsTypes.*
 import src.levels.levelManager.*
 import src.levels.tutorial.*
 import src.input.userController.*
-import src.menu.armMenu.*
+import src.menu.hud.armMenu.*
 import src.menu.levelComplete.*
 import src.machines.settings.*
-import src.menu.startMenu.*
-import src.menu.actionsMenu.*
+import src.menu.overBoard.actionsMenu.*
 
 // Fase 5 del plan de niveles: lo que el juego le avisa al tutorial, sus permisos y su mensaje.
 
@@ -64,7 +67,7 @@ object recordingTutorial inherits Tutorial {
 }
 
 // Un tutorial con un paso que se cumple con un evento (Enter para seguir) y uno que pide una máquina de 2x2
-object stepKindsLevel inherits Level(
+const stepKindsLevel = new Level(
   name = "Pasos",
   availableMachines = [{ => new Assembler(direction = up) }],
   availableRecipes = [],
@@ -81,29 +84,29 @@ object stepKindsLevel inherits Level(
     ],
     finishedLines = ["Ganaste"]
   )
-) {}
+)
 
 // Un tutorial que se puede cumplir entero sin ganar: un solo paso, que se cumple al prender la simulación
-object onlyRunLevel inherits Level(
+const onlyRunLevel = new Level(
   name = "Correr",
   availableMachines = [{ => new Belt() }],
   availableRecipes = [],
   goals = [noGoal],
   tutorial = new StepTutorial(steps = [new RunStep(lines = ["Apreta 5"])], finishedLines = ["Ganaste"])
-) {}
+)
 
-object recordingLevel inherits Level(
+const recordingLevel = new Level(
   name = "Prueba",
   availableMachines = [{ => new Belt() }],
   availableRecipes = [],
   goals = [noGoal],
   tutorial = recordingTutorial
-) {}
+)
 
 describe "tests de los eventos del tutorial" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(recordingLevel)
     recordingTutorial.events().clear()
@@ -158,7 +161,7 @@ describe "tests de los eventos del tutorial" {
 describe "tests del tutorial de papas fritas" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(tutorialLevel)
   }
@@ -198,7 +201,7 @@ describe "tests del tutorial de papas fritas" {
     const arm = board.machineAt(machinePos)
     const index = (0 .. arm.editKinds().size() - 1).find({ i => arm.editKinds().get(i) == kind })
     const target = straightOut.sideFor(arm.inputSide())
-    4.times({ _ => if (arm.sideOf(kind) != target) toolsManager.onClick(armMenu.cellOf(index)) })
+    4.times({ _ => if (arm.sideOf(kind) != target) playingScreen.onClick(armMenu.cellOf(index)) })
   }
 
   test "se juegan los tres tutoriales y despues los niveles 1, 2, 3 y 4" {
@@ -228,7 +231,7 @@ describe "tests del tutorial de papas fritas" {
 
   test "al prender la simulacion se van el cocinero, las marcas, el menu de la maquina y el panel de editar" {
     self.build()
-    toolsManager.onClick(game.at(11, 5))
+    playingScreen.onClick(game.at(11, 5))
     toolsManager.editKey()
     assert.that(toolsManager.isEditing())
     levelManager.toggleSimulation()
@@ -260,7 +263,7 @@ describe "tests del tutorial de papas fritas" {
   test "mientras se cocina, un clic en una maquina no la elige ni muestra su menu" {
     self.build()
     levelManager.toggleSimulation()
-    toolsManager.onClick(game.at(11, 5))
+    playingScreen.onClick(game.at(11, 5))
     assert.notThat(actionsMenu.isShown())
   }
 
@@ -292,7 +295,7 @@ describe "tests del tutorial de papas fritas" {
     (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
     assert.that(levelComplete.isShown())
     assert.that(levelComplete.lines().contains("Papas Fritas: 2/2"))
-    playingScreen.onClick(game.at(10, 3))
+    screenManager.onClick(game.at(10, 3))
     assert.equals(hotDogTutorialLevel, levelManager.currentLevel())
     assert.notThat(levelComplete.isShown())
   }
@@ -301,7 +304,7 @@ describe "tests del tutorial de papas fritas" {
     self.build()
     levelManager.toggleSimulation()
     (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
-    playingScreen.onClick(game.at(8, 8))
+    screenManager.onClick(game.at(8, 8))
     assert.notThat(board.isThereAMachine(game.at(8, 8)))
     assert.that(levelComplete.isShown())
   }
@@ -394,10 +397,10 @@ describe "tests del tutorial de papas fritas" {
     self.useTool(rotate, game.at(11, 5))
     self.useTool(rotate, game.at(11, 5))
     self.useTool(edit, game.at(11, 5))
-    toolsManager.onClick(armMenu.cellOf(0))
+    playingScreen.onClick(armMenu.cellOf(0))
     assert.equals(up, board.machineAt(game.at(11, 5)).sideOf(friedPotato))
     assert.equals("Tocá la papa", self.message().first())
-    toolsManager.onClick(armMenu.cellOf(0))
+    playingScreen.onClick(armMenu.cellOf(0))
     assert.equals("¡Listo! Ya se", self.message().first())
   }
 
@@ -450,7 +453,7 @@ describe "tests del tutorial de papas fritas" {
 describe "tests de los tipos de paso" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(stepKindsLevel)
   }
@@ -485,7 +488,7 @@ describe "tests de los tipos de paso" {
   test "un paso de 2x2 marca sus cuatro celdas y se cumple con la maquina colocada en ellas" {
     levelManager.continueTutorial()
     assert.equals(4, tutorialMarks.marks().size())
-    toolsManager.onClick(game.at(8, 8))
+    playingScreen.onClick(game.at(8, 8))
     assert.equals(["Fin"], self.message())
   }
 
@@ -515,7 +518,7 @@ describe "tests de los tipos de paso" {
 describe "tests del tutorial de panchos" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(hotDogTutorialLevel)
   }
@@ -547,7 +550,7 @@ describe "tests del tutorial de panchos" {
       const slot = editMenu.slotAt(pos)
       return slot.matches(setting, value)
     })
-    toolsManager.onClick(pos)
+    playingScreen.onClick(pos)
   }
 
   method build() {
@@ -640,7 +643,7 @@ describe "tests del dispenser y su ingrediente inicial" {
 describe "tests de saltear el tutorial" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(tutorialLevel)
   }
@@ -679,7 +682,7 @@ describe "tests de saltear el tutorial" {
 describe "tests del cocinero del tutorial" {
 
   method initialize() {
-    menuManager.setUp()
+    playingScreen.show()
     deliveryPoints.setUp()
     levelManager.load(tutorialLevel)
   }
@@ -690,7 +693,7 @@ describe "tests del cocinero del tutorial" {
 
   // Un click en el casillero del menú de colocar de esa máquina (la 1 es la cinta, la 2 la cortadora)
   method clickSlot(slot) {
-    toolsManager.onClick(placeMenu.slotPosition(slot))
+    playingScreen.onClick(placeMenu.slotPosition(slot))
   }
 
   test "dice el mensaje del paso y en que paso va" {
@@ -746,7 +749,7 @@ describe "tests del cocinero del tutorial" {
 
   test "un clic en el recuadro coloca la maquina que pide el paso" {
     levelManager.continueTutorial()
-    toolsManager.onClick(game.at(6, 5))
+    playingScreen.onClick(game.at(6, 5))
     assert.that(board.isThereAMachine(game.at(6, 5)))
     assert.that(chefGuide.complaint().isEmpty())
   }
@@ -754,16 +757,16 @@ describe "tests del cocinero del tutorial" {
   test "la celda del recuadro queda elegida sola, pero Enter no coloca ahi" {
     levelManager.continueTutorial()
     assert.that(boardCursor.isAt(game.at(6, 5)))
-    playingScreen.start()
+    playingScreen.enter()
     assert.notThat(board.isThereAMachine(game.at(6, 5)))
   }
 
   test "C sobre la maquina del cursor mientras explica: no rota y dice que apriete Enter" {
     levelManager.continueTutorial()
-    toolsManager.onClick(game.at(6, 5))
+    playingScreen.onClick(game.at(6, 5))
     levelManager.continueTutorial()
     machineManager.select(machineManager.cuttingMachineFactory())
-    toolsManager.onClick(game.at(7, 5))
+    playingScreen.onClick(game.at(7, 5))
     assert.that(boardCursor.isAt(game.at(7, 5)))
     toolsManager.act(rotate)
     assert.equals(right, board.machineAt(game.at(7, 5)).direction())

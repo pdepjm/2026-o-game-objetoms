@@ -19,10 +19,9 @@
 import board.*
 import simulation.simulationEngine.*
 import tools.userTools.*
-import menu.levelInfoMenu.*
+import menu.hud.levelInfoMenu.*
 
-// Lo que el juego le avisa a un tutorial. Lo entienden los tutoriales y también sus pasos
-// (StepTutorial le reenvía cada evento a su paso actual). Así como está no hace nada.
+// Lo que el juego le avisa a un tutorial.
 class TutorialEvents {
 	method onLevelLoaded(level) {}
 	method onMachinePlaced(machine) {}
@@ -32,15 +31,13 @@ class TutorialEvents {
 	method onSimulationToggled(running) {}
 	method onDelivered(item) {}
 	method onLevelWon(level) {}
-	// El jugador apretó Enter para seguir (ver ExplainStep)
+	// El jugador apretó Enter para seguir
 	method onContinue() {}
 }
 
-// Lo que el juego le avisa al tutorial del nivel, y lo que le pregunta. Se lo manda sólo levelManager.
-// Así como está no hace nada y deja hacer todo: los tutoriales sobrescriben lo que necesitan.
+// Lo que el juego le avisa al tutorial del nivel, y lo que le pregunta.
 class Tutorial inherits TutorialEvents {
 	// ----------- PERMISOS -----------
-	// ¿Deja usar esta acción (place, delete, edit, rotate) en esa celda?
 	method allowsTool(tool, pos) = true
 	// ¿Deja prender o apagar la simulación?
 	method allowsSimulationToggle() = true
@@ -48,9 +45,8 @@ class Tutorial inherits TutorialEvents {
 	method waitsForContinue() = false
 
 	// ----------- SALTEAR -----------
-	// El botón de saltear que dibuja la info del nivel (noSkipButton si no hay tutorial)
 	method skipButton(menu) = menu.newSkipButton()
-	// Saltearlo da por hechos todos los tutoriales (ver levelManager.skipTutorials)
+	// Saltearlo da por hechos todos los tutoriales
 	method skip(manager) { manager.skipTutorials() }
 	// Se da por hecho: se anota como completado ese nivel, si no lo estaba
 	method completeIn(completedLevels, level) {
@@ -58,31 +54,23 @@ class Tutorial inherits TutorialEvents {
 	}
 
 	// ----------- MENSAJE -----------
-	// Las líneas que dice el cocinero en su globo (ver chefGuide)
-	// (como máximo chefGuide.maxLines() contando las teclas, de chefGuide.maxLength() caracteres)
 	method messageLines() = []
 
-	// Las teclas que acompañan al mensaje (por ejemplo "place": [Z] para colocar). El cocinero las dice en
-	// su globo, debajo del mensaje, una por fila (assets/tutorial/key_<nombre>.png): cada una ocupa el lugar
-	// de una línea.
+	// Las teclas que acompañan al mensaje (por ejemplo "place": [Z] para colocar).
 	method messageKeys() = []
 
-	// Dónde va el jugador, arriba del mensaje (por ejemplo "PASO 2 DE 8"). Vacío: no se muestra.
+	// Dónde va el jugador, arriba del mensaje (por ejemplo "PASO 2 DE 8").
 	method stepLabels() = []
 
-	// Todos los mensajes que puede llegar a mostrar, cada uno con sus líneas (lines()) y sus teclas (keys()):
-	// los tests revisan que entren en el panel
+	// Todos los mensajes que puede llegar a mostrar, cada uno con sus líneas (lines()) y sus teclas
 	method allMessages() = []
 
 	// ----------- INDICADORES -----------
-	// Las celdas donde el jugador tiene que hacer algo: se marcan con un recuadro (ver tutorialMarks)
 	method targetCells() = []
 	// Las celdas de las máquinas que explica el mensaje: se señalan con una flecha arriba
 	method pointedCells() = []
 
 	// ----------- LO QUE DICE EL COCINERO SI ALGO NO VA -----------
-	// (ver chefGuide). [] es que no dice nada.
-	// Usó esa acción (place, rotate, edit, delete) en esa celda, y el tutorial no lo deja (allowsTool dio false)
 	method complaintFor(tool, pos) = []
 	// Eligió en el menú de colocar una máquina (su fábrica) que el paso no pide
 	method complaintForMachine(factory) = []
@@ -97,11 +85,7 @@ object noTutorial inherits Tutorial {
 	override method completeIn(completedLevels, level) {}
 }
 
-// Un tutorial hecho de pasos, en orden. El paso actual es el primero que todavía no se cumplió.
-// La mayoría de los pasos miran cómo está el juego (no qué evento llegó), así no importa en qué
-// orden haga las cosas el jugador, y si deshace algo (borra una máquina, apaga la simulación)
-// vuelve a ese paso. Los que dependen de algo que no se ve en el tablero ("apretá X") se enteran
-// por los eventos, que se le reenvían al paso actual (ver EventStep).
+// Un tutorial hecho de pasos, en orden.
 class StepTutorial inherits Tutorial {
 	const steps
 	// Lo que muestra después de ganar
@@ -125,8 +109,7 @@ class StepTutorial inherits Tutorial {
 	}
 	override method onContinue() { self.currentStep().onContinue() }
 
-	// Lo normal es que el último paso no se cumpla solo ("esperá a que lleguen las papas"), y se
-	// termine al ganar. Si igual se cumplen todos, se queda en el último.
+	// Lo normal es que el último paso no se cumpla solo ("esperá a que lleguen las papas")
 	method currentStep() = steps.findOrDefault({ step => !step.isDone() }, steps.last())
 
 	// Después de ganar deja hacer todo
@@ -153,29 +136,23 @@ class StepTutorial inherits Tutorial {
 	override method wantedMachines() = if (won) [] else self.currentStep().wantedMachines()
 }
 
-// Un paso del tutorial: qué dice y qué deja hacer. Éste nunca se cumple: sirve de último paso
-// (por ejemplo, "esperá a que lleguen las papas"), que termina cuando se gana.
-// Un paso o pide hacer algo (cells: se marcan con el recuadro) o explica una máquina (pointsAt: se
-// señala con la flecha), no las dos cosas: si tiene cells, la flecha no se muestra. Para explicar y
-// después pedir, dos pasos: un ExplainStep y el que pide.
+// Un paso del tutorial: qué dice y qué deja hacer.
 class TutorialStep inherits TutorialEvents {
 	const property lines
-	// Las teclas que se explican en este paso (ver Tutorial.messageKeys): así el texto no tiene que decir "C:"
+	// Las teclas que se explican en este paso
 	const property keys = []
-	// Las celdas donde deja colocar, borrar y rotar. Se marcan con un recuadro.
-	// Para una máquina de 2x2, sus cuatro celdas.
+	// Las celdas donde deja colocar, borrar y rotar.
 	const cells = []
-	// Las celdas de las máquinas que explica el mensaje. Se señalan con una flecha arriba.
+	// Las celdas de las máquinas que explica el mensaje.
 	const pointsAt = []
 	const allowsSimulation = false
 
 	method isDone() = false
 
-	// Vuelve a empezar (al cargar o reiniciar el nivel). Lo sobrescriben los pasos que se acuerdan de algo.
+	// Vuelve a empezar (al cargar o reiniciar el nivel).
 	method reset() {}
 
-	// En sus celdas deja hacer todo. Fuera de ellas, sólo editar: también las máquinas fijas, que el
-	// jugador tiene que poder configurar (por ejemplo, qué larga un Dispenser)
+	// En sus celdas deja hacer todo.
 	method allowsTool(tool, pos) = tool.canUseAnywhere() || self.isCell(pos)
 
 	method isCell(pos) = cells.any({ cell => pos.x() == cell.x() && pos.y() == cell.y() })
@@ -184,11 +161,10 @@ class TutorialStep inherits TutorialEvents {
 	method waitsForContinue() = false
 
 	method targetCells() = cells
-	// Si pide hacer algo, sólo el recuadro (ver arriba)
+	// Si pide hacer algo, sólo el recuadro
 	method pointedCells() = if (cells.isEmpty()) pointsAt else []
 
-	// Lo que dice el cocinero (ver Tutorial). Fuera del recuadro: que es en el recuadro. Si el paso no
-	// tiene recuadro, lo que espera (ver waitingComplaint).
+	// Lo que dice el cocinero.
 	method complaintFor(tool, pos) =
 		if (cells.isEmpty()) self.waitingComplaint()
 		else if (!self.isCell(pos)) ["Ahí no: es en", "el recuadro."]
@@ -199,13 +175,11 @@ class TutorialStep inherits TutorialEvents {
 	method wantedMachines() = []
 }
 
-// Se cumple cuando en todas sus celdas hay una máquina que cumple la condición: { machine => ... }
-// (si son las cuatro celdas de una máquina de 2x2, la misma máquina en todas)
+// Se cumple cuando en todas sus celdas hay una máquina que cumple la condición
 class MachineStep inherits TutorialStep {
 	// Qué tiene que cumplir la máquina de cada celda (por ejemplo, mirar hacia la derecha)
 	const condition = { machine => true }
-	// Las máquinas del catálogo (las fábricas de machineManager) que deja construir: así no hace falta
-	// preguntarle a la máquina qué es. Vacía: no restringe cuál (por ejemplo, en los pasos de editar o rotar).
+	// Las máquinas del catálogo (las fábricas de machineManager) que deja construir
 	const allowedMachines = []
 
 	override method allowsTool(tool, pos) = super(tool, pos) && tool.allowsMachine(allowedMachines)
@@ -228,9 +202,7 @@ class RunStep inherits TutorialStep(allowsSimulation = true) {
 	override method waitingComplaint() = ["Ahora no: apretá", "Espacio para", "cocinar."]
 }
 
-// Un paso que se cumple con un evento y se queda cumplido (aunque después el jugador haga otra cosa),
-// para lo que no se ve en el tablero. Cada tipo de evento es una subclase que sobrescribe ese evento
-// y llama a happened(). Vuelve a empezar al cargar o reiniciar el nivel.
+// Un paso que se cumple con un evento y se queda cumplido (aunque después el jugador haga otra cosa)
 class EventStep inherits TutorialStep {
 	var done = false
 

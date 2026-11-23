@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - el brazo automático: agarra un item y lo entrega recto, a la izquierda o a la derecha.
+// Buffet Albert Einstein - los brazos: el automático y el inteligente.
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -22,45 +22,26 @@ import simulation.simulationEngine.*
 import simulation.animationEngine.*
 import directions.*
 import board.*
-import menu.armMenu.*
+import food.foodTypes.*
+import food.foodClasses.*
 
-// Brazo automático: agarra el item que le llega por su ÚNICA entrada y lo entrega recto, a la
-// izquierda o a la derecha de su recorrido, según cómo se configure.
-// La entrada es el lado que se elige al colocarlo y al rotarlo. Descansa mirando hacia ella,
-// y gira solo para agarrar y entregar. Sólo recibe de la máquina que esté en su entrada.
-// Se anima frame a frame (PNG por frame, con play de MachineAnimator) y no con GIFs.
-//
-// Cuando le llega un item:
-// 1. Si no está mirando hacia la entrada, gira hacia ahí (animación rotate).
-// 2. Lo agarra y gira hacia el lado de salida (animación catch), llevando el item.
-// 3. Lo entrega a la máquina de esa celda (tryPush). Si está llena, espera a que se libere.
-// Mientras tiene un item no acepta otro.
-//
-// El item no viaja a la celda del brazo (por eso sobrescribe onReceive): el brazo lo
-// gira y lo lleva a la celda de salida. Cada animación termina en la etapa segura del
-// animationEngine (bloques pendientes), así el bloque puede girar, mover el item y
-// entregar directo, sin perder pasos.
+// Brazo automático: agarra el item que le llega por su ÚNICA entrada y lo entrega recto
 class AutomaticArm inherits Machine {
 	// ----------- ATRIBUTOS -----------
-	// Frames que hay en cada carpeta de animación (los genera assets/machines/gifToFrames.py, y se dejó uno
-	// de cada dos), y cuántos pasos dura cada animación (lo mismo que cuando tenían todos los cuadros)
 	const rotateFrames = 4
 	const rotateSteps = 7
 	const catchFrames = 14
 	const catchSteps = 28
 
 	// El lado por el que recibe: el que se eligió al colocarlo, y cambia al rotarlo.
-	// direction, en cambio, es hacia dónde está mirando la pinza en este momento.
-	var inputSide = up   // se fija al inicializar: es la dirección elegida
+	var inputSide = up
 	// Hacia dónde entrega se configura (recto, izquierda o derecha, relativo a la entrada)
 	const outputSetting = new OutputSideSetting(value = straightOut)
 
-	var from = up         // lado del que vino el item (sólo importa mientras lo lleva)
+	var from = up
 	var grabbed = false   // ¿ya lo llevó al lado contrario?
 
 	// ----------- INICIALIZACION -----------
-	// La entrada es la dirección elegida; leer direction fija la elegida en este momento (ver MachineSprite)
-	// y super() muestra la imagen quieta, mirando hacia la entrada.
 	override method initialize() {
 		inputSide = direction
 		super()
@@ -73,7 +54,6 @@ class AutomaticArm inherits Machine {
 	override method baseEnergy() = 2
 
 	// ----------- ROTACION -----------
-	// Rotar mueve la entrada, y el brazo descansa mirando hacia ella
 	override method rotate() {
 		inputSide = inputSide.next()
 		direction = inputSide
@@ -93,12 +73,11 @@ class AutomaticArm inherits Machine {
 	override method settings() = [outputSetting]
 
 	// ----------- DIBUJO -----------
-	// Se dibuja sobre 3x3 celdas, centrado en la suya
 	override method drawOffsetX() = -1
 
 	override method drawOffsetY() = -1
 
-	// La carpeta de sus imágenes. Los brazos que heredan de éste pueden compartirla.
+	// La carpeta de sus imágenes.
 	method assetFolder() = "machines/AutomaticArm/"
 
 	override method staticImage() = self.assetFolder() + direction.name() + "_game.png"
@@ -121,8 +100,6 @@ class AutomaticArm inherits Machine {
 	}
 
 	// ----------- ITEMS -----------
-	// El item no se anima hasta la celda del brazo: el brazo gira hacia él y lo lleva
-	// al lado opuesto. Por eso se sobrescribe onReceive (y no receive).
 	override method onReceive(item) {
 		from = inputSide
 		grabbed = false
@@ -133,14 +110,13 @@ class AutomaticArm inherits Machine {
 	method outputSide() = outputSetting.value().sideFor(inputSide)
 
 	// ----------- EL PANEL DEL BRAZO (ver armMenu) -----------
-	// En lugar de "Recto / Izq. / Der." (relativos a donde agarra), el panel muestra los lados del tablero.
 
-	override method editPanel() = armMenu
+	// Se edita como brazo: el panel muestra sus lados (o, el inteligente, sus ingredientes)
+	override method openEditorIn(panel) { panel.editArm(self) }
 	method editTitle() = "BRAZO"
 	method editHint() = "DEJA TODO HACIA"
 	// El brazo como se ve en el tablero, en un cuadro (assets/menu/makeArmAndTicket.py)
 	method editBoxImage() = "menu/arm_box_auto_" + inputSide.name() + ".png"
-	// Las cuatro direcciones, en el orden ↑ → ↓ ← (la de donde agarra no se elige)
 	method editChoices() = [up, right, down, left].map({ side => new ArmSideChoice(arm = self, side = side) })
 
 	// Deja todo hacia ese lado del tablero: la salida (relativa a la entrada) que da a ese lado
@@ -152,7 +128,7 @@ class AutomaticArm inherits Machine {
 	method sendsTo(side) = self.outputSide() == side
 	method kindsTo(side) = []
 
-	// Lado por el que entrega ESE item. Los brazos que eligen según el item lo sobrescriben.
+	// Lado por el que entrega ESE item.
 	method outputSideFor(item) = self.outputSide()
 
 	// Gira hacia el lado del que vino el item
@@ -163,14 +139,13 @@ class AutomaticArm inherits Machine {
 		})
 	}
 
-	// Lo agarra y gira hacia el lado contrario. El item viaja a la otra celda mientras tanto.
+	// Lo agarra y gira hacia el lado contrario.
 	method carry() {
 		const to = self.outputSideFor(self.itemToPush())
 		self.itemToPush().moveInSteps(to.move(self.cell()), catchSteps)
 		self.showCatch(from, to, {
 			direction = to
 			// Entrega hacia el lado al que quedó mirando (el contrario al del que vino el item).
-			// next se calculó al prender, mirando hacia otro lado: se vuelve a buscar.
 			next = self.nextMachine()
 			grabbed = true
 			self.showStatic()
@@ -186,30 +161,151 @@ class AutomaticArm inherits Machine {
 	}
 
 	// ----------- AGARRAR DE LA ENTRADA -----------
-	// La máquina de su entrada, sin importar hacia dónde apunte (noMachine si no hay)
 	method inputMachine() = board.machineAt(inputSide.move(self.cell()))
 
 	// Si está libre y en su entrada hay un item agarrable (el de una cinta que pasa por ahí), lo toma.
-	// Lo avisa la máquina de la entrada cuando le llega un item, y el brazo mismo al quedar libre.
-	// SIEMPRE revisa el estado antes de actuar: entre el aviso y este momento pasan cosas.
 	method tryGrab() {
 		const source = self.inputMachine()
 		source.grabbableItem().grabbedBy(self, source)
 	}
 
 	// ----------- SIMULACION -----------
-	// Se anota en la máquina de su entrada para enterarse de lo que le llega
 	override method start() {
 		super()
 		self.inputMachine().addGrabber(self)
 	}
 
 	// Al apagar la simulación suelta el item y vuelve a quedar quieto mirando hacia la entrada.
-	// El estado se reinicia antes del super(), que vacía el inventario y muestra staticImage().
 	override method reset() {
 		from = inputSide
 		grabbed = false
 		direction = inputSide
 		super()
 	}
+}
+
+// Una de las tres salidas del brazo inteligente: hacia dónde va
+class ArmRoute {
+	const property output
+	const property filter
+
+	method accepts(item) = filter.accepts(item)
+
+	// El lado del tablero por el que sale, para un brazo que agarra de inputSide
+	method sideFor(inputSide) = output.sideFor(inputSide)
+}
+
+// "Ninguna salida": la de un ingrediente que el brazo no agarra
+object noRoute {
+	method sideFor(inputSide) = noSide
+	method filter() = noFilter
+}
+
+object noFilter {
+	method contains(kind) = false
+	method add(kind) {}
+	method remove(kind) {}
+}
+
+// Brazo inteligente: igual que el automático, pero tiene tres salidas (izquierda, recta y derecha)
+class SmartRoboticArm inherits AutomaticArm {
+	// Los ingredientes que se pueden elegir en cada salida (hasta 13 para no salirse de la pantalla)
+	const kinds = [
+		friedPotato, burntPotato,
+		eggFryed,
+		cookedMeat,
+		sausageCooked
+	]
+
+	// En el orden de prioridad: recta, izquierda, derecha
+	const routes = [
+		new ArmRoute(output = straightOut, filter = new ItemSetSetting(outputName = "Recto", columnIndex = 1, kinds = kinds, value = [])),
+		new ArmRoute(output = leftOut, filter = new ItemSetSetting(outputName = "Izq.", columnIndex = 0, kinds = kinds, value = [])),
+		new ArmRoute(output = rightOut, filter = new ItemSetSetting(outputName = "Der.", columnIndex = 2, kinds = kinds, value = []))
+	]
+
+	override method name() = "AutomaticArm"
+	override method label() = "Brazo intel."
+	override method baseEnergy() = 3
+
+	// Las mismas imágenes del automático, recoloreadas en naranja (assets/machines/recolor.ps1)
+	override method assetFolder() = "machines/SmartRoboticArm/"
+
+	override method settings() = routes.map({ route => route.filter() })
+
+	// La salida que deja pasar a ese item
+	method routeFor(item) = routes.find({ route => route.accepts(item) })
+
+	// ¿Alguna de sus salidas deja pasar a ese item?
+	method canTake(item) = routes.any({ route => route.accepts(item) })
+
+	override method outputSideFor(item) = self.routeFor(item).output().sideFor(inputSide)
+
+	// ¿Toma un item de ese kind?
+	method takes(kind) = self.canTake(new Item(kind = kind))
+
+	// El lado por el que saldría un item de ese kind
+	method exitSideFor(kind) = self.routeFor(new Item(kind = kind)).output().sideFor(inputSide)
+
+	// No toma lo que no tiene por dónde salir
+	override method canReceive(item) = super(item) && self.canTake(item)
+
+	// ----------- EL PANEL DEL BRAZO (ver armMenu) -----------
+
+	override method editTitle() = "BRAZO INTELIGENTE"
+	override method editHint() = "CLIC: CAMBIA HACIA DÓNDE"
+	override method editBoxImage() = "menu/arm_box_smart_" + inputSide.name() + ".png"
+	override method editChoices() = kinds.map({ kind => new ArmKindChoice(arm = self, kind = kind) })
+	// Los ingredientes del panel, en el orden de sus casilleros
+	method editKinds() = kinds
+
+	// El lado del tablero por el que sale ese ingrediente (noSide si no lo agarra)
+	method sideOf(kind) = routes.findOrDefault({ route => route.filter().contains(kind) }, noRoute).sideFor(inputSide)
+
+	method cycle(kind) {
+		const options = [noSide] + [up, right, down, left].filter({ side => side != inputSide })
+		const index = (0 .. options.size() - 1).find({ i => options.get(i) == self.sideOf(kind) })
+		self.sendTo(kind, options.get((index + 1).rem(options.size())))
+	}
+
+	// Que ese ingrediente salga sólo por ese lado del tablero (noSide: que no lo agarre)
+	method sendTo(kind, side) {
+		routes.forEach({ route => route.filter().remove(kind) })
+		routes.findOrDefault({ route => route.sideFor(inputSide) == side }, noRoute).filter().add(kind)
+	}
+
+	override method sendsTo(side) = !self.kindsTo(side).isEmpty()
+	override method kindsTo(side) = kinds.filter({ kind => self.sideOf(kind) == side })
+}
+
+// ----------- LOS CASILLEROS DEL PANEL DEL BRAZO (ver armMenu) -----------
+
+// Brazo inteligente: un ingrediente.
+class ArmKindChoice {
+	const arm
+	const kind
+
+	method images() {
+		const side = arm.sideOf(kind)
+		return if (side == noSide) ["menu/arm_item.png", kind.image()]
+			else ["menu/arm_item_on.png", kind.image(), "menu/arm_chip_" + side.name() + ".png"]
+	}
+
+	method choose() { arm.cycle(kind) }
+}
+
+class ArmSideChoice {
+	const arm
+	const side
+
+	method images() = ["menu/arm_dir_" + side.name() + self.state() + ".png"]
+
+	method state() = if (side == arm.inputSide()) "_grab" else if (side == arm.outputSide()) "_on" else ""
+
+	method choose() { if (side != arm.inputSide()) arm.chooseOutputSide(side) }
+}
+
+// "Por ningún lado": el lado de un ingrediente que el brazo inteligente no agarra
+object noSide {
+	method name() = "none"
 }

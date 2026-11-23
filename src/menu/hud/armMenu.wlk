@@ -21,27 +21,16 @@ import board.*
 import cellPosition.*
 import directions.*
 import machines.machineClasses.*
-import menu.menuManager.*
-import menu.texts.*
-import menu.editMenu.*
-import menu.visuals.*
+import menu.hud.hud.*
+import input.clickManager.*
+import menu.drawing.texts.*
+import menu.hud.editMenu.*
+import menu.drawing.visuals.*
 import levels.levelManager.*
 import sound.sfx.*
 
-// Panel de la zona interactiva (x 18 a 21) mientras se edita un brazo (X sobre él). Muestra los lados como
-// se ven en el tablero (↑ → ↓ ←), no "Recto / Izq. / Der." (que son relativos a donde agarra):
-//
-//   BRAZO INTELIGENTE              ← fila 11: el título (editTitle)
-//   [ brazo ][AGARRA DE ←]         ← filas 9 y 10: el brazo como está, y de dónde agarra
-//   CLIC: CAMBIA HACIA DÓNDE       ← fila 8 (editHint)
-//   [🍟][🥚][🥩][🌭]               ← desde la fila 7: los casilleros (editChoices), de a 4 por fila
-//
-// El brazo inteligente tiene un casillero por ingrediente (cada clic lo manda al lado siguiente); el común,
-// las cuatro direcciones (la de donde agarra, en rojo). El panel no sabe cuál es: le pide los casilleros al
-// brazo y les avisa el clic (ver ArmKindChoice y ArmSideChoice en settings.wlk).
-// Mientras se edita, el tablero muestra al lado del brazo qué sale por cada lado (preview).
-// RENDIMIENTO: se dibuja al abrirlo y con cada clic; nada se calcula en cada frame.
-object armMenu {
+// Panel de la zona interactiva (x 18 a 21) mientras se edita un brazo (X sobre él).
+object armMenu inherits ClickTargets {
 	const columns = 4
 	const firstRow = 7
 	var arm = noMachine
@@ -49,13 +38,15 @@ object armMenu {
 	// El panel, y al lado del brazo, en el tablero, lo que sale por cada lado
 	const drawn = new VisualGroup()
 	const preview = new VisualGroup()
-	// El casillero marcado para el teclado (flechas y Enter). La marca se ve recién cuando se usan las flechas.
+	// El casillero marcado para el teclado (flechas y Enter).
 	var focusIndex = 0
 	var usingKeyboard = false
+	// Lo que se clickea: un lugar por casillero (se arman al dibujar)
+	var areas = []
 
 	method arm() = arm
 
-	// ----------- LO QUE LE MANDA menuManager / toolsManager -----------
+	// ----------- LO QUE LE MANDA rightPanel -----------
 
 	method show() {
 		visible = true
@@ -70,16 +61,15 @@ object armMenu {
 		arm = noMachine
 	}
 
-	// Lo llama la acción edit (X sobre el brazo)
-	method selectMachine(pos) {
-		arm = board.machineAt(pos)
+	// Lo llama rightPanel cuando un brazo pide que lo editen
+	method selectMachine(machine) {
+		arm = machine
 		if (visible) self.render()
 	}
 
-	method onClick(pos) {
-		const index = self.indexAt(pos)
-		if (index.between(0, self.choices().size() - 1)) self.choose(index)
-	}
+	// Los clics del panel: cada casillero sabe cuál es
+	override method zones() = [hud.interactiveZone()]
+	override method clickTargets() = areas
 
 	// Las flechas mueven la marca por los casilleros, y Enter usa el marcado
 	method moveFocus(direction) {
@@ -100,14 +90,7 @@ object armMenu {
 
 	method choices() = arm.editChoices()
 
-	// El casillero de esa celda (-1 si no hay ninguno)
-	method indexAt(pos) {
-		const column = pos.x() - menuManager.interactiveZone().origin().x()
-		const row = firstRow - pos.y()
-		return if (column.between(0, columns - 1) && row >= 0) row * columns + column else -1
-	}
-
-	method cellOf(index) = menuManager.interactiveZone().at(index.rem(columns), firstRow - index.div(columns))
+	method cellOf(index) = hud.interactiveZone().at(index.rem(columns), firstRow - index.div(columns))
 
 	method choose(index) {
 		self.choices().get(index).choose()
@@ -122,15 +105,16 @@ object armMenu {
 
 	method render() {
 		self.clear()
-		drawn.add(new MenuText(text = arm.editTitle(), position = menuManager.interactiveZone().at(1.5, 11), textColor = "FFD700FF"))
-		drawn.add(new Picture(image = arm.editBoxImage(), position = menuManager.interactiveZone().at(0, 9)))
-		drawn.add(new Picture(image = "menu/arm_grab_" + arm.inputSide().name() + ".png", position = menuManager.interactiveZone().at(2, 9)))
-		drawn.add(new MenuText(text = arm.editHint(), position = menuManager.interactiveZone().at(1.5, 8), textColor = "FFD700FF"))
+		drawn.add(new MenuText(text = arm.editTitle(), position = hud.interactiveZone().at(1.5, 11), textColor = "FFD700FF"))
+		drawn.add(new Picture(image = arm.editBoxImage(), position = hud.interactiveZone().at(0, 9)))
+		drawn.add(new Picture(image = "menu/arm_grab_" + arm.inputSide().name() + ".png", position = hud.interactiveZone().at(2, 9)))
+		drawn.add(new MenuText(text = arm.editHint(), position = hud.interactiveZone().at(1.5, 8), textColor = "FFD700FF"))
 		const choices = self.choices()
 		(0 .. choices.size() - 1).forEach({ index =>
 			const cell = self.cellOf(index)
 			choices.get(index).images().forEach({ image => drawn.add(new Picture(image = image, position = cell)) })
 		})
+		areas = (0 .. choices.size() - 1).map({ index => new CellArea(zone = rectangle.cell(self.cellOf(index)), action = { self.choose(index) }) })
 		self.updateFocus()
 		self.drawPreview()
 	}
@@ -160,9 +144,10 @@ object armMenu {
 	method clear() {
 		drawn.clear()
 		preview.clear()
+		areas = []
 		if (game.hasVisual(optionFocus)) game.removeVisual(optionFocus)
 	}
 
-	// La dirección para colocar no cambia nada acá, pero menuManager puede avisar igual
+	// La dirección para colocar no cambia nada acá, pero rightPanel puede avisar igual
 	method updateImages() {}
 }

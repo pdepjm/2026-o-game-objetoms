@@ -19,71 +19,50 @@
 // Traduce las entradas del usuario (clicks y teclas) a acciones del juego
 
 import wollok.game.*
-import board.*
-import menu.menuManager.*
-import menu.recipeBook.*
-import menu.startMenu.*
-import tools.toolsManager.*
-import tools.userTools.*
 import directions.*
-import simulation.simulationEngine.*
-import levels.levelManager.*
-import menu.levelInfoMenu.*
-import sound.sfx.*
-import menu.hud.*
+import menu.screenManager.*
 
+// Recibe los clics y las teclas de Wollok y se los pasa a screenManager
 object userController {
 	method setUp() {
-		game.onClickDo({ pos => self.onClick(pos) })
+		game.onClickDo({ pos => screenManager.onClick(pos) })
 
-		// --- RECETARIO, FLECHAS Y RETROCESO (Globales: andan en menú y en juego) ---
-		// Al no tener whenPlaying, funcionan siempre. Y como están en setUp(),
-		// solo se bindean UNA vez, evitando el problema de la doble ejecución.
-		// Lo que hace cada flecha lo decide la pantalla: en la portada mueven la opción marcada, jugando
-		// eligen la opción del panel de editar (el tablero es sólo con el mouse) y con el libro abierto pasan
-		// de página.
-		keyboard.f().onPressDo({ => startMenu.toggleRecipeBook() })
-		keyboard.right().onPressDo({ => startMenu.arrow(right) })
-		keyboard.left().onPressDo({ => startMenu.arrow(left) })
-		keyboard.up().onPressDo({ => startMenu.arrow(up) })
-		keyboard.down().onPressDo({ => startMenu.arrow(down) })
-		// Retroceso (Backspace): volver (deja de editar, cierra el libro o los controles). Wollok no le pasa
-		// Esc al juego: su página sólo manda letras, números, flechas, Enter, Espacio, Retroceso y pocas más.
-		keyboard.backspace().onPressDo({ => startMenu.back() })
+		keyboard.enter().onPressDo({ => screenManager.enter() })
+		keyboard.right().onPressDo({ => screenManager.arrow(right) })
+		keyboard.left().onPressDo({ => screenManager.arrow(left) })
+		keyboard.up().onPressDo({ => screenManager.arrow(up) })
+		keyboard.down().onPressDo({ => screenManager.arrow(down) })
+		// Retroceso: volver (deja de editar, cierra el libro o los controles)
+		keyboard.backspace().onPressDo({ => screenManager.back() })
+		keyboard.f().onPressDo({ => screenManager.toggleBook() })
+		keyboard.i().onPressDo({ => screenManager.pressI() })
+		keyboard.s().onPressDo({ => screenManager.pressS() })
 
-		// --- TECLAS DEL JUEGO (Protegidas) ---
-		keyboard.num1().onPressDo({ => self.whenPlaying({ sideButtons.speed(1) }) })
-		keyboard.num2().onPressDo({ => self.whenPlaying({ sideButtons.speed(2) }) })
-		keyboard.num3().onPressDo({ => self.whenPlaying({ sideButtons.speed(3) }) })
-		keyboard.space().onPressDo({ => self.whenPlaying({ levelManager.toggleSimulation() }) })
-		keyboard.num5().onPressDo({ => self.whenPlaying({ levelManager.toggleSimulation() }) })
+		keyboard.num1().onPressDo({ => screenManager.speed(1) })
+		keyboard.num2().onPressDo({ => screenManager.speed(2) })
+		keyboard.num3().onPressDo({ => screenManager.speed(3) })
+		keyboard.space().onPressDo({ => screenManager.toggleSimulation() })
+		keyboard.num5().onPressDo({ => screenManager.toggleSimulation() })
 
-		keyboard.n().onPressDo({ => self.whenPlaying({ levelManager.loadNext() }) })
-		keyboard.num0().onPressDo({ => self.whenPlaying({ levelManager.restart() }) })
-		keyboard.l().onPressDo({ => self.whenPlaying({ levelManager.toggleFreePlay() }) })
-
-		// Enter lo resuelve la pantalla (ver startMenu.show y playingScreen.start)
-		keyboard.t().onPressDo({ => self.whenPlaying({ levelManager.skipTutorial() }) })
+		keyboard.n().onPressDo({ => screenManager.nextLevel() })
+		keyboard.num0().onPressDo({ => screenManager.restart() })
+		keyboard.l().onPressDo({ => screenManager.toggleFreePlay() })
+		keyboard.t().onPressDo({ => screenManager.skipTutorial() })
 
 		// Q y E: la máquina anterior o la siguiente del menú de colocar
-		keyboard.q().onPressDo({ => self.whenPlaying({ menuManager.chooseMachine(-1) }) })
-		keyboard.e().onPressDo({ => self.whenPlaying({ menuManager.chooseMachine(1) }) })
+		keyboard.q().onPressDo({ => screenManager.chooseMachine(-1) })
+		keyboard.e().onPressDo({ => screenManager.chooseMachine(1) })
 
-		// C, X y V: rotar, editar o borrar la máquina elegida (la del cursor). X otra vez deja de editar.
-		keyboard.c().onPressDo({ => self.whenPlaying({ toolsManager.act(rotate) }) })
-		keyboard.x().onPressDo({ => self.whenPlaying({ toolsManager.editKey() }) })
-		keyboard.v().onPressDo({ => self.whenPlaying({ toolsManager.act(delete) }) })
+		// C, X y V: rotar, editar o borrar la máquina elegida.
+		keyboard.c().onPressDo({ => screenManager.rotateMachine() })
+		keyboard.x().onPressDo({ => screenManager.editMachine() })
+		keyboard.v().onPressDo({ => screenManager.deleteMachine() })
 
-		keyboard.w().onPressDo({ => self.whenPlaying({ toolsManager.currentDirection(up) }) })
-		keyboard.s().onPressDo({ => self.whenPlaying({ toolsManager.currentDirection(down) }) })
-		keyboard.a().onPressDo({ => self.whenPlaying({ toolsManager.currentDirection(left) }) })
-		keyboard.d().onPressDo({ => self.whenPlaying({ toolsManager.currentDirection(right) }) })
+		// W, A y D: hacia dónde miran las máquinas nuevas (S está arriba: en la portada es salir)
+		keyboard.w().onPressDo({ => screenManager.direction(up) })
+		keyboard.a().onPressDo({ => screenManager.direction(left) })
+		keyboard.d().onPressDo({ => screenManager.direction(right) })
 
-		keyboard.m().onPressDo({ => self.whenPlaying({ startMenu.backToCover() }) })
+		keyboard.m().onPressDo({ => screenManager.backToMenu() })
 	}
-
-	// Qué hace cada click o tecla lo decide la pantalla activa del menú (ver startMenu)
-	method onClick(pos) { startMenu.onClick(pos) }
-
-	method whenPlaying(action) { startMenu.whenPlaying(action) }
 }

@@ -21,16 +21,17 @@ import board.*
 import cellPosition.*
 import machines.machineClasses.*
 import tools.userTools.*
+import tools.toolsManager.*
 
-// El menú de la máquina elegida: ROTAR (C), EDITAR (X) y BORRAR (V), una celda cada uno, debajo de la
-// máquina (o arriba, si está en la fila de abajo). Lo que no se puede hacer se ve apagado. Clickear una de
-// sus celdas es usar esa acción. Aparece al elegir una máquina y también al colocarla (la nueva queda elegida).
+// El menú de la máquina elegida: ROTAR (C), EDITAR (X) y BORRAR (V), una celda cada uno
 object actionsMenu {
 	const actions = [rotate, edit, delete]
 	var machine = noMachine
 	var shown = false
 	var position = new CellPosition(x = 0, y = 0)
 	var image = "menu/actions_all.png"
+	// Las tres celdas que se clickean (nowhere mientras está escondido)
+	var zone = nowhere
 
 	method position() = position
 	method image() = image
@@ -51,6 +52,7 @@ object actionsMenu {
 			// sigue en el tablero si en su celda está ella (se pudo haber borrado)
 			if (board.machineAt(machine.cell()) == machine) {
 				position = self.placeFor(machine)
+				zone = rectangle.of(position.x(), position.y(), 3, 1)
 				image = self.imageFor(machine)
 				if (game.hasVisual(self)) game.removeVisual(self)
 				game.addVisual(self)
@@ -60,6 +62,7 @@ object actionsMenu {
 
 	method hide() {
 		shown = false
+		zone = nowhere
 		machine = noMachine
 		if (game.hasVisual(self)) game.removeVisual(self)
 	}
@@ -78,7 +81,9 @@ object actionsMenu {
 		return "menu/actions_" + (if (canChange && canEdit) "all" else if (canChange) "noedit" else if (canEdit) "editonly" else "none") + ".png"
 	}
 
-	method contains(pos) = shown && pos.y() == position.y() && pos.x().between(position.x(), position.x() + 2)
+	// Para playingScreen: está encima del tablero, así que un clic en sus celdas es suyo y no del tablero
+	method handlesClick(pos) = zone.contains(pos)
+	method onClick(pos) { toolsManager.act(self.actionAt(pos)) }
 
 	method actionAt(pos) = actions.get(pos.x() - position.x())
 }
