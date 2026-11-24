@@ -37,7 +37,7 @@ import src.machines.types.belt.*
 import src.machines.types.processing.*
 import src.directions.*
 
-describe "tests de menuManager" {
+describe "tests del HUD" {
 
   // Los casilleros del panel de place van de a 2 por fila, de 2x2 celdas: el 1º arriba a la izquierda
   // (x 18, y 10), el 2º a su derecha (x 20), y el 3º y el 4º abajo (y 8).

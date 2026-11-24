@@ -1,0 +1,170 @@
+// Buffet Albert Einstein - tests de las pantallas: qué pasa con cada clic y cada tecla en cada una.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.recipeBook.*
+import src.menu.levelComplete.*
+import src.levels.levelClasses.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+import src.simulation.simulationEngine.*
+import src.machines.types.deliverySlot.*
+
+describe "tests de la portada y los controles" {
+
+  method initialize() {
+    screenManager.showCover()
+  }
+
+  test "arranca en la portada" {
+    assert.equals(coverScreen, screenManager.screen())
+  }
+
+  test "un clic en CONTROLES abre los controles, y un clic en la fila de abajo vuelve" {
+    screenManager.onClick(game.at(10, 4))
+    assert.equals(instructionsScreen, screenManager.screen())
+    screenManager.onClick(game.at(10, 0))
+    assert.equals(coverScreen, screenManager.screen())
+  }
+
+  test "con I se abren los controles y con I o Retroceso se vuelve" {
+    screenManager.pressI()
+    assert.equals(instructionsScreen, screenManager.screen())
+    screenManager.back()
+    assert.equals(coverScreen, screenManager.screen())
+  }
+
+  test "las flechas mueven la opcion marcada sin pasarse de la primera ni de la ultima" {
+    screenManager.arrow(up)
+    assert.equals(0, coverMenu.focused())
+    3.times({ _ => screenManager.arrow(down) })
+    screenManager.arrow(down)
+    assert.equals(3, coverMenu.focused())
+  }
+
+  test "un clic fuera de las opciones no hace nada" {
+    screenManager.onClick(game.at(2, 10))
+    assert.equals(coverScreen, screenManager.screen())
+  }
+
+  test "las teclas del juego no hacen nada en la portada" {
+    screenManager.toggleSimulation()
+    screenManager.nextLevel()
+    assert.notThat(simulationEngine.running())
+    assert.equals(coverScreen, screenManager.screen())
+  }
+
+  test "INICIAR pasa a jugar y carga el primer nivel" {
+    screenManager.onClick(game.at(10, 6))
+    assert.equals(playingScreen, screenManager.screen())
+    assert.equals(tutorialLevel, levelManager.currentLevel())
+  }
+
+  test "volver a la portada y jugar otra vez sigue en el mismo nivel" {
+    screenManager.play()
+    levelManager.load(level1)
+    screenManager.backToMenu()
+    assert.equals(coverScreen, screenManager.screen())
+    screenManager.play()
+    assert.equals(level1, levelManager.currentLevel())
+  }
+}
+
+describe "tests del recetario como pantalla" {
+
+  method initialize() {
+    screenManager.showCover()
+  }
+
+  test "con el libro abierto sobre la portada, S e I no hacen nada" {
+    screenManager.toggleBook()
+    screenManager.pressS()
+    screenManager.pressI()
+    assert.equals(bookScreen, screenManager.screen())
+    assert.that(recipeBook.isOpen())
+  }
+
+  test "cerrar el libro vuelve a la portada" {
+    screenManager.toggleBook()
+    screenManager.toggleBook()
+    assert.equals(coverScreen, screenManager.screen())
+    assert.notThat(recipeBook.isOpen())
+  }
+
+  test "cerrar el libro vuelve a los controles" {
+    screenManager.openInstructions()
+    screenManager.toggleBook()
+    screenManager.back()
+    assert.equals(instructionsScreen, screenManager.screen())
+  }
+
+  test "cerrar el libro vuelve al juego" {
+    screenManager.play()
+    screenManager.toggleBook()
+    screenManager.onClick(game.at(19, 10))
+    assert.equals(playingScreen, screenManager.screen())
+  }
+
+  test "con el libro abierto, las flechas pasan de pagina" {
+    screenManager.toggleBook()
+    screenManager.arrow(right)
+    assert.equals(1, recipeBook.currentPage())
+  }
+}
+
+describe "tests del ticket como pantalla" {
+
+  method initialize() {
+    deliveryPoints.setUp()
+    screenManager.play()
+    screenManager.showLevelComplete(new LevelResult(level = levelManager.currentLevel(), cookSeconds = 38, ending = lastLevelEnding))
+  }
+
+  test "el ticket se abre encima del juego y dice como termino" {
+    assert.equals(levelCompleteScreen, screenManager.screen())
+    assert.that(levelComplete.lines().contains("Tiempo de cocina: 0:38"))
+    assert.that(levelComplete.lines().contains("¡FIN DEL JUEGO!"))
+  }
+
+  test "jugar de nuevo cierra el ticket y vuelve al juego" {
+    screenManager.restart()
+    assert.equals(playingScreen, screenManager.screen())
+    assert.notThat(levelComplete.isShown())
+  }
+
+  test "volver a la portada con el ticket abierto lo cierra" {
+    screenManager.backToMenu()
+    assert.equals(coverScreen, screenManager.screen())
+    assert.notThat(levelComplete.isShown())
+  }
+
+  test "Enter aprieta el primer boton" {
+    screenManager.enter()
+    assert.equals(playingScreen, screenManager.screen())
+  }
+
+  test "el libro tambien se abre encima del ticket, y al cerrarlo vuelve al ticket" {
+    screenManager.toggleBook()
+    screenManager.toggleBook()
+    assert.equals(levelCompleteScreen, screenManager.screen())
+  }
+}

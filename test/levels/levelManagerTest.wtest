@@ -281,11 +281,8 @@ describe "tests de todos los niveles" {
 
   method namesOf(levels) = levels.map({ level => level.name() })
 
-  test "todos los niveles cargan sin error" {
-    assert.equals([], self.namesOf(self.allLevels().filter({ level => !self.loads(level) })))
-  }
-
-  test "las maquinas fijas de cada nivel quedan en su lugar" {
+  // Una sola carga por nivel: cargar los 8 niveles es lo que más tarda
+  test "todos los niveles cargan sin error y sus maquinas fijas quedan en su lugar" {
     assert.equals([], self.namesOf(self.allLevels().filter({ level => !self.fixedMachinesInPlace(level) })))
   }
 

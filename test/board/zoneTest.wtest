@@ -1,0 +1,79 @@
+// Buffet Albert Einstein - tests de las zonas y de lo que se clickea.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.cellPosition.*
+import src.input.clickManager.*
+import src.board.*
+import src.machines.types.belt.*
+import src.machines.machineManager.*
+import src.menu.screens.*
+import src.menu.overBoard.actionsMenu.*
+import src.tools.toolsManager.*
+import src.directions.*
+
+describe "tests de Zone" {
+
+  const zone = rectangle.of(2, 3, 4, 2)
+
+  test "contiene sus bordes" {
+    assert.that([game.at(2, 3), game.at(5, 3), game.at(2, 4), game.at(5, 4)].all({ pos => zone.contains(pos) }))
+  }
+
+  test "no contiene las celdas de al lado" {
+    assert.notThat([game.at(1, 3), game.at(6, 3), game.at(2, 2), game.at(2, 5)].any({ pos => zone.contains(pos) }))
+  }
+
+  test "su origen es la esquina de abajo a la izquierda" {
+    assert.equals([2, 3], [zone.origin().x(), zone.origin().y()])
+  }
+}
+
+describe "tests de lo que se clickea" {
+
+  test "un CellArea hace su accion sólo con un clic en su zona" {
+    var clicks = 0
+    const area = new CellArea(zone = rectangle.of(0, 0, 2, 1), action = { clicks += 1 })
+    assert.that(area.handlesClick(game.at(1, 0)))
+    assert.notThat(area.handlesClick(game.at(2, 0)))
+    area.onClick(game.at(1, 0))
+    assert.equals(1, clicks)
+  }
+
+  test "un clic que no es de nadie no hace nada" {
+    assert.notThat(nothingClicked.handlesClick(game.at(0, 0)))
+    nothingClicked.onClick(game.at(0, 0))
+  }
+
+  test "jugando, el menu de la maquina esta encima del tablero: un clic en ROTAR rota y no coloca" {
+    playingScreen.show()
+    machineManager.select(machineManager.beltFactory())
+    playingScreen.onClick(game.at(9, 5))
+    const belt = board.machineAt(game.at(9, 5))
+    const rotateCell = actionsMenu.position()
+    playingScreen.onClick(rotateCell)
+    assert.equals(down, belt.direction())
+    assert.notThat(board.isThereAMachine(rotateCell))
+  }
+
+  test "jugando, un clic en la pared de la cocina no hace nada" {
+    playingScreen.show()
+    playingScreen.onClick(game.at(17, 12))
+    assert.notThat(board.isThereAMachine(game.at(17, 12)))
+  }
+}

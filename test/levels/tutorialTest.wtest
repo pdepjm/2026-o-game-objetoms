@@ -43,6 +43,7 @@ import src.food.foodTypes.*
 import src.levels.levelClasses.*
 import src.levels.levelsTypes.*
 import src.levels.levelManager.*
+import test.runner.*
 import src.levels.tutorial.*
 import src.input.userController.*
 import src.menu.hud.armMenu.*
@@ -282,33 +283,6 @@ describe "tests del tutorial de papas fritas" {
     assert.that(simulationEngine.running())
   }
 
-  test "al ganar el cocinero no dice ninguna tecla" {
-    self.build()
-    levelManager.toggleSimulation()
-    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
-    assert.that(chefGuide.keys().isEmpty())
-  }
-
-  test "al ganar aparece la comanda, y su boton SIGUIENTE NIVEL carga el proximo" {
-    self.build()
-    levelManager.toggleSimulation()
-    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
-    assert.that(levelComplete.isShown())
-    assert.that(levelComplete.lines().contains("Papas Fritas: 2/2"))
-    screenManager.onClick(game.at(10, 3))
-    assert.equals(hotDogTutorialLevel, levelManager.currentLevel())
-    assert.notThat(levelComplete.isShown())
-  }
-
-  test "con la comanda, un clic fuera de sus botones no hace nada" {
-    self.build()
-    levelManager.toggleSimulation()
-    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
-    screenManager.onClick(game.at(8, 8))
-    assert.notThat(board.isThereAMachine(game.at(8, 8)))
-    assert.that(levelComplete.isShown())
-  }
-
   test "al explicar muestra solo la flecha, arriba del dispenser" {
     assert.equals([], self.marksOf("place.gif"))
     assert.equals([[5, 6]], self.marksOf("look.gif"))
@@ -340,13 +314,6 @@ describe "tests del tutorial de papas fritas" {
     self.placeMachine(3, game.at(11, 5))
     self.useTool(delete, game.at(11, 5))
     assert.equals("Poné el brazo", self.message().first())
-  }
-
-  test "al ganar no queda ningun indicador" {
-    self.build()
-    levelManager.toggleSimulation()
-    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
-    assert.equals([], tutorialMarks.marks())
   }
 
   test "no deja colocar fuera de la celda del paso" {
@@ -420,13 +387,24 @@ describe "tests del tutorial de papas fritas" {
     assert.equals(["¡Listo! Ya se", "puede cocinar"], self.message())
   }
 
-  test "armado como dice el tutorial, entrega las papas fritas y se gana" {
+  // Una sola partida para todo lo que pasa al ganar: jugarla entera es lo que más tarda
+  test "armado como dice el tutorial, entrega las papas fritas y se gana: comanda, cocinero sin teclas, sin marcas y SIGUIENTE" {
     self.build()
     levelManager.toggleSimulation()
     assert.equals("Las papas fritas", self.message().first())
-    (1 .. 3000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    runner.runUntilWon()
     assert.that(levelManager.completed())
     assert.equals(["¡Papas fritas", "listas!"], self.message())
+    assert.that(chefGuide.keys().isEmpty())
+    assert.equals([], tutorialMarks.marks())
+    assert.that(levelComplete.isShown())
+    assert.that(levelComplete.lines().contains("Papas Fritas: 2/2"))
+    screenManager.onClick(game.at(8, 8))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+    assert.that(levelComplete.isShown())
+    screenManager.onClick(game.at(10, 3))
+    assert.equals(hotDogTutorialLevel, levelManager.currentLevel())
+    assert.notThat(levelComplete.isShown())
   }
 
   test "apagar la simulacion sin ganar vuelve a pedir que se prenda" {
@@ -624,7 +602,7 @@ describe "tests del tutorial de panchos" {
   test "armado como dice el tutorial, entrega los panchos y se gana" {
     self.build()
     levelManager.toggleSimulation()
-    (1 .. 4000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    runner.runUntilWon()
     assert.that(levelManager.completed())
     assert.equals(["¡Panchos", "listos!"], self.message())
   }

@@ -31,6 +31,7 @@ import src.menu.hud.hud.*
 import src.menu.hud.rightPanel.*
 import src.cellPosition.*
 import src.simulation.simulationEngine.*
+import test.runner.*
 import src.food.foodTypes.*
 import src.food.recipes.*
 import src.levels.levelsTypes.*
@@ -83,7 +84,7 @@ describe "tests de que los niveles se pueden ganar" {
   // Prende la simulación y la deja correr hasta ganar (o hasta cansarse)
   method runUntilWon() {
     levelManager.toggleSimulation()
-    (1 .. 9000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    runner.runUntilWon()
     return levelManager.completed()
   }
 

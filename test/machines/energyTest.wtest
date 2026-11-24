@@ -37,6 +37,7 @@ import src.menu.hud.editMenu.*
 import src.menu.hud.levelInfoMenu.*
 import src.menu.overBoard.tutorialGuide.*
 import src.simulation.simulationEngine.*
+import test.runner.*
 import src.tools.toolsManager.*
 import src.tools.userTools.*
 import src.food.foodTypes.*
@@ -307,7 +308,7 @@ describe "tests del tutorial de energia" {
     self.build()
     levelManager.toggleSimulation()
     assert.that(simulationEngine.running())
-    (1 .. 6000).forEach({ _ => if (simulationEngine.running()) simulationEngine.step() })
+    runner.runUntilWon()
     assert.that(levelManager.completed())
   }
 }
