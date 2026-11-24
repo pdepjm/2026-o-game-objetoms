@@ -63,8 +63,8 @@ object left {
 	method move(position) = position.left(1)
 	method invert() = right
 	method output(startPoint, width, height) = startPoint.left(1)
-	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida
-	method outputEdgeShift(position) = position.up(1)
+	// Una máquina de 2x2 entrega por la celda de abajo de su borde izquierdo (ahí dibuja la flecha)
+	method outputEdgeShift(position) = position
 }
 object up {
 	method name() = "up"

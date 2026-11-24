@@ -121,14 +121,10 @@ describe "tests del libro de recetas" {
     assert.equals(0, recipeBook.currentPage())
   }
 
-  test "en la tapa, la flecha izquierda no hace nada" {
+  test "en la tapa la flecha izquierda no hace nada, y en la ultima receta la derecha tampoco" {
     recipeBook.open()
     recipeBook.prevPage()
     assert.equals(0, recipeBook.currentPage())
-  }
-
-  test "la flecha derecha en la ultima receta no hace nada" {
-    recipeBook.open()
     recipeBook.currentPage(10)
     recipeBook.nextPage()
     assert.equals(10, recipeBook.currentPage())

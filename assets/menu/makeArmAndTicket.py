@@ -34,7 +34,7 @@
 # - arm_chip_<dir>.png (50x50, transparente): la flechita de la esquina: hacia dónde sale.
 # - arm_dir_<dir>.png, _on y _grab (50x50): las flechas del brazo común (la de donde agarra, en rojo).
 # - arm_tag_<dir>.png (24x30): en el tablero, al lado del brazo, la flecha de una salida (al lado van las
-#   insignias de lo que sale, las del dispenser).
+#   insignias de lo que sale, las de machines/makeBadges.py).
 #
 # LA COMANDA (nivel completo, ver levelComplete)
 # - dim.png (1100x650): oscurece la pantalla.

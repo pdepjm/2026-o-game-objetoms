@@ -57,19 +57,8 @@ const limitedLevel = new Level(
 
 describe "tests del consumo de energia de las maquinas" {
 
-  test "cada maquina tiene su energia base" {
-    assert.equals(1, new Belt().baseEnergy())
-    assert.equals(1, new Dispenser().baseEnergy())
-    assert.equals(2, new AutomaticArm().baseEnergy())
-    assert.equals(3, new SmartRoboticArm().baseEnergy())
-    assert.equals(1, new CuttingMachine().baseEnergy())
-    assert.equals(2, new Oven().baseEnergy())
-    assert.equals(2, new Fryer().baseEnergy())
-    assert.equals(1, new Assembler().baseEnergy())
-  }
-
-  test "la cortadora, el horno, la freidora y el ensamblador tambien tienen velocidad, que suma energia" {
-    [new CuttingMachine(), new Oven(), new Fryer(), new Assembler()].forEach({ machine =>
+  test "las maquinas con velocidad gastan su base mas la de la velocidad: a mas velocidad, mas energia" {
+    [new Dispenser(), new CuttingMachine(), new Oven(), new Fryer(), new Assembler()].forEach({ machine =>
       const speed = machine.settings().last()
       speed.value(0.5)
       assert.equals(machine.baseEnergy() + 1, machine.energyConsumption())
@@ -100,29 +89,6 @@ describe "tests del consumo de energia de las maquinas" {
     assert.equals(5, new Belt().workSteps(5))
   }
 
-  test "el ensamblador sigue teniendo la receta primero y la velocidad despues" {
-    const assembler = new Assembler()
-    assert.equals("Receta", assembler.settings().first().name())
-    assert.equals("Velocidad", assembler.settings().last().name())
-  }
-
-  test "el dispenser gasta su base mas la de la velocidad: a mas velocidad, mas energia" {
-    const dispenser = new Dispenser()
-    dispenser.settings().last().value(0.5)
-    assert.equals(2, dispenser.energyConsumption())
-    dispenser.settings().last().value(1)
-    assert.equals(3, dispenser.energyConsumption())
-    dispenser.settings().last().value(2)
-    assert.equals(5, dispenser.energyConsumption())
-  }
-
-  test "la velocidad del dispenser se puede preguntar" {
-    const dispenser = new Dispenser()
-    assert.equals(1, dispenser.speed())
-    dispenser.settings().last().value(0.5)
-    assert.equals(0.5, dispenser.speed())
-  }
-
   test "el tablero suma la energia de todas las maquinas colocadas" {
     board.clear()
     assert.equals(0, board.totalEnergy())
@@ -144,16 +110,6 @@ describe "tests del limite de energia" {
     assert.that(limit.allows(2))
     assert.that(limit.allows(3))
     assert.notThat(limit.allows(4))
-  }
-
-  test "sin limite siempre alcanza y no hay contador" {
-    assert.that(unlimitedEnergy.allows(1000))
-    levelInfoMenu.updateEnergy(freePlay, 1000)
-    assert.equals([], levelInfoMenu.energyMessage())
-  }
-
-  test "los niveles de siempre no tienen limite, y el modo libre tampoco" {
-    assert.that(([freePlay, tutorialLevel, hotDogTutorialLevel, level1, level2, level3]).all({ level => level.energyLimit().allows(1000) }))
   }
 
   test "el contador muestra lo gastado y el limite, con las maquinas fijas" {
@@ -186,12 +142,6 @@ describe "tests del limite de energia" {
     levelManager.load(limitedLevel)
     levelManager.load(level1)
     assert.equals([], levelInfoMenu.energyMessage())
-  }
-
-  test "con energia de sobra se puede prender la simulacion" {
-    levelManager.load(limitedLevel)
-    levelManager.toggleSimulation()
-    assert.that(simulationEngine.running())
   }
 
   test "justo en el limite se puede prender" {

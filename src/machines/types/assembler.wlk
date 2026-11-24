@@ -18,6 +18,7 @@
 
 import src.directions.*
 import machines.machineClasses.*
+import machines.badge.*
 import simulation.simulationEngine.*
 import food.recipes.*
 import cellPosition.*
@@ -36,6 +37,9 @@ class Assembler inherits Machine {
 	// Qué tan rápido arma el plato (se cambia con X, editando la máquina)
 	const speedSetting = new SpeedSetting(value = 1)
 
+	// Una insignia con el plato de la receta elegida
+	const badge = new Badge(machine = self)
+
 	override method settings() = [recipeSetting, speedSetting]
 
 	// Se edita por sus ajustes (la receta y la velocidad)
@@ -45,6 +49,17 @@ class Assembler inherits Machine {
 
 	// La receta elegida en el panel de edit (la que va a usar al prender la simulación)
 	method selectedRecipe() = recipeSetting.value()
+
+	// Lo que muestra su insignia: el plato de la receta elegida
+	method selectedFood() = self.selectedRecipe().result()
+
+	method badge() = badge
+
+	// La insignia está en el tablero mientras el ensamblador está, y cambia al editarlo
+	override method addedToBoard() { badge.show() }
+	override method removedFromBoard() { badge.hide() }
+	override method settingChanged() { badge.update() }
+
 	override method name() = "Assembler"
 	override method label() = "Ensamblador"
 	override method article() = "el"

@@ -156,9 +156,9 @@ Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assem
 
 `menu/makeArmAndTicket.py` genera, todo alineado a celdas de 50 px (Wollok avisa el clic por celda): la brújula de "hacia dónde mira" (`compass_*.png`, `compass_center.png`, `dir_label.png`), el panel de los brazos (`arm_box_*`, `arm_grab_*`, `arm_item*.png`, `arm_chip_*`, `arm_dir_*`, `arm_tag_*`) y la comanda del nivel completo (`dim.png`, `ticket.png`, `btn_*.png`). Los ingredientes del panel usan sus imágenes de siempre: no hace falta una imagen nueva por ingrediente.
 
-## La insignia del dispenser
+## La insignia de las máquinas
 
-El dispenser muestra en una esquina de arriba el ingrediente que larga: un círculo crema con el ingrediente centrado, **una sola imagen de 30x30 por ingrediente**. Las genera `machines/Dispenser/makeBadges.py` a partir de las imágenes de `food/Ingredients/` (recorta lo dibujado y lo centra), con la misma ruta adentro de `machines/Dispenser/badge/`. Si se agrega un ingrediente, hay que volver a correrlo.
+El dispenser (el ingrediente que larga) y el ensamblador (el plato de su receta) muestran en su esquina de arriba a la derecha un círculo crema con la comida centrada, **una sola imagen de 30x30 por comida**. Las genera `machines/makeBadges.py` a partir de las imágenes de `food/Ingredients/` y `food/Dishes/` (recorta lo dibujado y lo centra), con la misma ruta adentro de `machines/badge/`. Si se agrega un ingrediente o un plato, hay que volver a correrlo.
 
 ## `menu/` (la interfaz sin herramientas)
 

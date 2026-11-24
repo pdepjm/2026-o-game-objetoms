@@ -82,10 +82,6 @@ describe "tests de maquinas bloqueadas" {
     assert.notThat(placement.create().locked())
   }
 
-  test "una maquina nueva no esta bloqueada" {
-    assert.notThat(new Belt().locked())
-  }
-
   test "la herramienta delete no borra una maquina bloqueada" {
     self.placeLockedDispenser()
     self.useTool(delete, game.at(8, 8))

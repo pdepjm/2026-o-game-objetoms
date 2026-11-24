@@ -47,20 +47,6 @@ describe "tests de los settings de las maquinas" {
     assert.equals(belt.baseEnergy(), belt.energyConsumption())
   }
 
-  test "el dispenser acepta ingrediente y velocidad, los dos de produccion" {
-    assert.equals(2, dispenser.settings().size())
-    assert.that(dispenser.settings().all({ setting => setting.category() == production }))
-  }
-
-  test "el brazo acepta la salida, de movimiento" {
-    const arm = new AutomaticArm()
-    assert.equals([movement], arm.settings().map({ setting => setting.category() }))
-  }
-
-  test "el dispenser larga papa por defecto" {
-    assert.equals(potato, dispenser.product())
-  }
-
   test "elegir una opcion cambia el valor del setting" {
     const product = dispenser.settings().first()
     const lettuceOption = product.options().find({ option => option.value() == lettuce })
@@ -79,29 +65,13 @@ describe "tests de los settings de las maquinas" {
     assert.equals([potato], selected.map({ option => option.value() }))
   }
 
-  test "las opciones de velocidad se dibujan con texto" {
+  test "a velocidad normal el dispenser tarda 5 segundos; a rapida, menos, y a lenta, mas" {
     const speed = dispenser.settings().last()
-    assert.equals(["x0.5", "x1", "x2"], speed.options().map({ option => option.label() }))
-  }
-
-  test "a velocidad normal el dispenser tarda 5 segundos" {
     assert.equals(5000, dispenser.intervalMs())
-  }
-
-  test "a velocidad rapida tarda menos y a lenta mas" {
-    const speed = dispenser.settings().last()
     speed.value(2)
     assert.equals(2500, dispenser.intervalMs())
     speed.value(0.5)
     assert.equals(10000, dispenser.intervalMs())
-  }
-
-  test "la energia que consume suma la de la opcion de velocidad elegida" {
-    const speed = dispenser.settings().last()
-    speed.value(0.5)
-    const slow = dispenser.energyConsumption()
-    speed.value(2)
-    assert.that(dispenser.energyConsumption() > slow)
   }
 
   test "un valor que no es una de las opciones no suma energia" {

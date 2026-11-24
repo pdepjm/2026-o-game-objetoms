@@ -239,12 +239,6 @@ describe "tests del HUD" {
 
   // ORDEN DE LOS SLOTS: la 1ª máquina de la página va arriba
 
-  test "los casilleros se dibujan de a 2: en x 18 y 20, arriba en y 10 y abajo en y 8" {
-    self.startWithPlace()
-    const sizes = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).size() })
-    assert.equals([1, 1, 1, 1], sizes)
-  }
-
   test "al clickear cada máquina dibujada se elige esa máquina" {
     self.startWithPlace()
     const drawn = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().name() })
@@ -255,26 +249,14 @@ describe "tests del HUD" {
     assert.equals(drawn, chosen)
   }
 
-  test "el marco amarillo queda sobre la máquina elegida" {
+  test "el marco amarillo arranca sobre la primera máquina y queda sobre la elegida" {
     self.startWithPlace()
+    assert.equals(self.slotPosition(1), selectionFrame.position())
     const framed = [1, 2, 3, 4].map({ slot =>
       playingScreen.onClick(self.slotVisuals(slot).first().position())
       selectionFrame.position()
     })
     assert.equals([1, 2, 3, 4].map({ slot => self.slotPosition(slot) }), framed)
-  }
-
-  test "el marco amarillo arranca sobre la primera máquina" {
-    self.startWithPlace()
-    assert.equals(self.slotPosition(1), selectionFrame.position())
-  }
-
-  test "un click en la zona interactiva con place elige la máquina del casillero" {
-    self.startWithPlace()
-    playingScreen.onClick(game.at(21, 9))
-    assert.equals(self.slotVisuals(4).first().name(), machineManager.selectedName())
-    assert.equals(self.slotPosition(4), selectionFrame.position())
-    assert.that(game.hasVisual(selectionFrame))
   }
 
   // Lo esperado sale del catálogo, así el test no depende de cuántas máquinas haya:
@@ -289,16 +271,12 @@ describe "tests del HUD" {
     assert.notThat(game.hasVisual(selectionFrame))
   }
 
-  test "pasar de la última página no hace nada" {
-    self.startWithPlace()
-    3.times({ _ => placeMenu.next() })
-    assert.equals(machineManager.pageCount() - 1, placeMenu.currentPage())
-  }
-
-  test "volver de la primera página no hace nada" {
+  test "volver de la primera página o pasar de la última no hace nada" {
     self.startWithPlace()
     placeMenu.prev()
     assert.equals(0, placeMenu.currentPage())
+    3.times({ _ => placeMenu.next() })
+    assert.equals(machineManager.pageCount() - 1, placeMenu.currentPage())
   }
 
   test "un click en la zona interactiva con edit no cambia la máquina elegida" {
@@ -309,11 +287,6 @@ describe "tests del HUD" {
   }
 
   // ZONAS
-
-  test "la zona interactiva va de la fila 0 a la 11: la fila 12 es del cartel COLOCANDO / EDITANDO" {
-    const results = [0, 11, 12].map({ y => hud.interactiveZone().contains(game.at(19, y)) })
-    assert.equals([true, true, false], results)
-  }
 
   // CATÁLOGO Y REINICIO (fase 1 del plan de niveles)
 

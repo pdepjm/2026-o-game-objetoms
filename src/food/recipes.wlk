@@ -29,19 +29,12 @@ object recipeBook {
 	method available() = available
 
 	// La receta con la que arranca un Assembler: la primera disponible
-	method firstAvailable() = if (available.isEmpty()) noRecipe else available.first()
+	method firstAvailable() = available.first()
 
 	// Lo llama levelManager.load con las recetas del nivel
 	method changeAvailable(recipes) {
 		available = recipes
 	}
-}
-
-// La receta de un Assembler cuando el nivel no ofrece ninguna: no pide nada y nunca arma un plato.
-object noRecipe {
-	method totalItems() = 0
-	method stillNeeds(item, items) = false
-	method canBeMadeWith(items) = false
 }
 
 object burgerRecipe inherits Recipe(result = burger){

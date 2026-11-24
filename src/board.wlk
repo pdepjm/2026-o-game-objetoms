@@ -105,7 +105,7 @@ object board {
 		)
 		game.addVisual(element)
 		self.addToGrid(position, element)
-		// lo que la máquina dibuja aparte (la insignia del dispenser), encima de ella
+		// lo que la máquina dibuja aparte (la insignia del dispenser o del ensamblador), encima de ella
 		element.addedToBoard()
 		simulationEngine.addSimulatedObject(element)
 		

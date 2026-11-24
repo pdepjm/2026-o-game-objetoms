@@ -111,7 +111,7 @@ El panel de los brazos (X sobre un brazo: el brazo contesta `editArm`, ver `righ
 - Desde la fila 7, los casilleros, de a 4 por fila (`editChoices`, ver `ArmKindChoice` y `ArmSideChoice` en `machines/types/arms.wlk`):
   - **brazo inteligente:** uno por ingrediente. Cada clic lo manda al lado siguiente (nada → ↑ → → → ↓ → ← → nada, sin el de donde agarra); si sale por algún lado va en amarillo con una flechita en la esquina. Un ingrediente sale por un solo lado. Por dentro se guarda en los filtros de siempre (`Recto`, `Izq.`, `Der.`), así la simulación no cambia.
   - **brazo común:** las cuatro direcciones; la de donde agarra va en rojo y no se elige.
-- Mientras se edita, en el tablero, al lado del brazo, una flechita por cada lado por el que sale algo y las insignias de lo que sale (las del dispenser).
+- Mientras se edita, en el tablero, al lado del brazo, una flechita por cada lado por el que sale algo y las insignias de lo que sale (las mismas del dispenser y el ensamblador).
 - Con el teclado: las flechas mueven una marca (que aparece recién al usarlas) y Enter usa el casillero marcado.
 
 ## `levelComplete.wlk`

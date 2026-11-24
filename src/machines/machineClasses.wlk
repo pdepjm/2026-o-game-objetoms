@@ -187,9 +187,6 @@ class MachineSprite inherits MachineAnimator {
 
 // Esta clase se encarga de la logica general de las maquinas.
 class Machine inherits MachineSprite {
-	// Una máquina de al lado cambió (o ésta acaba de colocarse).
-	method onNeighbourChanged() {}
-
 	// ----------- ATRIBUTOS -----------
 	const inventory = new Inventory(capacity = self.capacity())
 
@@ -221,9 +218,17 @@ class Machine inherits MachineSprite {
 	// Al editarla (X), le dice al panel de la derecha qué es, y el panel decide qué mostrar.
 	method openEditorIn(panel) { panel.nothingToEdit() }
 
-	// ----------- LO QUE DIBUJA APARTE -----------
+	// ----------- EVENTOS -----------
+	// Avisos que recibe la máquina; por defecto no hace nada con ellos
+
+	// La colocaron en el tablero (lo avisa board.push)
 	method addedToBoard() {}
+	// La sacaron del tablero (lo avisa board.pop)
 	method removedFromBoard() {}
+	// Cambió uno de sus ajustes desde el panel de edición (lo avisa editMenu)
+	method settingChanged() {}
+	// Una máquina de al lado cambió, o ésta acaba de colocarse
+	method onNeighbourChanged() {}
 	
 	// ----------- CONFIGURACION -----------
 	method settings() = []

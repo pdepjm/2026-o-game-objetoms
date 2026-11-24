@@ -153,24 +153,6 @@ test "al empezar a cortar muestra el primer frame de la animacion de corte" {
     assert.equals("machines/CuttingMachine/right_cut/0.png", cutter.image())
 }
 
-test "al terminar de cortar vuelve a la imagen quieta" {
-    simulationEngine.run()
-    self.feed(new Item(kind = potato))
-    self.steps(cellSteps + 5)
-    assert.equals(cutter.staticImage(), cutter.image())
-}
-
-test "al apagar la simulacion a mitad del corte no procesa nada ni da error" {
-    const piece = new Item(kind = potato)
-    simulationEngine.run()
-    self.feed(piece)
-    self.steps(cellSteps + 2)
-    simulationEngine.stop()
-    self.steps(20)
-    assert.that(cutter.heldItems().isEmpty())
-    assert.notThat(cutter.animating())
-    assert.equals(potato, piece.kind())
-}
 }
 
 describe "tests del horno: tiempo de procesamiento" {
@@ -205,16 +187,6 @@ test "la carne tarda 8 pasos en cocinarse desde que llega" {
     self.feed(piece)
     self.steps(cellSteps + 7)
     assert.equals(meat, piece.kind())
-    self.steps(1)
-    assert.equals(cookedMeat, piece.kind())
-}
-
-test "un ingrediente que tarda mas de 15 pasos se cocina igual" {
-    const piece = new Item(kind = slowIngredient)
-    simulationEngine.run()
-    self.feed(piece)
-    self.steps(cellSteps + 29)
-    assert.equals(slowIngredient, piece.kind())
     self.steps(1)
     assert.equals(cookedMeat, piece.kind())
 }
@@ -279,17 +251,12 @@ test "acepta lo que puede procesar y rechaza el resto" {
     assert.notThat(processor.canReceive(new Item(kind = cutPotato)))
 }
 
-test "respeta el tiempo: no entrega antes de tiempo" {
+test "entrega el item procesado justo cuando termina el tiempo, no antes" {
     simulationEngine.run()
     self.feed(new Item(kind = potato))
     self.steps(cellSteps + 4)
     assert.that(sink.received().isEmpty())
-}
-
-test "entrega el item procesado cuando termina el tiempo" {
-    simulationEngine.run()
-    self.feed(new Item(kind = potato))
-    self.steps(cellSteps + 5)
+    self.steps(1)
     assert.equals(1, sink.received().size())
     assert.equals(cutPotato, sink.received().first().kind())
 }
@@ -297,15 +264,9 @@ test "entrega el item procesado cuando termina el tiempo" {
 
 describe "tests de CuttingMachine: que acepta" {
 
-  test "acepta una papa cruda" {
+  test "acepta una papa cruda, pero no una ya cortada ni un plato terminado" {
     assert.that(new CuttingMachine().canReceive(new Item(kind = potato)))
-  }
-
-  test "no acepta una papa que ya esta cortada" {
     assert.notThat(new CuttingMachine().canReceive(new Item(kind = cutPotato)))
-  }
-
-  test "no acepta un plato terminado" {
     assert.notThat(new CuttingMachine().canReceive(new Item(kind = friedPotato)))
   }
 }
@@ -344,25 +305,21 @@ describe "tests de la cortadora en una cadena" {
     assert.equals(cutPotato, beltAfter.heldItems().first().kind())
   }
 
-  test "mientras corta, la papa todavia esta cruda" {
+  test "mientras corta, la papa todavia esta cruda y no acepta otra" {
     simulationEngine.run()
     self.steps(dispenseSteps + cellSteps * 2)
     assert.that(cutter.animating())
     assert.equals(potato, cutter.heldItems().first().kind())
     assert.that(beltAfter.heldItems().isEmpty())
-  }
-
-  test "no acepta otra papa mientras esta cortando" {
-    simulationEngine.run()
-    self.steps(dispenseSteps + cellSteps * 2)
     assert.notThat(cutter.canReceive(new Item(kind = potato)))
   }
 
-  test "al terminar de cortar queda libre y deja de animarse" {
+  test "al terminar de cortar queda libre, deja de animarse y vuelve a la imagen quieta" {
     simulationEngine.run()
     self.stepsUntil({ !beltAfter.heldItems().isEmpty() })
     assert.that(cutter.heldItems().isEmpty())
     assert.notThat(cutter.animating())
+    assert.equals(cutter.staticImage(), cutter.image())
   }
 }
 

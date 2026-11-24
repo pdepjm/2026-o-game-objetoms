@@ -150,14 +150,11 @@ describe "tests de los objetivos" {
     assert.equals("Papas cortadas: 0/3", goal.progressText())
   }
 
-  test "entregar lo que pide suma al progreso" {
+  test "entregar lo que pide suma al progreso, y entregarlo todo lo cumple" {
     self.deliver(cutPotato, 2)
     assert.notThat(goal.isMet())
     assert.equals("Papas cortadas: 2/3", goal.progressText())
-  }
-
-  test "entregar todo lo que pide lo cumple" {
-    self.deliver(cutPotato, 3)
+    self.deliver(cutPotato, 1)
     assert.that(goal.isMet())
   }
 

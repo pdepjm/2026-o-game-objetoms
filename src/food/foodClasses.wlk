@@ -26,22 +26,28 @@ object frying {}
 object burning {}
 object cooking {}
 
-// Clase para los ingredientes
-class IngredientKind{
-    const transitions = new Dictionary()
-    // La insignia del dispenser que lo larga (se arma una vez: la dibuja el dispenser en cada frame)
+// Lo común a ingredientes y platos: su imagen y su insignia
+class FoodKind {
+    // La insignia se arma una vez: la dibuja una máquina en cada frame
     var badgeImage = ""
 
     method image()
 
-    // La insignia del dispenser: el ingrediente centrado en un círculo
+    // La insignia de las máquinas: la comida centrada en un círculo
     method badgeImage() {
-        if (badgeImage.isEmpty()) badgeImage = "machines/Dispenser/badge/" + self.image()
+        if (badgeImage.isEmpty()) badgeImage = "machines/badge/" + self.image()
         return badgeImage
     }
 
     // Un kind también es un filtro de items: deja pasar a los que son de ese kind
     method accepts(item) = item.kind() == self
+
+    method canProcess(aProcess)
+}
+
+// Clase para los ingredientes
+class IngredientKind inherits FoodKind {
+    const transitions = new Dictionary()
 
     // Pasos de simulación que tarda en procesarse.
     method processTime() = 5
@@ -52,7 +58,7 @@ class IngredientKind{
     }
 
     // Verifica si al ingrediente se le puede aplicar un proceso, por ejemplo, freírlo
-    method canProcess(aProcess) = transitions.containsKey(aProcess)
+    override method canProcess(aProcess) = transitions.containsKey(aProcess)
 
     // Aplica el proceso y devuelve el objeto ya convertido.
     method process(aProcess) =
@@ -60,10 +66,8 @@ class IngredientKind{
 }
 
 // Clase para los platos finales: ningún proceso se les puede aplicar
-class DishKind {
-    method image()
-    method accepts(item) = item.kind() == self
-    method canProcess(_) = false
+class DishKind inherits FoodKind {
+    override method canProcess(_) = false
 }
 
 // Lo que circula por el tablero.

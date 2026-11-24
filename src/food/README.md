@@ -4,16 +4,17 @@ Lo que circula por las máquinas: los items (ingredientes y platos), los proceso
 
 | Archivo | Qué tiene |
 |---|---|
-| `foodClasses.wlk` | Los procesos (`cutting`, `frying`, `burning`, `cooking`) y las clases `IngredientKind`, `DishKind` e `Item` |
+| `foodClasses.wlk` | Los procesos (`cutting`, `frying`, `burning`, `cooking`) y las clases `FoodKind`, `IngredientKind`, `DishKind` e `Item` |
 | `foodTypes.wlk` | Los kinds concretos: ingredientes (`potato`, `meat`...) y platos (`burger`) |
 | `recipesClasses.wlk` | Las clases `Requirement` y `Recipe` |
-| `recipes.wlk` | Las recetas concretas (`burgerRecipe`, ...), `recipeBook` y `noRecipe` |
+| `recipes.wlk` | Las recetas concretas (`burgerRecipe`, ...), y `recipeBook` |
 
 ## `foodClasses.wlk`
 
 - **Procesos** (`cutting`, `frying`, `burning`, `cooking`): objetos vacíos que representan lo que hace cada máquina. Se comparan por identidad. `burning` no lo aplica ninguna máquina a propósito: es lo que le pasa a un item que se queda demasiado en la freidora.
 - `Item`: lo que está en el tablero. Se mueve (`Animated`, de `simulation/animationEngine.wlk`) y delega en su `kind`, que cambia cuando lo procesan. Lo crean el `Dispenser` y las recetas (`prepare()`).
 - **Kinds**: qué es un item en este momento. Hay dos clases, y `Item` no necesita saber cuál tiene:
+  - `FoodKind`: lo común a ingredientes y platos: su imagen, su insignia (`badgeImage()`, la que muestran el dispenser y el ensamblador) y `accepts(item)`.
   - `IngredientKind`: un ingrediente (papa, papa cortada...). Guarda sus transiciones: con qué proceso se convierte en qué. Cada kind concreto las carga en su `initialize()` con `turnsInto(proceso, resultado)`.
   - `DishKind`: un plato final. Ningún proceso se le puede aplicar.
   - Los dos entienden `accepts(item)`: un kind es también un **filtro de items** que deja pasar a los que son de ese kind. Lo usan los filtros de salida del brazo inteligente (`ItemSetSetting`, en `machines/settings.wlk`).
@@ -61,5 +62,4 @@ Platos (`DishKind`): `burger`.
 
 - Las recetas son objetos bien conocidos, igual que los kinds: `burgerRecipe`, `cheeseBurgerRecipe`, `doubleBurgerRecipe`, `pizzaPepperoniRecipe`, `saladRecipe`, `hotDogRecipe` y `tomatoSoupRecipe`.
 - **`recipeBook`**: conoce todas las recetas (`all()`) y cuáles se pueden elegir ahora (`available()`), como `machineManager` con las máquinas. `levelManager.load` le pasa las del nivel (`changeAvailable(recetas)`). **Al agregar una receta, sumarla a `all`**: si no, no aparece en el modo libre.
-  - `firstAvailable()`: la receta con la que arranca un Assembler: la primera disponible, o `noRecipe` si no hay ninguna.
-- **`noRecipe`**: la receta de un Assembler cuando el nivel no ofrece ninguna. No pide nada y nunca arma un plato. Es un objeto nulo (como `noGoal`): así un nivel sin recetas no rompe al crear un Assembler. **No va en `availableRecipes`**: un nivel sin recetas pone `[]`.
+  - `firstAvailable()`: la receta con la que arranca un Assembler: la primera disponible. Un nivel que ofrece el Assembler **tiene que tener al menos una receta**: si no, crearlo da error.

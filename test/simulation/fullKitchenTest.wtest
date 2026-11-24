@@ -1,0 +1,134 @@
+// Buffet Albert Einstein - test de una cocina con todas las máquinas trabajando juntas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.cellPosition.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.processing.*
+import src.machines.types.arms.*
+import src.machines.types.assembler.*
+import src.machines.types.deliverySlot.*
+import src.menu.screens.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.food.recipesClasses.*
+import src.levels.levelClasses.*
+import src.levels.levelManager.*
+import test.runner.*
+
+// Un plato sólo para este test: pide algo de cada máquina procesadora
+object kitchenTestDish inherits DishKind {
+  override method image() = "food/Dishes/burgers/burger.png"
+}
+
+// Tomate cortado (cortadora), carne cocida (horno) y huevo frito (freidora, con los dos brazos)
+object kitchenTestRecipe inherits Recipe(result = kitchenTestDish) {
+  override method initialize() {
+    requirements.add(new Requirement(kind = cutTomato, amount = 1))
+    requirements.add(new Requirement(kind = cookedMeat, amount = 1))
+    requirements.add(new Requirement(kind = eggFryed, amount = 1))
+  }
+}
+
+// Todas las máquinas trabajando juntas, en todas las direcciones: si un cambio en cualquiera rompe la
+// cadena, falla acá. Las máquinas se prueban una por una en sus archivos; esto prueba que juntas alcanzan.
+//
+//  y  x: 11    12               13            14     15           16
+// 10     →     →                ↑ platito (13, 11)
+//  9     ↑                      Dispenser ↓          Dispenser →  ↓
+//  8     ↑                      Cortadora ↓                       ↓
+//  7     ↑     [ Ensamblador ←              ]  ←     ←            Horno ←
+//  6     ↑ ←   [ (2x2, sale por abajo a la izq.)]
+//  5           Brazo inteligente (agarra de abajo, sólo huevo frito)
+//  4           Freidora ↑
+//  3           Brazo común (agarra de abajo)
+//  2           ↑
+//  1           Dispenser ↑
+describe "tests de la cocina completa" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(self.kitchenTestLevel())
+  }
+
+  // Un nivel sólo para este test: se gana con un plato. No depende de los niveles del juego.
+  // Se crea acá y no como const global: si no, su objetivo queda con otra instancia de kitchenTestDish
+  method kitchenTestLevel() = new Level(
+    name = "Cocina de prueba",
+    availableMachines = [{ => new Belt() }],
+    availableRecipes = [kitchenTestRecipe],
+    goals = [new DeliveryGoal(kind = kitchenTestDish, amount = 1, label = "Plato de prueba")]
+  )
+
+  method put(x, y, machine) {
+    board.push(game.at(x, y), machine)
+  }
+
+  method beltsColumn(x, y0, y1, direction) {
+    (y0 .. y1).forEach({ y => self.put(x, y, new Belt(direction = direction)) })
+  }
+
+  // Tomate: baja desde arriba, se corta y entra al ensamblador por arriba
+  method tomatoLine() {
+    self.put(13, 9, new Dispenser(direction = down, availableKinds = [tomato]))
+    self.put(13, 8, new CuttingMachine(direction = down))
+  }
+
+  // Carne: sale a la derecha, baja, se cocina y entra al ensamblador por la derecha
+  method meatLine() {
+    self.put(15, 9, new Dispenser(direction = right, availableKinds = [meat]))
+    self.beltsColumn(16, 8, 9, down)
+    self.put(16, 7, new Oven(direction = left))
+    self.put(15, 7, new Belt(direction = left))
+    self.put(14, 7, new Belt(direction = left))
+  }
+
+  // Huevo: sube, el brazo común lo deja en la freidora y el inteligente lo saca recién frito
+  method eggLine() {
+    self.put(12, 1, new Dispenser(direction = up, availableKinds = [egg]))
+    self.put(12, 2, new Belt(direction = up))
+    self.put(12, 3, new AutomaticArm(direction = down))
+    self.put(12, 4, new Fryer(direction = up))
+    const smartArm = new SmartRoboticArm(direction = down)
+    smartArm.settings().first().value([eggFryed])
+    self.put(12, 5, smartArm)
+  }
+
+  // El plato sale por la izquierda, sube y va por la fila de arriba hasta el platito
+  method exitLine() {
+    self.beltsColumn(11, 6, 9, up)
+    self.put(11, 10, new Belt(direction = right))
+    self.put(12, 10, new Belt(direction = right))
+    self.put(13, 10, new Belt(direction = up))
+  }
+
+  test "con todas las maquinas en todas las direcciones se arma el plato y se entrega" {
+    self.tomatoLine()
+    self.meatLine()
+    self.eggLine()
+    self.put(12, 6, new Assembler(direction = left))
+    self.exitLine()
+    levelManager.toggleSimulation()
+    runner.runUntilWon()
+    assert.that(levelManager.completed())
+  }
+}

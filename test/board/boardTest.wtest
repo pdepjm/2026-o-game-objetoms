@@ -37,27 +37,15 @@ import src.directions.*
 
 describe "tests de board" {
 
-  test "una posicion con x fuera del rango no esta en el tablero" {
-    assert.notThat(board.inBoard(game.at(4, 5)))
-    assert.notThat(board.inBoard(game.at(20, 5)))
-  }
-
-  test "una posicion con y fuera del rango no esta en el tablero" {
-    assert.notThat(board.inBoard(game.at(10, 0)))
-    assert.notThat(board.inBoard(game.at(10, 11)))
-  }
-
-  test "una posicion dentro del rango esta en el tablero" {
+  // El tablero va de (5, 1) a (16, 10), bordes incluidos
+  test "una posicion esta en el tablero solo dentro de su rango, bordes incluidos" {
     assert.that(board.inBoard(game.at(10, 5)))
-  }
-
-  test "los bordes del rango tambien cuentan como dentro del tablero" {
     assert.that(board.inBoard(game.at(5, 1)))
     assert.that(board.inBoard(game.at(16, 10)))
-  }
-
-  test "no hay maquina en una posicion vacia" {
-    assert.notThat(board.isThereAMachine(game.at(10, 5)))
+    assert.notThat(board.inBoard(game.at(4, 5)))
+    assert.notThat(board.inBoard(game.at(17, 5)))
+    assert.notThat(board.inBoard(game.at(10, 0)))
+    assert.notThat(board.inBoard(game.at(10, 11)))
   }
 
   // Una casilla vacía guarda noMachine: ninguna parece ocupada

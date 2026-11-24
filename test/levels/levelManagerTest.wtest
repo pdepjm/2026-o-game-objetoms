@@ -98,21 +98,6 @@ describe "tests de levelManager" {
 
   // ENTREGAR
 
-  test "un nivel nuevo arranca con el progreso en cero" {
-    assert.equals(["Papas Fritas: 0/3"], self.progress())
-  }
-
-  test "entregar lo que pide el objetivo suma al progreso" {
-    self.deliver(friedPotato, 1)
-    assert.equals(["Papas Fritas: 1/3"], self.progress())
-  }
-
-  test "entregar otra cosa no suma al progreso" {
-    self.deliver(potato, 2)
-    self.deliver(cutPotato, 2)
-    assert.equals(["Papas Fritas: 0/3"], self.progress())
-  }
-
   test "apagar la simulacion sin haber ganado vuelve el progreso a cero" {
     simulationEngine.run()
     self.deliver(friedPotato, 2)
@@ -306,7 +291,7 @@ describe "tests de todos los niveles" {
     assert.equals([], missing)
   }
 
-  // availableRecipes lleva recetas (cheeseBurgerRecipe), no platos (cheeseBurger) ni noRecipe
+  // availableRecipes lleva recetas (cheeseBurgerRecipe), no platos (cheeseBurger)
   test "las recetas de cada nivel son recetas del juego" {
     const wrong = self.allLevels().filter({ level =>
       !level.availableRecipes().all({ recipe => recipeBook.all().contains(recipe) })

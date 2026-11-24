@@ -127,10 +127,10 @@ describe "tests de la herramienta de colocar" {
 //
 //                (10,7) ↑ up
 //           ┌────────┬────────┐
-//  left ←   │ (10,6) │ (11,6) │  → right (12,6)
-//  (9,6)    ├────────┼────────┤
-//           │ (10,5) │ (11,5) │
-//           └────────┴────────┘
+//           │ (10,6) │ (11,6) │  → right (12,6)
+//           ├────────┼────────┤
+//  left ←   │ (10,5) │ (11,5) │
+//  (9,5)    └────────┴────────┘
 //                    (11,4) ↓ down
 describe "tests de la celda de salida" {
 
@@ -143,33 +143,12 @@ describe "tests de la celda de salida" {
     return assembler
   }
 
-  test "mirando a la derecha entrega a la celda pegada a su borde derecho" {
-    const assembler = self.assemblerFacing(right, game.at(12, 6))
-    assert.equals(board.machineAt(game.at(12, 6)), assembler.nextMachine())
-  }
-
-  test "mirando hacia arriba entrega a la celda pegada a su borde de arriba" {
-    const assembler = self.assemblerFacing(up, game.at(10, 7))
-    assert.equals(board.machineAt(game.at(10, 7)), assembler.nextMachine())
-  }
-
-  test "mirando a la izquierda entrega a la celda pegada a su borde izquierdo" {
-    const assembler = self.assemblerFacing(left, game.at(9, 6))
-    assert.equals(board.machineAt(game.at(9, 6)), assembler.nextMachine())
-  }
-
-  test "mirando hacia abajo entrega a la celda pegada a su borde de abajo" {
-    const assembler = self.assemblerFacing(down, game.at(11, 4))
-    assert.equals(board.machineAt(game.at(11, 4)), assembler.nextMachine())
-  }
-
-  test "en ninguna direccion se entrega a si misma" {
-    [right, up, left, down].forEach({ aDirection =>
-      toolsManager.currentDirection(aDirection)
-      const assembler = new Assembler()
-      board.push(game.at(10, 5), assembler)
-      assert.notThat(assembler.nextMachine() == assembler)
-      board.pop(game.at(10, 5))
+  // La celda de salida de cada dirección es la que marca la flecha del sprite (ver el dibujo de arriba)
+  test "en cada direccion entrega a la celda que marca su flecha" {
+    [[right, game.at(12, 6)], [up, game.at(10, 7)], [left, game.at(9, 5)], [down, game.at(11, 4)]].forEach({ pair =>
+      const assembler = self.assemblerFacing(pair.first(), pair.last())
+      assert.equals(board.machineAt(pair.last()), assembler.nextMachine())
+      board.clear()
     })
   }
 
@@ -177,12 +156,6 @@ describe "tests de la celda de salida" {
     [right, up, left, down].forEach({ aDirection =>
       assert.equals(aDirection.move(game.at(10, 5)), aDirection.output(game.at(10, 5), 1, 1))
     })
-  }
-
-  // outputTarget es la celda; la máquina que está ahí es la que se guarda en next
-  test "outputTarget devuelve la celda de salida y no la maquina" {
-    const assembler = self.assemblerFacing(right, game.at(12, 6))
-    assert.equals(game.at(12, 6), assembler.outputTarget())
   }
 
   test "una cinta que apunta a la celda de arriba a la derecha le entrega al ensamblador" {

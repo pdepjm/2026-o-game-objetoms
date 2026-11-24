@@ -69,6 +69,7 @@ object editMenu inherits ClickTargets {
     // Aplica esa opción a su setting
     method choose(slot) {
         slot.setting().select(slot.option())
+        selectedMachine.settingChanged()
         self.updateMarkers()
         levelManager.settingChanged(selectedMachine, slot.setting())
         sfx.menuSelect()

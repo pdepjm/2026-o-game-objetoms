@@ -1,4 +1,4 @@
-# Buffet Albert Einstein - genera la insignia del dispenser para cada ingrediente.
+# Buffet Albert Einstein - genera la insignia de cada ingrediente y de cada plato.
 # Este archivo NO forma parte del juego: es una herramienta auxiliar para crear
 # sprites e imágenes del juego, y no se usa al jugarlo.
 #
@@ -18,22 +18,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# La insignia del dispenser: un círculo crema con borde marrón y el ingrediente que larga, centrado.
-# Es una sola imagen por ingrediente (30x30), así el dispenser dibuja un solo visual encima (ver
-# DispenserBadge en src/machines/types/dispenser.wlk).
+# La insignia: un círculo crema con borde marrón y la comida centrada. La muestran el dispenser (el
+# ingrediente que larga) y el ensamblador (el plato de su receta), arriba a la derecha. Es una sola
+# imagen por comida (30x30), así cada máquina dibuja un solo visual encima (ver Badge en
+# src/machines/badge.wlk).
 #
-# Sale de la imagen del ingrediente (food/Ingredients/<carpeta>/<archivo>.png): se recorta lo dibujado
-# (las imágenes traen el dibujo al 65% y no siempre centrado) y se centra en el círculo. Se guarda con
-# la misma ruta adentro de badge/: badge/food/Ingredients/<carpeta>/<archivo>.png, así el juego arma el
-# nombre con la imagen del ingrediente (IngredientKind.badgeImage).
+# Sale de la imagen de la comida (food/Ingredients/... o food/Dishes/...): se recorta lo dibujado (las
+# imágenes traen el dibujo al 65% y no siempre centrado) y se centra en el círculo. Se guarda con la misma
+# ruta adentro de badge/, así el juego arma el nombre con la imagen de la comida (FoodKind.badgeImage).
 #
-# Uso (desde la raíz del repositorio):   python assets/machines/Dispenser/makeBadges.py
+# Uso (desde la raíz del repositorio):   python assets/machines/makeBadges.py
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 HERE = Path(__file__).resolve().parent
-ASSETS = HERE.parents[1]
+ASSETS = HERE.parent
 S = 4
 SIZE = 30
 CREAM = (253, 243, 225, 255)
@@ -43,25 +43,33 @@ SHADOW = (0, 0, 0, 90)
 FIT = 20
 
 
+def circle():
+    im = Image.new('RGBA', (SIZE * S, SIZE * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse([2 * S, 3 * S, 29 * S, 30 * S], fill=SHADOW)
+    d.ellipse([1 * S, 1 * S, 28 * S, 28 * S], fill=CREAM, outline=BROWN, width=2 * S)
+    return im
+
+
+def save(im, target):
+    target.parent.mkdir(parents=True, exist_ok=True)
+    im.resize((SIZE, SIZE), Image.LANCZOS).save(target)
+
+
 def badge(source, target):
     food = Image.open(source).convert('RGBA')
     food = food.crop(food.getchannel('A').getbbox())
     scale = FIT * S / max(food.size)
     food = food.resize((max(1, round(food.width * scale)), max(1, round(food.height * scale))), Image.LANCZOS)
 
-    im = Image.new('RGBA', (SIZE * S, SIZE * S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.ellipse([2 * S, 3 * S, 29 * S, 30 * S], fill=SHADOW)
-    d.ellipse([1 * S, 1 * S, 28 * S, 28 * S], fill=CREAM, outline=BROWN, width=2 * S)
+    im = circle()
     center = 14.5 * S
     im.alpha_composite(food, (round(center - food.width / 2), round(center - food.height / 2)))
-
-    target.parent.mkdir(parents=True, exist_ok=True)
-    im.resize((SIZE, SIZE), Image.LANCZOS).save(target)
+    save(im, target)
 
 
 if __name__ == '__main__':
-    sources = sorted((ASSETS / 'food' / 'Ingredients').glob('*/*.png'))
+    sources = sorted((ASSETS / 'food').glob('*/*/*.png'))
     for source in sources:
         badge(source, HERE / 'badge' / source.relative_to(ASSETS))
     print(f'  badge/: {len(sources)}')

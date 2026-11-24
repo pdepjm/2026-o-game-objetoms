@@ -81,11 +81,11 @@ El código no usa `null` ni lo compara. Donde "no hay nada" se usa un objeto que
 | `noSlot` | opción clickeada | un click afuera de las opciones (`editMenu`) |
 | `noSkipButton` | botón de saltear | niveles sin tutorial (`levelInfoMenu`) |
 | `noSound` | sonido | `musicManager` antes de arrancar la música |
-| `unlimitedEnergy`, `noGoal`, `noRecipe`, `noTutorial` | límite / objetivo / receta / tutorial | los niveles que no los tienen. `noTutorial` también sabe saltearse (`skip`) y devolver `noSkipButton` |
+| `unlimitedEnergy`, `noGoal`, `noTutorial` | límite / objetivo / tutorial | los niveles que no los tienen. `noTutorial` también sabe saltearse (`skip`) y devolver `noSkipButton` |
 
 Para no preguntar qué es algo, se le pide lo que se necesita (polimorfismo) en vez de comparar:
 - **Qué hace cada nivel con L y al cargarse:** `level.toggleFreePlay(manager)` y `level.showHints(menu)`; el modo libre las sobrescribe (no se compara con `freePlay`).
 - **Qué máquina pide un paso del tutorial:** `MachineStep.allowedMachines` guarda las fábricas del catálogo (`machineManager.beltFactory()`), y `tool.allowsMachine(...)` mira si está seleccionada. Ya no se compara `machine.name()`.
 - **Qué acción se usa:** `tool.canUseAnywhere()` (edit) en lugar de `tool == edit`. **Qué hace cada tecla según el modo:** `mode.arrow(...)`, `mode.enter(...)`, `mode.editKey(...)` en lugar de preguntar si se está editando.
-- **Cómo entrega el ensamblador:** `direction.outputEdgeShift(celda)`: cada dirección sabe por qué celda de su borde sale el plato.
+- **Cómo entrega el ensamblador:** `direction.outputEdgeShift(celda)`: cada dirección sabe por qué celda de su borde sale el plato (la que marca la flecha del sprite).
 - **Qué visual es un texto o una barra:** los visuales de la info del nivel responden `textLines()` y `barImages()` (listas, vacías si no corresponde).

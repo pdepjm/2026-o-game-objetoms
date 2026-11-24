@@ -16,14 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import wollok.game.*
-import src.directions.*
 import machines.machineClasses.*
+import machines.badge.*
 import machines.settings.*
 import simulation.simulationEngine.*
 import food.foodClasses.*
 import food.foodTypes.*
-import cellPosition.*
 
 // Crea un ingrediente cada intervalo y se lo entrega a la máquina de adelante.
 class Dispenser inherits Machine {
@@ -36,8 +34,8 @@ class Dispenser inherits Machine {
 		kinds = availableKinds
 	)
 	const speedSetting = new SpeedSetting(value = 1)
-	// Una insignia con el ingrediente que larga, en una esquina de arriba
-	const badge = new DispenserBadge(dispenser = self)
+	// Una insignia con el ingrediente que larga
+	const badge = new Badge(machine = self)
 
 	override method name() = "Dispenser"
 	override method label() = "Dispenser"
@@ -51,7 +49,11 @@ class Dispenser inherits Machine {
 
 	method product(kind) {
 		productSetting.value(kind)
+		self.settingChanged()
 	}
+
+	// Lo que muestra su insignia: el ingrediente que larga
+	method selectedFood() = self.product()
 
 	override method settings() = [productSetting, speedSetting]
 
@@ -60,13 +62,10 @@ class Dispenser inherits Machine {
 
 	method badge() = badge
 
-	// La insignia se dibuja encima del dispenser mientras está en el tablero, y se mueve al rotarlo
+	// La insignia está en el tablero mientras el dispenser está, y cambia al editarlo
 	override method addedToBoard() { badge.show() }
 	override method removedFromBoard() { badge.hide() }
-	override method rotate() {
-		super()
-		badge.update()
-	}
+	override method settingChanged() { badge.update() }
 
 	// El multiplicador de velocidad elegido (0.5, 1 o 2)
 	override method speed() = speedSetting.value()
@@ -108,27 +107,4 @@ class Dispenser inherits Machine {
 	override method onPushed(item) {
 		self.scheduleNext()
 	}
-}
-
-// La insignia del dispenser: un círculo con el ingrediente que larga
-class DispenserBadge {
-	const dispenser
-	var position = new CellPosition(x = 0, y = 0)
-
-	method position() = position
-	method image() = dispenser.product().badgeImage()
-
-	method update() {
-		const cell = dispenser.cell()
-		// mirando a la derecha, la esquina de la izquierda; si no, la de la derecha
-		const left = if (dispenser.direction() == right) cell.x() - 0.1 else cell.x() + 0.58
-		position = new CellPosition(x = left, y = cell.y() + 0.6)
-	}
-
-	method show() {
-		self.update()
-		if (!game.hasVisual(self)) game.addVisual(self)
-	}
-
-	method hide() { if (game.hasVisual(self)) game.removeVisual(self) }
 }

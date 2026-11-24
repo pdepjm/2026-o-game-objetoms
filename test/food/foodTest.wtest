@@ -23,15 +23,10 @@ import src.food.recipes.*
 
 describe "tests de items" {
 
-  test "una papa cortada queda como cutPotato" {
+  test "una papa cortada queda como cutPotato, y frita como friedPotato" {
     const item = new Item(kind = potato)
     item.process(cutting)
     assert.equals(cutPotato, item.kind())
-  }
-
-  test "una papa cortada y frita queda como friedPotato" {
-    const item = new Item(kind = potato)
-    item.process(cutting)
     item.process(frying)
     assert.equals(friedPotato, item.kind())
   }

@@ -19,7 +19,7 @@ Un nivel no hace nada por sí mismo: dice cómo es, y `levelManager` lo usa.
 |---|---|
 | `name` | Cómo se llama ("Nivel 1"). La info del nivel lo muestra en mayúsculas |
 | `availableMachines` | Las máquinas que se pueden colocar: bloques que crean máquinas, como el catálogo de `machineManager` (`{ => new Belt() }`) |
-| `availableRecipes` | Las recetas que se pueden elegir en los Assembler (ver `recipeBook` en [`food/README.md`](../food/README.md)). **Obligatorio**: `freePlay` pone `recipeBook.all()` y un nivel sin Assembler pone `[]` (nunca `noRecipe`) |
+| `availableRecipes` | Las recetas que se pueden elegir en los Assembler (ver `recipeBook` en [`food/README.md`](../food/README.md)). **Obligatorio**: `freePlay` pone `recipeBook.all()` y un nivel sin Assembler pone `[]`. Un nivel con Assembler necesita al menos una receta |
 | `fixedMachines` | Las que el nivel trae colocadas: una lista de `Placement` (ver abajo) |
 | `buildZones` | Dónde puede colocar máquinas el jugador: una lista de `Zone` (ver abajo). Opcional: por defecto, todo el tablero (`[wholeBoard]`) |
 | `goals` | Los objetivos. **Se gana cuando se cumplen todos** |
@@ -138,7 +138,7 @@ new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction =
 8. **Correr los tests.** "tests de todos los niveles" (en `test/levelManagerTest.wtest`) carga cada nivel de `levels` y el modo libre, y dice cuáles tienen un problema:
    - **no carga**: una máquina fija fuera del tablero (las de 2x2, como el Assembler, ocupan una celda más a la derecha y una más arriba de su posición) o encima de otra. En el juego, eso hace fallar el nivel al cargarlo;
    - **sus máquinas fijas no quedan en su lugar**;
-   - **`availableRecipes` tiene algo que no es una receta del juego**: por ejemplo un plato (`cheeseBurger` en vez de `cheeseBurgerRecipe`) o `noRecipe`.
+   - **`availableRecipes` tiene algo que no es una receta del juego**: por ejemplo un plato (`cheeseBurger` en vez de `cheeseBurgerRecipe`).
 
 ## Al ganar: el resultado y el final
 
@@ -276,7 +276,7 @@ Cada máquina gasta energía (`energyConsumption()`: su `baseEnergy()` más lo q
 
 ## Los niveles
 
-Van de menos a más difícil. Todos tienen los Dispensers fijos a la izquierda, y el resto lo arma el jugador. `test/levelSolutionsTest.wtest` arma una forma de ganar cada uno: si un cambio hace que un nivel no se pueda ganar, falla ahí.
+Van de menos a más difícil. Todos tienen los Dispensers fijos a la izquierda, y el resto lo arma el jugador. Que se puedan ganar se prueba jugándolos: los tests no los arman (`test/simulation/fullKitchenTest.wtest` prueba que todas las máquinas funcionan juntas, con un nivel propio).
 
 | Nivel | Plato | Qué tiene de nuevo |
 |---|---|---|
