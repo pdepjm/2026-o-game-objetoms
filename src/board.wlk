@@ -36,6 +36,8 @@ object board {
 	var buildZones = [wholeBoard]
 	var blockedLayer = noBlockedLayer
 	const grid = (0..maxColumn).map({ x => (0..maxRow).map({ y => new Cell(machine = noMachine) }) })
+	// Las máquinas colocadas, una vez cada una: así no hay que recorrer la grilla para saberlas
+	const placedMachines = []
 
 	// métodos privados
 
@@ -61,23 +63,23 @@ object board {
 		})
 	})
 
-	method machines() = grid.flatMap({ column => column.flatMap({ cell => cell.machine().asList() }) }).asSet().asList()
+	method machines() = placedMachines.copy()
 
 	// La energía que gastan todas las máquinas colocadas (las fijas del nivel también)
 	method totalEnergy() = self.machines().sum({ machine => machine.energyConsumption() })
 
-	// Avisa a la máquina colocada y a las de al lado que algo cambió en su entorno
-	method updateNeighbourBelts(position, placedElement) {
-		placedElement.onNeighbourChanged()
+	// Avisa a las máquinas de al lado de cada celda de esa máquina que algo cambió (una cinta cambia de forma)
+	method notifyAround(start, machine) {
+		self.cellsFor(start, machine)
+			.flatMap({ cell => [cell.left(1), cell.right(1), cell.up(1), cell.down(1)] })
+			.map({ cell => self.machineAt(cell) })
+			.filter({ neighbour => neighbour != machine })
+			.forEach({ neighbour => neighbour.onNeighbourChanged() })
+	}
 
-		const neighbours = [
-			self.machineAt(position.left(1)),
-			self.machineAt(position.right(1)),
-			self.machineAt(position.up(1)),
-			self.machineAt(position.down(1))
-		]
-
-		neighbours.forEach({ neighbour => neighbour.onNeighbourChanged() })
+	// Una máquina rotó: si está en el tablero, se enteran las de al lado
+	method rotated(machine) {
+		if (self.machineAt(machine.cell()) == machine) self.notifyAround(machine.cell(), machine)
 	}
 
 	// métodos públicos
@@ -105,11 +107,13 @@ object board {
 		)
 		game.addVisual(element)
 		self.addToGrid(position, element)
+		placedMachines.add(element)
 		// lo que la máquina dibuja aparte (la insignia del dispenser o del ensamblador), encima de ella
 		element.addedToBoard()
 		simulationEngine.addSimulatedObject(element)
 		
-		self.updateNeighbourBelts(position, element)
+		element.onNeighbourChanged()
+		self.notifyAround(position, element)
 	}
 
 	// Saca la máquina de esa posición, aunque esté bloqueada: el bloqueo es para el jugador
@@ -124,8 +128,9 @@ object board {
 			machine.removedFromBoard()
 			game.removeVisual(machine)
 			self.removeFromGrid(position)
-			
-			self.updateNeighbourBelts(position, noMachine) 
+			placedMachines.remove(machine)
+
+			self.notifyAround(machine.cell(), machine)
 		}
 	}
 

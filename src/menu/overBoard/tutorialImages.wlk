@@ -1,0 +1,38 @@
+// GENERADO por assets/tutorial/makeSteps.py: no editar a mano (cambiar los tutoriales y volver a correrlo)
+
+// Lo que dibuja cada imagen de assets/tutorial/steps/ (chefGuide.signatureOf de su mensaje)
+const tutorialImages = [
+	"fries_1;PASO 1 DE 12;Las papas salen|del dispenser|de la flecha.;continue;talk;down;left;right;0;0;123;0;337;160",
+	"fries_2;PASO 2 DE 12;Elegí la cinta|y ponela en el|recuadro para|llevar las papas;place;talk;down;left;right;0;0;123;0;337;169",
+	"fries_3;PASO 3 DE 12;La cinta lleva|las papas hacia|donde apunta.;continue;talk;down;left;right;0;0;123;0;337;160",
+	"fries_4;PASO 4 DE 12;Poné la|cortadora: corta|las papas que|le trae la cinta;place;talk;down;right;right;0;0;123;0;337;169",
+	"fries_5;PASO 5 DE 12;Este brazo toma|las papas de la|cinta y las deja|del otro lado.;continue;talk;down;right;right;0;0;123;0;337;169",
+	"fries_6;PASO 6 DE 12;Poné la|freidora donde|el brazo deja|las papas;place;talk;down;right;right;0;0;123;0;337;169",
+	"fries_7;PASO 7 DE 12;La freidora no|larga las papas:|hay que sacarlas|con un brazo.;continue;talk;down;right;right;0;0;123;0;337;169",
+	"fries_8;PASO 8 DE 12;Poné el brazo|inteligente en|el recuadro;place;talk;down;right;right;0;0;123;0;337;160",
+	"fries_9;PASO 9 DE 12;Un brazo agarra|de donde mira.|Rotalo hasta que|mire la freidora;rotate;talk;down;right;right;0;0;123;0;337;169",
+	"fries_10;PASO 10 DE 12;Tocá la papa|frita hasta que|vaya a la cinta|de la derecha.;edit,choose;talk;down;right;right;0;0;123;0;337;197",
+	"fries_11;PASO 11 DE 12;¡Listo! Ya se|puede cocinar;start;talk;down;right;right;0;0;123;0;337;160",
+	"fries_12;PASO 12 DE 12;Las papas fritas|llegan al|platito. Esperá|a que lleguen 2.;stop;talk;up;right;left;217;0;0;0;337;169",
+	"fries_done;;¡Papas fritas|listas!;;happy;up;right;left;217;0;0;0;337;160",
+	"hotDog_1;PASO 1 DE 12;Para un pancho|hacen falta pan|y salchicha.|Este dispenser|larga salchicha;continue;talk;down;left;right;0;0;123;0;337;197",
+	"hotDog_2;PASO 2 DE 12;Hacé que el|dispenser del|recuadro largue|pan.;edit,choose;talk;down;left;right;0;0;123;0;337;197",
+	"hotDog_3;PASO 3 DE 12;Las salchichas|de este otro|hay que|cocinarlas.;continue;talk;down;left;right;0;0;123;0;337;169",
+	"hotDog_4;PASO 4 DE 12;Poné el horno|en el recuadro:|cocina lo que|le llega;place;talk;down;right;right;0;0;123;0;337;169",
+	"hotDog_5;PASO 5 DE 12;Esta cinta sube|los panes|cortados al|ensamblador,|que junta todo.;continue;talk;down;right;right;0;0;123;0;337;197",
+	"hotDog_6;PASO 6 DE 12;Poné el|ensamblador|apuntando arriba;place,up;talk;down;right;right;0;0;123;0;337;169",
+	"hotDog_7;PASO 7 DE 12;Arma la receta|elegida: elegí|el pancho.;edit,choose;talk;down;right;right;0;0;123;0;337;169",
+	"hotDog_8;PASO 8 DE 12;Un brazo toma|de cintas, de la|freidora y de lo|que le entregan,|como el horno.;continue;talk;down;right;right;0;0;123;0;337;197",
+	"hotDog_9;PASO 9 DE 12;Y lo deja en|cualquier otra|máquina: como|el ensamblador.;continue;talk;down;right;right;0;0;123;0;337;169",
+	"hotDog_10;PASO 10 DE 12;Poné el brazo|entre el horno|y el ensamblador;place,left;talk;down;right;right;0;0;123;0;337;169",
+	"hotDog_11;PASO 11 DE 12;¡Listo! Ya se|puede cocinar;start;talk;down;right;right;0;0;123;0;337;160",
+	"hotDog_12;PASO 12 DE 12;Los panchos|llegan al|platito. Esperá|a que lleguen 2.;stop;talk;up;right;left;217;0;0;0;337;169",
+	"hotDog_done;;¡Panchos|listos!;;happy;up;right;left;217;0;0;0;337;160",
+	"energy_1;PASO 1 DE 6;Cada máquina|gasta energía.|El nivel tiene|un límite: mirá|el contador.;continue;talk;up;right;right;0;0;123;0;337;197",
+	"energy_2;PASO 2 DE 6;Poné la cinta|en el recuadro;place;talk;up;right;right;0;0;123;0;337;160",
+	"energy_3;PASO 3 DE 6;Ahora la|cortadora: gasta|más que la|cinta;place;talk;up;right;right;0;0;123;0;337;169",
+	"energy_4;PASO 4 DE 6;¡Te pasaste del|límite! Bajá la|velocidad del|dispenser: x0.5;edit,choose;talk;up;right;right;0;0;123;0;337;197",
+	"energy_5;PASO 5 DE 6;¡Listo! Ya se|puede cocinar;start;talk;up;right;right;0;0;123;0;337;160",
+	"energy_6;PASO 6 DE 6;Las papas|cortadas llegan|al platito.|Esperá a que|lleguen 2.;stop;talk;up;right;left;217;0;0;0;337;197",
+	"energy_done;;¡Bien! Ahora|sabés cuidar|la energía.;;happy;up;right;left;217;0;0;0;337;160"
+]

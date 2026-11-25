@@ -112,6 +112,7 @@ const tutorialLevel = new Level(
     + friesTutorialCells.exitBeltsAlongRow().map({ cell => new Placement(position = cell, factory = {=> new Belt(direction = right)}) })
     + friesTutorialCells.exitBeltsUp().map({ cell => new Placement(position = cell, factory = {=> new Belt(direction = up)}) }),
     tutorial = new StepTutorial(
+        name = "fries",
         steps = [
             new ExplainStep(
                 lines = ["Las papas salen", "del dispenser", "de la flecha."],
@@ -279,6 +280,7 @@ const hotDogTutorialLevel = new Level(
     + hotDogTutorialCells.exitBeltsUp().map({ cell => new Placement(position = cell, factory = {=> new Belt(direction = up)}) })
     + hotDogTutorialCells.exitBeltsAlongTop().map({ cell => new Placement(position = cell, factory = {=> new Belt(direction = right)}) }),
     tutorial = new StepTutorial(
+        name = "hotDog",
         steps = [
             new ExplainStep(
                 lines = ["Para un pancho", "hacen falta pan", "y salchicha.", "Este dispenser", "larga salchicha"],
@@ -312,6 +314,7 @@ const hotDogTutorialLevel = new Level(
                 lines = ["Poné el", "ensamblador", "apuntando arriba"],
                 keys = ["place", "up"],
                 cells = hotDogTutorialCells.assemblerCells(),
+                marked = [hotDogTutorialCells.assembler()],
                 allowedMachines = [machineManager.assemblerFactory()],
                 condition = { machine => machine.direction() == up }
             ),
@@ -319,6 +322,7 @@ const hotDogTutorialLevel = new Level(
                 lines = ["Arma la receta", "elegida: elegí", "el pancho."],
                 keys = ["edit", "choose"],
                 cells = hotDogTutorialCells.assemblerCells(),
+                marked = [hotDogTutorialCells.assembler()],
                 condition = { machine => machine.selectedRecipe() == hotDogRecipe }
             ),
             new ExplainStep(
@@ -405,6 +409,7 @@ const energyTutorialLevel = new Level(
     ]
     + energyTutorialCells.fixedBelts().map({ cell => new Placement(position = cell, factory = {=> new Belt(direction = right)}) }),
     tutorial = new StepTutorial(
+        name = "energy",
         steps = [
             new ExplainStep(
                 lines = ["Cada máquina", "gasta energía.", "El nivel tiene", "un límite: mirá", "el contador."],

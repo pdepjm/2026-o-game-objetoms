@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import input.clickManager.*
+import menu.screenClasses.*
 import menu.hud.hud.*
 import menu.hud.placeMenu.*
 import menu.hud.editMenu.*
@@ -25,17 +25,18 @@ import tools.toolsManager.*
 import sound.sfx.*
 
 // La columna de la derecha: arriba el cartel COLOCANDO / EDITANDO
-object rightPanel inherits ClickTargets {
+object rightPanel {
 	// El panel que se ve (noPanel antes de empezar a jugar)
 	var activePanel = noPanel
 	// El panel de la máquina que se está editando: lo elige la máquina al abrirse
 	var editor = editMenu
+	// Un clic en la columna que no es del panel no hace nada
+	const wholeColumn = [new CellArea(zone = hud.interactiveZone()), new CellArea(zone = hud.bannerZone())]
 
 	method activePanel() = activePanel
 	method editor() = editor
 
-	override method zones() = [hud.interactiveZone(), hud.bannerZone()]
-	override method clickTargets() = [activePanel]
+	method clickableAreas() = activePanel.clickableAreas() + wholeColumn
 
 	method show() {
 		modeBanner.show()
@@ -89,9 +90,8 @@ object rightPanel inherits ClickTargets {
 }
 
 // "Ningún panel": el que hay antes de empezar a jugar
-object noPanel inherits ClickTargets {
-	override method zones() = []
-	override method clickTargets() = []
+object noPanel {
+	method clickableAreas() = []
 	method show() {}
 	method hide() {}
 	method moveFocus(direction) {}

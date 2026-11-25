@@ -136,13 +136,16 @@ describe "tests del ticket como pantalla" {
   method initialize() {
     deliveryPoints.setUp()
     screenManager.play()
-    screenManager.showLevelComplete(new LevelResult(level = levelManager.currentLevel(), cookSeconds = 38, ending = lastLevelEnding))
+    screenManager.showLevelComplete(new LevelResult(level = levelManager.currentLevel(), ending = lastLevelEnding))
   }
 
-  test "el ticket se abre encima del juego y dice como termino" {
+  test "el ticket se abre encima del juego con la imagen de su nivel" {
     assert.equals(levelCompleteScreen, screenManager.screen())
-    assert.that(levelComplete.lines().contains("Tiempo de cocina: 0:38"))
-    assert.that(levelComplete.lines().contains("¡FIN DEL JUEGO!"))
+    assert.equals("levels/complete/" + levelManager.currentLevel().imageKey() + ".png", levelComplete.image())
+  }
+
+  test "en el ultimo nivel hay dos botones: jugar de nuevo y menu" {
+    assert.equals(2, levelComplete.buttons().size())
   }
 
   test "jugar de nuevo cierra el ticket y vuelve al juego" {

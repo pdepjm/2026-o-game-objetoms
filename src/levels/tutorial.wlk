@@ -17,6 +17,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import board.*
+import cellPosition.*
 import simulation.simulationEngine.*
 import tools.userTools.*
 import menu.hud.levelInfoMenu.*
@@ -54,15 +55,10 @@ class Tutorial inherits TutorialEvents {
 	}
 
 	// ----------- MENSAJE -----------
-	method messageLines() = []
+	// Lo que dice ahora el cocinero (un ChefSpeech)
+	method speech() = noSpeech
 
-	// Las teclas que acompañan al mensaje (por ejemplo "place": [Z] para colocar).
-	method messageKeys() = []
-
-	// Dónde va el jugador, arriba del mensaje (por ejemplo "PASO 2 DE 8").
-	method stepLabels() = []
-
-	// Todos los mensajes que puede llegar a mostrar, cada uno con sus líneas (lines()) y sus teclas
+	// Todo lo que puede llegar a decir el cocinero (para los tests y para generar sus imágenes)
 	method allMessages() = []
 
 	// ----------- INDICADORES -----------
@@ -87,6 +83,8 @@ object noTutorial inherits Tutorial {
 
 // Un tutorial hecho de pasos, en orden.
 class StepTutorial inherits Tutorial {
+	// Para los nombres de sus imágenes (assets/tutorial/steps/<name>_<paso>.png)
+	const name
 	const steps
 	// Lo que muestra después de ganar
 	const finishedLines
@@ -117,14 +115,32 @@ class StepTutorial inherits Tutorial {
 	override method allowsSimulationToggle() = won || self.currentStep().allowsSimulationToggle()
 	override method waitsForContinue() = !won && self.currentStep().waitsForContinue()
 
-	override method messageLines() = if (won) finishedLines else self.currentStep().lines()
-	override method messageKeys() = if (won) [] else self.currentStep().keys()
-	override method stepLabels() = if (won) [] else ["PASO " + self.stepNumber() + " DE " + steps.size()]
+	override method speech() = if (won) self.finishedSpeech() else self.stepSpeech(self.stepNumber())
 
 	// El número del paso actual, empezando en 1
-	method stepNumber() = (1 .. steps.size()).find({ n => steps.get(n - 1) == self.currentStep() })
+	method stepNumber() {
+		const current = self.currentStep()
+		return (1 .. steps.size()).find({ n => steps.get(n - 1) == current })
+	}
 
-	override method allMessages() = steps + [new TutorialStep(lines = finishedLines)]
+	method stepSpeech(n) = new ChefSpeech(
+		image = name + "_" + n,
+		label = "PASO " + n + " DE " + steps.size(),
+		lines = steps.get(n - 1).lines(),
+		keys = steps.get(n - 1).keys(),
+		focus = self.focusAt(n)
+	)
+
+	// Al ganar festeja, sin paso ni teclas, donde estaba
+	method finishedSpeech() = new ChefSpeech(image = name + "_done", lines = finishedLines, focus = self.focusAt(steps.size()))
+
+	// La celda que señala el cocinero en el paso n: la del paso o, si no marca ninguna, la del último que marcó
+	method focusAt(n) {
+		const pointing = steps.take(n).filter({ step => !step.focusCells().isEmpty() })
+		return if (pointing.isEmpty()) noSpeech.focus() else pointing.last().focusCells().first()
+	}
+
+	override method allMessages() = (1 .. steps.size()).map({ n => self.stepSpeech(n) }) + [self.finishedSpeech()]
 
 	// Después de ganar no marca nada
 	override method targetCells() = if (won) [] else self.currentStep().targetCells()
@@ -143,6 +159,8 @@ class TutorialStep inherits TutorialEvents {
 	const property keys = []
 	// Las celdas donde deja colocar, borrar y rotar.
 	const cells = []
+	// Las que se marcan con el recuadro (en una máquina de 2x2, sólo la de abajo a la izquierda).
+	const marked = cells
 	// Las celdas de las máquinas que explica el mensaje.
 	const pointsAt = []
 	const allowsSimulation = false
@@ -160,9 +178,11 @@ class TutorialStep inherits TutorialEvents {
 	method allowsSimulationToggle() = allowsSimulation
 	method waitsForContinue() = false
 
-	method targetCells() = cells
+	method targetCells() = marked
 	// Si pide hacer algo, sólo el recuadro
 	method pointedCells() = if (cells.isEmpty()) pointsAt else []
+	// Las celdas que puede señalar el cocinero
+	method focusCells() = self.targetCells() + self.pointedCells()
 
 	// Lo que dice el cocinero.
 	method complaintFor(tool, pos) =
@@ -218,3 +238,19 @@ class ExplainStep inherits EventStep {
 	override method waitsForContinue() = !self.isDone()
 	override method waitingComplaint() = ["Primero leé y", "apretá Enter", "para seguir."]
 }
+
+// Lo que dice el cocinero: su imagen ya dibujada (assets/tutorial/steps/<image>.png) y lo que dice en ella.
+class ChefSpeech {
+	const property image
+	const property label = ""
+	const property lines = []
+	const property keys = []
+	// La celda que señala
+	const property focus = new CellPosition(x = 9, y = 5)
+
+	// Sin paso, terminó el tutorial: festeja
+	method mood() = if (label.isEmpty()) "happy" else "talk"
+}
+
+// Sin tutorial, el cocinero no dice nada
+const noSpeech = new ChefSpeech(image = "")

@@ -206,9 +206,13 @@ class Machine inherits MachineSprite {
 	
 	// Sólo se rota con la simulación apagada, así que la imagen es la quieta
 	method rotate() {
-		direction = direction.next()
+		self.turn()
 		self.showStatic()
+		board.rotated(self)
 	}
+
+	// Cómo gira: hacia la dirección siguiente
+	method turn() { direction = direction.next() }
 
 	// ----------- LO QUE PASA AL TOCARLA -----------
 

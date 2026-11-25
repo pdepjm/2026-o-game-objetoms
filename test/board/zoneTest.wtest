@@ -18,7 +18,7 @@
 
 import wollok.game.*
 import src.cellPosition.*
-import src.input.clickManager.*
+import src.menu.screenClasses.*
 import src.board.*
 import src.machines.types.belt.*
 import src.machines.machineManager.*

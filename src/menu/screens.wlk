@@ -18,13 +18,12 @@
 
 import wollok.game.*
 import cellPosition.*
-import input.clickManager.*
+import menu.screenClasses.*
 import menu.screenManager.*
 import menu.recipeBook.*
 import menu.levelComplete.*
 import menu.drawing.visuals.*
 import menu.hud.hud.*
-import menu.hud.levelInfoMenu.*
 import menu.hud.rightPanel.*
 import menu.overBoard.tutorialGuide.*
 import menu.overBoard.actionsMenu.*
@@ -36,57 +35,7 @@ import board.*
 import directions.*
 import sound.sfx.*
 
-// Lo que entiende cualquier pantalla.
-class Screen inherits ClickTargets {
-	// Una pantalla recibe todos los clics
-	override method zones() = [wholeScreen]
-
-	// Al entrar y al salir (screenManager.changeScreen)
-	method show() {}
-	method hide() {}
-	method leave() { self.hide() }
-
-	// Cuando se abre o se cierra encima el libro o el ticket (screenManager.cover y uncover)
-	method hideUnderOverlay() {}
-	method showAfterOverlay() {}
-
-	// Las teclas del menú
-	method enter() {}
-	method arrow(direction) {}
-	method back() {}
-	method toggleBook() { screenManager.openBook() }
-	method pressI() {}
-	method pressS() {}
-
-	// Las teclas del juego
-	method speed(n) {}
-	method toggleSimulation() {}
-	method nextLevel() {}
-	method restart() {}
-	method toggleFreePlay() {}
-	method skipTutorial() {}
-	method chooseMachine(step) {}
-	method rotateMachine() {}
-	method editMachine() {}
-	method deleteMachine() {}
-	method direction(aDirection) {}
-	method backToMenu() {}
-}
-
-// Una pantalla que se abre encima de otra: recuerda cuál quedó abajo.
-class OverlayScreen inherits Screen {
-	var under = coverScreen
-
-	method under() = under
-	method under(screen) { under = screen }
-
-	override method leave() {
-		self.hide()
-		under.leave()
-	}
-}
-
-// ----------- LA PORTADA -----------
+// ----------- LAS PANTALLAS DEL MENÚ -----------
 
 // Las imágenes de pantalla completa del menú
 const startScreen = new Picture(image = "startScreen.png", position = new CellPosition(x = 0, y = 0))
@@ -95,36 +44,28 @@ const menuControlsOverlay = new Picture(image = "menu/menu_controls.png", positi
 
 const menuBackground = new Picture(image = "menu/menu_background.png", position = new CellPosition(x = 0, y = 0))
 
-// La portada: las opciones se eligen con un clic, o con las flechas (arriba y abajo) y Enter.
-object coverScreen inherits Screen {
-	override method clickTargets() = coverMenu.options()
-
+// Una pantalla del menú: el fondo azul queda siempre, también detrás del libro.
+class MenuScreen inherits Screen {
 	override method show() {
 		menuBackground.show()
-		startScreen.show()
-		coverMenu.show()
+		super()
 	}
 
-	override method hide() {
-		startScreen.hide()
-		coverMenu.hide()
-	}
+	override method hideUnderOverlay() { self.hide() }
+	override method showAfterOverlay() { self.show() }
+}
 
-	// El fondo azul queda detrás del libro
-	override method hideUnderOverlay() {
-		self.hide()
-		menuBackground.show()
-	}
+// La portada: las opciones se eligen con un clic, o con las flechas (arriba y abajo) y Enter.
+object coverScreen inherits MenuScreen {
+	override method visuals() = [startScreen, coverMenu]
+	override method clickableAreas() = coverMenu.options()
 
-	override method showAfterOverlay() {
-		startScreen.show()
-		coverMenu.show()
-	}
-
-	override method enter() { coverMenu.activate() }
-	override method arrow(direction) { direction.moveCoverFocus(coverMenu) }
-	override method pressI() { screenManager.openInstructions() }
-	override method pressS() { game.stop() }
+	override method keyActions() = [
+		new KeyAction(key = "enter", action = { _ => coverMenu.activate() }),
+		new KeyAction(key = "arrow", action = { direction => direction.moveCoverFocus(coverMenu) }),
+		new KeyAction(key = "i", action = { _ => screenManager.openInstructions() }),
+		new KeyAction(key = "s", action = { _ => game.stop() })
+	]
 }
 
 // Las opciones de la portada (assets/startScreen.png), de arriba hacia abajo
@@ -188,38 +129,41 @@ object coverFocus {
 	method moveTo(index) { position = positions.get(index) }
 }
 
-// ----------- LOS CONTROLES -----------
-
-// I, Retroceso, Enter o un clic en "volver al menú" (la fila de abajo) vuelven a la portada
-object instructionsScreen inherits Screen {
+// Los controles: I, Retroceso, Enter o un clic en "volver al menú" (la fila de abajo) vuelven a la portada
+object instructionsScreen inherits MenuScreen {
 	const backButton = new CellArea(zone = rectangle.of(0, 0, 22, 1), action = { screenManager.backToCover() })
 
-	override method clickTargets() = [backButton]
+	override method visuals() = [menuControlsOverlay]
+	override method clickableAreas() = [backButton]
 
-	override method show() {
-		menuBackground.show()
-		menuControlsOverlay.show()
-	}
-
-	override method hide() { menuControlsOverlay.hide() }
-
-	override method hideUnderOverlay() {
-		menuControlsOverlay.hide()
-		menuBackground.show()
-	}
-
-	override method showAfterOverlay() { menuControlsOverlay.show() }
-
-	override method enter() { screenManager.backToCover() }
-	override method back() { screenManager.backToCover() }
-	override method pressI() { screenManager.backToCover() }
+	override method keyActions() = ["enter", "back", "i"].map({ key => new KeyAction(key = key, action = { _ => screenManager.backToCover() }) })
 }
 
 // ----------- JUGANDO -----------
 
 // Los clics van por capas, de la que se ve más arriba a la de más abajo
 object playingScreen inherits Screen {
-	override method clickTargets() = [chefBubble, actionsMenu, hud, boardArea]
+	override method clickableAreas() = [chefBubble, actionsMenu] + hud.clickableAreas() + [boardArea]
+
+	override method keyActions() = [
+		new KeyAction(key = "enter", action = { _ => self.enter() }),
+		new KeyAction(key = "arrow", action = { direction => toolsManager.arrow(direction) }),
+		new KeyAction(key = "back", action = { _ => toolsManager.stopEditing() }),
+		// S es mirar hacia abajo, como W, A y D (en la portada, S es salir)
+		new KeyAction(key = "s", action = { _ => toolsManager.currentDirection(down) }),
+		new KeyAction(key = "direction", action = { direction => toolsManager.currentDirection(direction) }),
+		new KeyAction(key = "speed", action = { n => sideButtons.speed(n) }),
+		new KeyAction(key = "simulation", action = { _ => levelManager.toggleSimulation() }),
+		new KeyAction(key = "nextLevel", action = { _ => levelManager.loadNext() }),
+		new KeyAction(key = "restart", action = { _ => levelManager.restart() }),
+		new KeyAction(key = "freePlay", action = { _ => levelManager.toggleFreePlay() }),
+		new KeyAction(key = "skipTutorial", action = { _ => levelManager.skipTutorial() }),
+		new KeyAction(key = "chooseMachine", action = { step => rightPanel.chooseMachine(step) }),
+		new KeyAction(key = "rotate", action = { _ => toolsManager.act(rotate) }),
+		new KeyAction(key = "edit", action = { _ => toolsManager.editKey() }),
+		new KeyAction(key = "delete", action = { _ => toolsManager.act(delete) }),
+		new KeyAction(key = "menu", action = { _ => screenManager.backToCover() })
+	]
 
 	// El HUD queda dibujado al volver a la portada (lo tapa el fondo del menú)
 	override method show() {
@@ -230,30 +174,14 @@ object playingScreen inherits Screen {
 
 	override method hide() { simulationEngine.pause() }
 
-	override method enter() {
+	// Enter sigue el tutorial si el cocinero espera, si no es para las herramientas
+	method enter() {
 		if (levelManager.tutorial().waitsForContinue()) levelManager.continueTutorial()
 		else toolsManager.enter()
 	}
-	override method arrow(direction) { toolsManager.arrow(direction) }
-	override method back() { toolsManager.stopEditing() }
-	// S es mirar hacia abajo, como W, A y D (en la portada, S es salir)
-	override method pressS() { self.direction(down) }
-
-	override method speed(n) { sideButtons.speed(n) }
-	override method toggleSimulation() { levelManager.toggleSimulation() }
-	override method nextLevel() { levelManager.loadNext() }
-	override method restart() { levelManager.restart() }
-	override method toggleFreePlay() { levelManager.toggleFreePlay() }
-	override method skipTutorial() { levelManager.skipTutorial() }
-	override method chooseMachine(step) { rightPanel.chooseMachine(step) }
-	override method rotateMachine() { toolsManager.act(rotate) }
-	override method editMachine() { toolsManager.editKey() }
-	override method deleteMachine() { toolsManager.act(delete) }
-	override method direction(aDirection) { toolsManager.currentDirection(aDirection) }
-	override method backToMenu() { screenManager.backToCover() }
 }
 
-// El tablero, como parte clickeable de playingScreen
+// El tablero, como zona clickeable de playingScreen
 object boardArea {
 	method handlesClick(pos) = board.inBoard(pos)
 	method onClick(pos) { toolsManager.clickCell(pos) }
@@ -267,36 +195,43 @@ object bookScreen inherits OverlayScreen {
 	const leftHalf = new CellArea(zone = rectangle.of(0, 0, 11, 13), action = { recipeBook.prevPage() })
 	const rightHalf = new CellArea(zone = rectangle.of(11, 0, 11, 13), action = { recipeBook.nextPage() })
 
-	override method clickTargets() = [closeButton, leftHalf, rightHalf]
+	override method clickableAreas() = [closeButton, leftHalf, rightHalf]
+
+	override method keyActions() = [
+		new KeyAction(key = "arrow", action = { direction => direction.turnPage(recipeBook) }),
+		new KeyAction(key = "back", action = { _ => screenManager.closeBook() }),
+		new KeyAction(key = "book", action = { _ => screenManager.closeBook() })
+	]
 
 	override method show() { recipeBook.open() }
 	override method hide() { recipeBook.close() }
-
-	override method arrow(direction) { direction.turnPage(recipeBook) }
-	override method back() { screenManager.closeBook() }
-	override method toggleBook() { screenManager.closeBook() }
 }
 
 // ----------- EL TICKET DE NIVEL COMPLETO (encima del juego) -----------
 
 // Mientras se ve, sólo cuentan sus botones (el resto de los clics no hace nada).
 object levelCompleteScreen inherits OverlayScreen {
-	override method clickTargets() = levelComplete.buttons()
+	override method clickableAreas() = levelComplete.buttons()
+
+	override method keyActions() = [
+		new KeyAction(key = "enter", action = { _ => levelComplete.pressFirstButton() }),
+		new KeyAction(key = "nextLevel", action = { _ => self.nextLevel() }),
+		new KeyAction(key = "restart", action = { _ => self.restart() }),
+		new KeyAction(key = "menu", action = { _ => self.backToMenu() })
+	]
 
 	// Lo dibuja screenManager.showLevelComplete, que sabe qué decir
 	override method hide() { levelComplete.hide() }
 
-	override method enter() { levelComplete.buttons().first().press() }
-
-	override method nextLevel() {
+	method nextLevel() {
 		screenManager.uncover()
 		levelManager.loadNext()
 	}
 
-	override method restart() {
+	method restart() {
 		screenManager.uncover()
 		levelManager.restart()
 	}
 
-	override method backToMenu() { screenManager.backToCover() }
+	method backToMenu() { screenManager.backToCover() }
 }

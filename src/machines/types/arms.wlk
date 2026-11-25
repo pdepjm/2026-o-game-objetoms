@@ -54,10 +54,9 @@ class AutomaticArm inherits Machine {
 	override method baseEnergy() = 2
 
 	// ----------- ROTACION -----------
-	override method rotate() {
+	override method turn() {
 		inputSide = inputSide.next()
 		direction = inputSide
-		self.showStatic()
 	}
 
 	method inputSide() = inputSide
@@ -115,7 +114,7 @@ class AutomaticArm inherits Machine {
 	override method openEditorIn(panel) { panel.editArm(self) }
 	method editTitle() = "BRAZO"
 	method editHint() = "DEJA TODO HACIA"
-	// El brazo como se ve en el tablero, en un cuadro (assets/menu/makeArmAndTicket.py)
+	// El brazo como se ve en el tablero, en un cuadro (assets/menu/makeArmAndCompass.py)
 	method editBoxImage() = "menu/arm_box_auto_" + inputSide.name() + ".png"
 	method editChoices() = [up, right, down, left].map({ side => new ArmSideChoice(arm = self, side = side) })
 

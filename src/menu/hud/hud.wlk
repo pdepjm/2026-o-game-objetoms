@@ -18,7 +18,7 @@
 
 import wollok.game.*
 import cellPosition.*
-import input.clickManager.*
+import menu.screenClasses.*
 import menu.screenManager.*
 import menu.drawing.visuals.*
 import menu.hud.leftPanel.*
@@ -28,7 +28,7 @@ import simulation.simulationEngine.*
 import sound.sfx.*
 
 // El HUD: lo fijo alrededor del tablero (lo muestra playingScreen).
-object hud inherits ClickTargets {
+object hud {
 	// La columna izquierda entera, y la parte de arriba con la info del nivel
 	const leftZone = new Zone(minX = 0, maxX = 4, minY = 0, maxY = 12)
 	const levelInfoZone = new Zone(minX = 0, maxX = 4, minY = 1, maxY = 11)
@@ -42,8 +42,8 @@ object hud inherits ClickTargets {
 	method bannerZone() = bannerZone
 	method interactiveZone() = interactiveZone
 
-	override method zones() = leftPanel.zones() + rightPanel.zones()
-	override method clickTargets() = [leftPanel, rightPanel]
+	// Las zonas de las dos columnas (cada una termina con su zona entera, que se traga los clics sueltos)
+	method clickableAreas() = leftPanel.clickableAreas() + rightPanel.clickableAreas()
 
 	// Mostrarlo otra vez no duplica nada: cada parte se agrega sólo si no está
 	method show() {
@@ -57,27 +57,17 @@ object modeBanner inherits Picture(image = "menu/mode_placing.png", position = h
 	method change(mode) { image = mode.banner() }
 }
 
-// Los botones de abajo a la izquierda (x 0 a 3, y 0 a 3)
-object sideButtons inherits ClickTargets {
-	const zone = new Zone(minX = 0, maxX = 3, minY = 0, maxY = 3)
-	const position = new CellPosition(x = 0, y = 0)
+// Los botones de abajo a la izquierda (x 0 a 3, y 0 a 3): están dibujados en el fondo, sólo se clickean
+object sideButtons {
 	const buttons = [
 		new CellArea(zone = rectangle.of(0, 3, 4, 1), action = { screenManager.openBook() }),
 		new CellArea(zone = rectangle.of(0, 2, 4, 1), action = { screenManager.backToCover() }),
 		new CellArea(zone = rectangle.of(0, 1, 4, 1), action = { levelManager.toggleSimulation() })
 	] + [1, 2, 3].map({ speed => new CellArea(zone = rectangle.of(speed - 1, 0, 1, 1), action = { self.speed(speed) }) })
 
-	method position() = position
-	method image() = "menu/side_buttons.png"
+	method clickableAreas() = buttons
 
-	// Un clic en estas celdas es de los botones (aunque caiga en la celda libre de la fila de abajo)
-	override method zones() = [zone]
-	override method clickTargets() = buttons
-
-	method show() {
-		if (!game.hasVisual(self)) game.addVisual(self)
-		speedFrame.show()
-	}
+	method show() { speedFrame.show() }
 
 	// Las teclas 1, 2 y 3 y los botones de la fila de abajo
 	method speed(n) {

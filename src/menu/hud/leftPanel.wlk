@@ -1,4 +1,4 @@
-// Buffet Albert Einstein - la columna izquierda del HUD: la info del nivel y los botones.
+// Buffet Albert Einstein - la columna de la izquierda: la info del nivel y los botones.
 //
 // Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
 // Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
@@ -16,14 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import input.clickManager.*
+import menu.screenClasses.*
 import menu.hud.hud.*
 import menu.hud.levelInfoMenu.*
 
 // La columna de la izquierda (x 0 a 4): arriba la info del nivel
-object leftPanel inherits ClickTargets {
-	override method zones() = [hud.leftZone()]
-	override method clickTargets() = [skipTutorialButton, sideButtons]
+object leftPanel {
+	// Un clic en la columna que no es de ningún botón no hace nada
+	const wholeColumn = new CellArea(zone = hud.leftZone())
+
+	method clickableAreas() = [skipTutorialButton] + sideButtons.clickableAreas() + [wholeColumn]
 
 	method show() { sideButtons.show() }
 }

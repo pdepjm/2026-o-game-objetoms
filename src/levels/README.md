@@ -26,23 +26,24 @@ Un nivel no hace nada por sí mismo: dice cómo es, y `levelManager` lo usa.
 | `tutorial` | El tutorial que lo acompaña (ver [Tutorial](#tutorial)). Opcional: por defecto, `noTutorial` |
 | `energyLimit` | Cuánta energía pueden gastar las máquinas en total (ver [Energía](#energía)). Opcional: por defecto, `unlimitedEnergy` (sin límite) |
 
-Y para hablar con sus objetivos sin que `levelManager` los recorra: `delivered(item)`, `goalsMet()`, `resetGoals()` y `progressLines()` (una línea de texto por objetivo; `noGoal` no suma línea).
+Y para hablar con sus objetivos sin que `levelManager` los recorra: `delivered(item)`, `goalsMet()`, `resetGoals()` y `shownGoals()` (los que se muestran en la info del nivel; `noGoal` no suma ninguno). `imageKey()` es cómo empiezan los nombres de sus imágenes: el nombre en minúsculas con `_` en vez de espacios (`"Tutorial 1"` → `tutorial_1`). `imageSignature()` dice qué tienen que tener dibujado su comanda y sus objetivos (nombre, y por objetivo texto, cantidad y plato).
 
 ## Objetivos
 
-Todo objetivo entiende:
+Todo objetivo entiende (`displayed()` dice si se muestra: él, o nada en `noGoal`):
 
 | Método | Para qué |
 |---|---|
 | `delivered(item)` | Se entera de que se entregó un item en un platito |
 | `isMet()` | ¿Se cumplió? |
-| `progressText()` | El texto que muestra la info del nivel, por ejemplo `"Papas Fritas: 2/3"` |
 | `reset()` | Vuelve a cero |
 
-- **`DeliveryGoal(kind, amount, label)`**: entregar `amount` items de ese kind. Cuenta sólo los del kind pedido (usa `kind.accepts(item)`). `label` es cómo se muestra, porque los kinds no tienen un nombre para mostrar. El texto no pasa de `amount` aunque se entreguen de más.
-- **`noGoal`**: el objetivo del modo libre. Nunca se cumple, no cuenta nada y su texto es vacío. Es un objeto nulo: entiende los mismos mensajes, así nadie tiene que preguntar si un nivel tiene objetivo.
+`DeliveryGoal` además entiende `shownDelivered()` (lo entregado, sin pasar de `amount`) y `progressImage(prefijo)`: la imagen de la info del nivel según cuántos van entregados (`prefijo + "2.png"`). Las imágenes ya tienen el texto escrito: las genera `assets/levels/makeLevelImages.py`, **que le pide los niveles a Wollok** (`imageSignature()`) y guarda lo que dibujó en `levelImages.wlk` (generado). **Si se cambia un objetivo o se agrega un nivel, hay que volver a correrlo**: un test de `levelManagerTest` compara cada nivel con lo dibujado.
 
-Para agregar otro tipo de objetivo (por ejemplo, "sin quemar nada"), alcanza con que entienda esos cuatro mensajes.
+- **`DeliveryGoal(kind, amount, label)`**: entregar `amount` items de ese kind. Cuenta sólo los del kind pedido (usa `kind.accepts(item)`). `label` es cómo se muestra, porque los kinds no tienen un nombre para mostrar. La imagen no pasa de `amount` aunque se entreguen de más.
+- **`noGoal`**: el objetivo del modo libre. Nunca se cumple, no cuenta nada y no se muestra. Es un objeto nulo: entiende los mismos mensajes, así nadie tiene que preguntar si un nivel tiene objetivo.
+
+Para agregar otro tipo de objetivo (por ejemplo, "sin quemar nada"), alcanza con que entienda esos mensajes.
 
 ## `levelManager`
 
@@ -142,10 +143,10 @@ new Placement(position = game.at(5, 7), factory = { => new Dispenser(direction =
 
 ## Al ganar: el resultado y el final
 
-Cuando se cumplen los objetivos, `levelManager.finishLevel` arma un **`LevelResult`** (en `levelClasses.wlk`) con el nivel, los segundos de cocina y **cómo termina** (`ending`), y se lo da al ticket (`screenManager.showLevelComplete`) y a la info del nivel. Ellos sólo dibujan.
+Cuando se cumplen los objetivos, `levelManager.finishLevel` arma un **`LevelResult`** (en `levelClasses.wlk`) con el nivel y **cómo termina** (`ending`), y se lo da al ticket (`screenManager.showLevelComplete`). El ticket sólo dibuja.
 
-- `LevelResult.lines()`: lo que dice el ticket. Los objetivos, el tiempo de cocina (`clock()`, minutos:segundos), la energía usada, las máquinas que puso el jugador y el título del final.
-- **El final es un objeto, no un `if`**: `nextLevelEnding` (hay otro nivel: "PEDIDO COMPLETO", botones SIGUIENTE / REPETIR / MENÚ, y en la info "¡Nivel completo!" con la tecla N) o `lastLevelEnding` ("¡FIN DEL JUEGO!", JUGAR DE NUEVO / MENÚ, y "¡Fin del juego!" con la tecla 0). Cada uno le dice al ticket (`showButtonsIn`) y a la info del nivel (`showIn`) qué mostrar.
+- `LevelResult.image()`: la comanda del nivel, ya dibujada (`levels/complete/<nivel>.png`): lo entregado y el título del final. No muestra nada que cambie de una partida a otra (ni el tiempo, ni la energía, ni las máquinas), porque es una imagen fija. El modo libre nunca se gana (`noGoal` nunca se cumple), así que no tiene comanda.
+- **El final es un objeto, no un `if`**: `nextLevelEnding` (hay otro nivel: botones SIGUIENTE / REPETIR / MENÚ) o `lastLevelEnding` (JUGAR DE NUEVO / MENÚ). Cada uno le dice al ticket qué botones poner (`showButtonsIn`). El título ("PEDIDO COMPLETO" o "¡FIN DEL JUEGO!") viene en la imagen: el script lo elige según si el nivel es el último de la lista.
 - El único que decide cuál toca es `levelManager.ending()`, porque es el único que sabe si hay otro nivel (`hasNext()`).
 
 ## Tutorial
@@ -166,19 +167,18 @@ Un nivel puede traer un tutorial (`tutorial = ...`). El juego le avisa lo que pa
 | `allowsTool(acción, pos)` | `toolsManager.useAt`, antes de colocar, rotar, editar o borrar. Si es `false`, no hace nada y el cocinero dice por qué |
 | `waitsForContinue()` | `playingScreen`, con Enter o un clic en el globo: si el cocinero está explicando (`ExplainStep`), sigue |
 | `allowsSimulationToggle()` | `levelManager.toggleSimulation`. Si es `false`, no prende ni apaga |
-| `messageLines()` | Después de cada aviso: las líneas del mensaje, que dice el cocinero (`chefGuide`) en su globo (como máximo `chefGuide.maxLines()`, 6, de hasta `chefGuide.maxLength()`, 16 caracteres: lo revisa un test) |
-| `stepLabels()` | Después de cada aviso: una lista con dónde va el jugador, arriba del mensaje (`StepTutorial`: `["PASO 2 DE 8"]`). Vacía: no se muestra |
-| `messageKeys()` | Después de cada aviso: las teclas que acompañan al mensaje (`"place"`, `"continue"`…), que el cocinero dice en su globo, debajo del mensaje ("[ENTER] para seguir") |
-| `complaintFor(acción, pos)`, `complaintForMachine(fábrica)` | Cuando el jugador hace algo que el paso no deja (usar una herramienta fuera del recuadro, tocar el tablero sin herramienta, elegir otra máquina en el menú): lo que dice el cocinero, en rojo, un momento (`[]`: nada). Cada paso decide: fuera del recuadro, "Ahí no: es en el recuadro"; en un `MachineStep`, cuál máquina va; en un `ExplainStep`, que apriete Enter |
+| `speech()` | Después de cada aviso: lo que dice el cocinero (`chefGuide`), un `ChefSpeech` (ver abajo). `noTutorial`: `noSpeech`, sin líneas (el cocinero no se ve) |
+| `complaintFor(acción, pos)`, `complaintForMachine(fábrica)` | Cuando el jugador hace algo que el paso no deja (usar una herramienta fuera del recuadro, tocar el tablero sin herramienta, elegir otra máquina en el menú): si no es `[]`, el cocinero se queja un momento (con una imagen genérica de error) y el recuadro se pone rojo. Cada paso decide qué diría (fuera del recuadro, "Ahí no: es en el recuadro"; en un `MachineStep`, cuál máquina va; en un `ExplainStep`, que apriete Enter): las líneas las revisan los tests, pero no se dibujan |
 | `wantedMachines()` | Las máquinas que pide el paso: su casillero titila en el menú de colocar |
-| `allMessages()` | Todos los mensajes que puede mostrar. Sólo para los tests (ver abajo) |
-| `targetCells()` | Después de cada aviso: las celdas donde el jugador tiene que hacer algo. Se marcan con un recuadro amarillo que late |
+| `allMessages()` | Todo lo que puede decir el cocinero (`ChefSpeech`). Para los tests y para generar sus imágenes (`assets/tutorial/makeSteps.py`) |
+| `targetCells()` | Después de cada aviso: las celdas donde el jugador tiene que hacer algo (`marked` del paso). Se marcan con un recuadro amarillo que late |
 | `pointedCells()` | Después de cada aviso: las celdas de las máquinas que explica el mensaje. Se señala la máquina con una flecha naranja arriba (centrada, si es de 2x2) |
 
 - **`TutorialEvents`** tiene los diez eventos sin hacer nada. La entienden los tutoriales y también los pasos.
 - **`Tutorial`** hereda de ella y agrega los permisos, el mensaje y los indicadores, dejando hacer todo; **`noTutorial`** es el objeto que usan los niveles sin tutorial. Un tutorial nuevo hereda de `Tutorial` y sobrescribe sólo lo que necesita.
-- **`StepTutorial(steps, finishedLines)`**: una lista de pasos en orden. El paso actual es **el primero que todavía no se cumplió**. La mayoría de los pasos miran el tablero: no importa el orden en que el jugador haga las cosas, y si deshace algo vuelve a ese paso. Cada evento se le reenvía al paso actual, para los pasos que dependen de algo que no se ve en el tablero. Al cargar o reiniciar el nivel, todos los pasos vuelven a empezar (`reset()`). Al ganar muestra `finishedLines` y deja hacer todo.
+- **`StepTutorial(name, steps, finishedLines)`**: una lista de pasos en orden (`name` da el nombre de sus imágenes: `fries`, `hotDog`, `energy`). El paso actual es **el primero que todavía no se cumplió**. La mayoría de los pasos miran el tablero: no importa el orden en que el jugador haga las cosas, y si deshace algo vuelve a ese paso. Cada evento se le reenvía al paso actual, para los pasos que dependen de algo que no se ve en el tablero. Al cargar o reiniciar el nivel, todos los pasos vuelven a empezar (`reset()`). Al ganar muestra `finishedLines` y deja hacer todo.
   - Lo normal es que el último paso no se cumpla solo (un `TutorialStep`, "esperá a que lleguen las papas"). Si igual se cumplen todos sin ganar, se queda mostrando el último.
+  - **Lo que dice el cocinero** (`speech()`) es un `ChefSpeech`: su imagen (`<name>_<paso>`, o `<name>_done` al ganar), el paso (`PASO 2 DE 12`; vacío al ganar: festeja), las líneas, las teclas y la celda que señala (`focusAt(paso)`: la primera del recuadro o de la flecha del paso o, si no marca ninguna, la del último paso que marcó). Todo eso está dibujado en **una sola imagen** por mensaje (ver `chefGuide` en [`menu/README.md`](../menu/README.md)): **si se cambia un mensaje, una tecla, un paso o una celda, hay que volver a correr `assets/tutorial/makeSteps.py`** (un test de `tutorialTest` avisa).
 
 ### Los pasos
 
@@ -186,10 +186,11 @@ Todos tienen `lines`, y opcionalmente:
 
 | Atributo | Qué es |
 |---|---|
-| `cells` | Las celdas donde deja **colocar, borrar y rotar** (en ningún otro lado). Se marcan con el recuadro. Para una máquina de 2x2, sus cuatro celdas |
+| `cells` | Las celdas donde deja **colocar, borrar y rotar** (en ningún otro lado). Para una máquina de 2x2, sus cuatro celdas |
+| `marked` | Las celdas que se marcan con el recuadro (y que señala el cocinero). Por defecto, las `cells`. Para una máquina de 2x2, sólo la de abajo a la izquierda, donde el jugador hace clic para colocarla (`marked = [hotDogTutorialCells.assembler()]`) |
 | `pointsAt` | Las celdas de las máquinas de las que habla el mensaje. Se señalan con la flecha: así el texto puede decir "de la flecha" en vez de "a la derecha de las papas" |
 | `allowsSimulation` | Si deja prender y apagar la simulación (por defecto, no) |
-| `keys` | Las teclas que explica el paso, por nombre: `place` (Z), `edit` (X), `rotate` (C), `up` (W), `left` (A), `continue` (Enter), `start` y `stop` (Espacio), y lo que se hace con el clic: `clickPlace` (elegir y colocar), `clickEdit` (abrir y elegir) y `clickRotate` (en la máquina). El cocinero las dice debajo del mensaje, cada una en el lugar de una línea (líneas más teclas: como máximo 6), así el texto no dice "apretá Z". Para una tecla nueva, agregarla en `KEYS` de `assets/tutorial/makeChef.py` y correrlo |
+| `keys` | Las teclas que explica el paso, por nombre: `place` (Z), `edit` (X), `rotate` (C), `up` (W), `left` (A), `continue` (Enter), `start` y `stop` (Espacio), y lo que se hace con el clic: `clickPlace` (elegir y colocar), `clickEdit` (abrir y elegir) y `clickRotate` (en la máquina). El cocinero las dice debajo del mensaje, cada una en el lugar de una línea (líneas más teclas: como máximo 6), así el texto no dice "apretá Z". Para una tecla nueva, agregarla en `KEYS` de `assets/tutorial/makeChef.py` y correr `makeSteps.py` |
 
 **Un paso o pide hacer algo (`cells`, el recuadro) o explica (`pointsAt`, la flecha), no las dos cosas:** si tiene `cells`, la flecha no se muestra. Para explicar una máquina y después pedir otra, dos pasos: un `ExplainStep` y el que pide.
 
@@ -214,7 +215,7 @@ class SettingStep inherits EventStep {
 
 ### Agregar un tutorial
 
-1. Un `Level` con `tutorial = new StepTutorial(steps = [...], finishedLines = [...])`, en `levelsTypes.wlk`, y agregarlo a `levels` en `levelManager`.
+1. Un `Level` con `tutorial = new StepTutorial(name = "...", steps = [...], finishedLines = [...])`, en `levelsTypes.wlk`, y agregarlo a `levels` en `levelManager`. Después, correr `assets/tutorial/makeSteps.py` para dibujar sus mensajes.
 2. **Las celdas, en un solo lugar:** un objeto con las celdas del armado, como `friesTutorialCells`, que usen tanto las máquinas fijas y la zona de construcción como los pasos. Así, para mover el armado se cambia una sola cosa.
 3. Textos de hasta 16 caracteres por línea y 6 líneas. **"tests de todos los niveles" lo revisa** ("los mensajes de los tutoriales entran en el panel").
 4. Un test que lo juegue entero, como "armado como dice el tutorial, entrega las papas fritas y se gana".

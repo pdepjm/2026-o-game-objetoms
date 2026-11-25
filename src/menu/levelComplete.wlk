@@ -19,62 +19,46 @@
 import wollok.game.*
 import cellPosition.*
 import menu.drawing.visuals.*
-import menu.drawing.texts.*
-import menu.drawing.spriteFonts.*
+import menu.screenClasses.*
 import menu.screens.*
-import levels.levelManager.*
 
+// La comanda de nivel completo: una imagen ya dibujada por nivel y los botones, zonas sin imagen.
 object levelComplete {
 	const drawn = new VisualGroup()
-	const texts = new VisualGroup()
 	var buttons = []
-	const centerX = 11
-	// Las filas del ticket, de arriba hacia abajo (entre sus líneas punteadas)
-	const rowsY = [8.42, 7.82, 7.22, 6.62, 6.02, 5.42]
 
 	method isShown() = !drawn.isEmpty()
 	method buttons() = buttons
-	// Lo que dice (para los tests)
-	method lines() = texts.visuals().map({ text => text.description() })
+	// Enter: como un clic en el primer botón
+	method pressFirstButton() { buttons.first().onClick(buttons.first().zone().origin()) }
+	// La imagen que se ve (para los tests)
+	method image() = drawn.visuals().first().image()
 
 	method draw(result) {
 		self.hide()
-		drawn.add(new Picture(image = "menu/dim.png", position = new CellPosition(x = 0, y = 0)))
-		drawn.add(new Picture(image = "menu/ticket.png", position = new CellPosition(x = 7, y = 1.6)))
-		drawn.add(new Picture(image = "tutorial/chef_happy_up_left.png", position = new CellPosition(x = 15.2, y = 2.2)))
-		texts.keep(spriteText.draw(result.level().name(), labelFont, centerX, 9.12))
-		const rows = result.lines()
-		rows.size().min(rowsY.size()).times({ row =>
-			texts.keep(spriteText.draw(rows.get(row - 1), textFont, centerX, rowsY.get(row - 1)))
-		})
+		drawn.add(new Picture(image = result.image(), position = new CellPosition(x = 0, y = 0)))
 		result.ending().showButtonsIn(self)
 	}
 
 	// Hay otro nivel: SIGUIENTE NIVEL, REPETIR y MENÚ
 	method showNextLevelButtons() {
-		self.showButtons([
-			new Button(image = "menu/btn_next.png", zone = rectangle.of(9, 3, 4, 1), action = { levelCompleteScreen.nextLevel() }),
-			new Button(image = "menu/btn_repeat.png", zone = rectangle.of(9, 2, 2, 1), action = { levelCompleteScreen.restart() }),
-			new Button(image = "menu/btn_menu.png", zone = rectangle.of(11, 2, 2, 1), action = { levelCompleteScreen.backToMenu() })
-		])
+		buttons = [
+			new CellArea(zone = rectangle.of(9, 3, 4, 1), action = { levelCompleteScreen.nextLevel() }),
+			new CellArea(zone = rectangle.of(9, 2, 2, 1), action = { levelCompleteScreen.restart() }),
+			new CellArea(zone = rectangle.of(11, 2, 2, 1), action = { levelCompleteScreen.backToMenu() })
+		]
 	}
 
 	// Era el último nivel: JUGAR DE NUEVO y MENÚ
 	method showPlayAgainButtons() {
-		self.showButtons([
-			new Button(image = "menu/btn_again.png", zone = rectangle.of(9, 3, 4, 1), action = { levelCompleteScreen.restart() }),
-			new Button(image = "menu/btn_menu.png", zone = rectangle.of(10, 2, 2, 1), action = { levelCompleteScreen.backToMenu() })
-		])
-	}
-
-	method showButtons(newButtons) {
-		buttons = newButtons
-		buttons.forEach({ button => drawn.add(button) })
+		buttons = [
+			new CellArea(zone = rectangle.of(9, 3, 4, 1), action = { levelCompleteScreen.restart() }),
+			new CellArea(zone = rectangle.of(10, 2, 2, 1), action = { levelCompleteScreen.backToMenu() })
+		]
 	}
 
 	method hide() {
 		drawn.clear()
-		texts.clear()
 		buttons = []
 	}
 }

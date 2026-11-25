@@ -77,33 +77,17 @@ class Belt inherits Machine {
 		}
 	}
 
-	method notifyNeighbours() {
-		const myCell = self.cell()
-		const neighbours = [
-			board.machineAt(myCell.left(1)),
-			board.machineAt(myCell.right(1)),
-			board.machineAt(myCell.up(1)),
-			board.machineAt(myCell.down(1))
-		]
-		neighbours.forEach({ neighbour => neighbour.onNeighbourChanged() })
-	}
-
-	// Una máquina de al lado cambió (se construyó, se destruyó o rotó): la cinta recalcula su forma
+	// Una máquina de al lado cambió (se construyó, se destruyó o rotó): la cinta recalcula su forma.
+	// Como el tablero avisa siempre, al prender la simulación la forma ya está calculada
 	override method onNeighbourChanged() {
 		self.updateShape()
 		if (!simulationEngine.running()) self.showStatic()
 	}
 
-	override method rotate() {
-		super() 
+	// Al girar cambia también de dónde le llegan las cosas
+	override method turn() {
+		super()
 		self.updateShape()
-		self.showStatic() 
-		self.notifyNeighbours()
-	}
-
-	override method start() {
-		self.updateShape() 
-		super() 
 	}
 
 	override method staticImage() = "machines/" + self.name() + "/" + self.direction().name() + shape.imageSuffix() + "_game.png"

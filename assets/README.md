@@ -33,12 +33,10 @@ assets/
 │       └── <dir>_<accion>/         (sólo las máquinas frame a frame)
 │           └── 0.png, 1.png, ...
 ├── menu/
-│   ├── font/                       (una imagen por letra, para escribir sin contorno; las genera makeFont.py)
-│   ├── info/                       (los fondos de la info del nivel: cinta, tarjetas, barras y globos; los genera makeLevelInfo.py)
-│   ├── key_<nombre>.png            (200x25: una tecla con su texto, como las del fondo)
+│   ├── key_skip.png                (200x25: el botón para saltear el tutorial, como las teclas del fondo)
 │   ├── menu_controls.png           (la pantalla de controles)
-│   ├── makeKeyHints.py             (genera las key_*.png y redibuja el panel de menu_controls.png)
-│   └── makeBoardUi.py              (genera el menú de la máquina, el cartel del modo y los botones)
+│   ├── makeKeyHints.py             (genera key_skip.png y redibuja el panel de menu_controls.png)
+│   └── makeBoardUi.py              (genera el menú de la máquina, el cartel del modo y los botones; los de abajo a la izquierda los pega en background.gif)
 └── recipes_book/
     ├── cover.png                   (800x500: la tapa)
     └── recipe_<plato>.png          (800x500: una página por plato)
@@ -152,9 +150,18 @@ Cada GIF genera una carpeta con su mismo nombre (`up_assemble.gif` → `up_assem
 1. Crear la carpeta `machines/<MachineName>/` con `_menu.png` y `_game.png` para cada dirección, y su animación: `.gif` o carpetas de frames, según el tipo.
 2. Crear la clase y agregarla al catálogo siguiendo [`src/machines/README.md`](../src/machines/README.md#agregar-una-máquina-nueva), que tiene el contrato de qué métodos sobrescribir.
 
-## El panel del brazo, la brújula de colocar y la comanda
+## El panel del brazo y la brújula de colocar
 
-`menu/makeArmAndTicket.py` genera, todo alineado a celdas de 50 px (Wollok avisa el clic por celda): la brújula de "hacia dónde mira" (`compass_*.png`, `compass_center.png`, `dir_label.png`), el panel de los brazos (`arm_box_*`, `arm_grab_*`, `arm_item*.png`, `arm_chip_*`, `arm_dir_*`, `arm_tag_*`) y la comanda del nivel completo (`dim.png`, `ticket.png`, `btn_*.png`). Los ingredientes del panel usan sus imágenes de siempre: no hace falta una imagen nueva por ingrediente.
+`menu/makeArmAndCompass.py` genera, todo alineado a celdas de 50 px (Wollok avisa el clic por celda): la brújula de "hacia dónde mira" (`compass_*.png`, `compass_center.png`, `dir_label.png`), el panel de los brazos (`arm_box_*`, `arm_grab_*`, `arm_item*.png`, `arm_chip_*`, `arm_dir_*`, `arm_tag_*`). (La comanda del nivel completo ya no sale de ahí: ver [Las imágenes de cada nivel](#las-imágenes-de-cada-nivel).) Los ingredientes del panel usan sus imágenes de siempre: no hace falta una imagen nueva por ingrediente.
+
+## Las imágenes de cada nivel
+
+Los niveles son fijos, así que lo que se escribe sobre ellos se dibuja de antemano: Wollok redibuja cada visual en cada frame, y escribirlo letra por letra eran decenas de visuals. `levels/makeLevelImages.py` (le pide los niveles a Wollok con un test temporal, así que hace falta `wollok-ts-cli`; guarda lo que dibujó en `src/levels/levelImages.wlk`, y un test avisa si un nivel cambió y **hay que volver a correrlo**) genera, con `<nivel>` el nombre en minúsculas y con `_` (`tutorial_1`, `nivel_3`):
+
+- `levels/info/ribbon.png` (la cinta del nombre del nivel), `levels/info/goal_title.png` (la parte de arriba de la tarjeta, con OBJETIVO) y `levels/info/<nivel>_goal<i>_<k>.png` (184x50): el objetivo `i` con `k` entregados, de 0 a la cantidad pedida, con su pedazo de tarjeta, el plato, el texto y la barra.
+- `levels/complete/<nivel>.png` (1100x650): la comanda del nivel completo entera (oscurecido, papel, cocinero, lo entregado, el título del final y los botones). Los botones se clickean en celdas fijas de `src/menu/levelComplete.wlk`.
+
+Las letras salen de las fuentes de Windows (`segoeuib.ttf`, `cour.ttf`, `courbd.ttf`), con los mismos tamaños y colores que tenían.
 
 ## La insignia de las máquinas
 
@@ -162,7 +169,7 @@ El dispenser (el ingrediente que larga) y el ensamblador (el plato de su receta)
 
 ## `menu/` (la interfaz sin herramientas)
 
-`assets/menu/makeBoardUi.py` genera las imágenes de la interfaz: el menú de la máquina elegida (`actions_*.png`, 150x50: ROTAR · EDITAR · BORRAR, una celda cada uno, con lo que no se puede apagado), el cartel COLOCANDO / EDITANDO (`mode_*.png`, 200x50), los botones de abajo a la izquierda (`side_buttons.png`, 200x200, y `speed_selected.png`), los botones de dirección (`dir_pad.png`, `dir_selected.png`), la marca de la portada (`cover_focus.png`) y del panel de editar (`option_focus.png`) y los botones del recetario (`book_*.png`). `assets/makeCover.py` borra las teclas de las opciones de `startScreen.png`.
+`assets/menu/makeBoardUi.py` genera las imágenes de la interfaz: el menú de la máquina elegida (`actions_*.png`, 150x50: ROTAR · EDITAR · BORRAR, una celda cada uno, con lo que no se puede apagado), el cartel COLOCANDO / EDITANDO (`mode_*.png`, 200x50), los botones de abajo a la izquierda (F RECETARIO, M MENÚ, ESPACIO y 1 2 3: **no son una imagen aparte**, se pegan en todos los cuadros de `background.gif`, en x 0 a 200 e y 450 a 650; si se vuelve a armar el fondo con `makeSmallScreen.py`, hay que correr `makeBoardUi.py` después) y el marco de la velocidad elegida (`speed_selected.png`), los botones de dirección (`dir_pad.png`, `dir_selected.png`), la marca de la portada (`cover_focus.png`) y del panel de editar (`option_focus.png`) y los botones del recetario (`book_*.png`). `assets/makeCover.py` borra las teclas de las opciones de `startScreen.png`.
 
 ## `food/`
 
@@ -235,8 +242,9 @@ El script necesita Edge, Chrome o Chromium instalado: lo usa sin abrir ventanas 
 
 | Archivo | Para qué sirve |
 |---|---|
-| `background.gif` | fondo del juego (se carga con `game.boardGround`) |
+| `background.gif` | fondo del juego (se carga con `game.boardGround`), con los botones de abajo a la izquierda ya pegados en cada cuadro (`menu/makeBoardUi.py`) |
 | `levels/blocked_<nivel>.png` | 1100x650, transparente: la capa de celdas bloqueadas de cada nivel, con la marca en cada celda donde no se puede construir. Se genera con `levels/makeBlockedOverlays.py` (herramienta auxiliar, no forma parte del juego) |
+| `levels/info/`, `levels/complete/` | la info de cada nivel (cinta, título y un estado por objetivo) y su comanda de nivel completo. Se generan con `levels/makeLevelImages.py` (ver [Las imágenes de cada nivel](#las-imágenes-de-cada-nivel)) |
 | `no_texture.png` | imagen de reemplazo cuando todavía no hay una definitiva |
 
 ## Cuántas imágenes hay en `assets/`
@@ -245,7 +253,7 @@ Al arrancar, Wollok Game le pide al navegador **todas** las imágenes y sonidos 
 vuelve a pedir cada vez, sin caché). Si son demasiadas, el navegador corta las últimas con
 `ERR_INSUFFICIENT_RESOURCES` y en su lugar se ve el logo de Wollok, o nada. Como se piden en orden
 alfabético, las primeras en fallar son `menu/`, `recipes_book/`, `startScreen.png` y `tutorial/`:
-el juego arranca sin portada ni tutorial. Con unas 1470 ya fallaba; hoy son unas 1050 (los mensajes del cocinero, `tutorial/messages/`, son 34).
+el juego arranca sin portada ni tutorial. Con unas 1470 ya fallaba; hoy son unas 1030 (el cocinero del tutorial, `tutorial/steps/`, son 35: una imagen por mensaje, con el cocinero, el globo y el texto juntos; las genera `tutorial/makeSteps.py`).
 
 Por eso:
 

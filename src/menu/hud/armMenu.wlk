@@ -22,7 +22,7 @@ import cellPosition.*
 import directions.*
 import machines.machineClasses.*
 import menu.hud.hud.*
-import input.clickManager.*
+import menu.screenClasses.*
 import menu.drawing.texts.*
 import menu.hud.editMenu.*
 import menu.drawing.visuals.*
@@ -30,7 +30,7 @@ import levels.levelManager.*
 import sound.sfx.*
 
 // Panel de la zona interactiva (x 18 a 21) mientras se edita un brazo (X sobre él).
-object armMenu inherits ClickTargets {
+object armMenu {
 	const columns = 4
 	const firstRow = 7
 	var arm = noMachine
@@ -68,8 +68,7 @@ object armMenu inherits ClickTargets {
 	}
 
 	// Los clics del panel: cada casillero sabe cuál es
-	override method zones() = [hud.interactiveZone()]
-	override method clickTargets() = areas
+	method clickableAreas() = areas
 
 	// Las flechas mueven la marca por los casilleros, y Enter usa el marcado
 	method moveFocus(direction) {

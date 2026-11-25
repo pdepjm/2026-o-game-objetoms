@@ -36,8 +36,6 @@ object levelManager {
     // Arranca en el modo libre (y no en null): así entregar algo o apretar 5 antes de start() no rompe
     var currentLevel = freePlay
     var completed = false   // Si se cumplio el nivel actual
-    // El paso de la simulación en el que se prendió por última vez: para el tiempo de cocina de la comanda
-    var cookStartStep = 0
 
     method _clear() {
         simulationEngine.reset()
@@ -107,7 +105,6 @@ object levelManager {
         // Prender necesita energía de sobra; apagar siempre se puede
         if (!completed && self.tutorial().allowsSimulationToggle() && (simulationEngine.running() || self.hasEnergy())) {
 	    	simulationEngine.toggle()
-	    	if (simulationEngine.running()) cookStartStep = simulationEngine.currentStep()
 	    	// Al apagar se borran los items: el progreso vuelve a cero
 	    	if (!simulationEngine.running()) {
 	    		currentLevel.resetGoals()
@@ -156,10 +153,7 @@ object levelManager {
     method finishLevel() {
     	simulationEngine.stop()
     	self._cookingChanged()                                 // vuelve el cocinero, a festejar
-    	// el tiempo de cocina: 10 pasos por segundo
-    	const result = new LevelResult(level = currentLevel, cookSeconds = (simulationEngine.currentStep() - cookStartStep).div(10), ending = self.ending())
-    	levelInfoMenu.showCompleted(result.ending())
-    	screenManager.showLevelComplete(result)
+    	screenManager.showLevelComplete(new LevelResult(level = currentLevel, ending = self.ending()))
     }
 
     // Cómo termina el nivel que se ganó: con otro nivel después, o fin del juego
@@ -227,7 +221,7 @@ object levelManager {
         const targets = self.tutorial().targetCells()
         if (!targets.isEmpty() && targets != before) toolsManager.jumpTo(targets.first())
         tutorialMarks.show(targets, self.tutorial().pointedCells())
-        chefGuide.say(self.tutorial().stepLabels(), self.tutorial().messageLines(), self.tutorial().messageKeys(), self.tutorial().targetCells() + self.tutorial().pointedCells())
+        chefGuide.say(self.tutorial().speech())
         placeMenu.highlight(self.tutorial().wantedMachines())
     }
 }

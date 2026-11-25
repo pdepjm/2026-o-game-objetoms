@@ -90,27 +90,32 @@ object screenManager {
 
 	// ----------- LO QUE HACE EL JUGADOR: lo resuelve la pantalla activa -----------
 
+	// CLIC -> screenManager -> la pantalla activa -> la zona clickeada (o nothingClicked)
 	method onClick(pos) { screen.onClick(pos) }
 
-	method enter() { screen.enter() }
-	method arrow(direction) { screen.arrow(direction) }
-	method back() { screen.back() }
-	method toggleBook() { screen.toggleBook() }
-	method pressI() { screen.pressI() }
-	method pressS() { screen.pressS() }
+	// Cada tecla, por su nombre: la pantalla activa la usa o no hace nada
+	method press(key) { self.press(key, key) }
+	method press(key, value) { screen.press(key, value) }
 
-	method speed(n) { screen.speed(n) }
-	method toggleSimulation() { screen.toggleSimulation() }
-	method nextLevel() { screen.nextLevel() }
-	method restart() { screen.restart() }
-	method toggleFreePlay() { screen.toggleFreePlay() }
-	method skipTutorial() { screen.skipTutorial() }
-	method chooseMachine(step) { screen.chooseMachine(step) }
-	method rotateMachine() { screen.rotateMachine() }
-	method editMachine() { screen.editMachine() }
-	method deleteMachine() { screen.deleteMachine() }
-	method direction(aDirection) { screen.direction(aDirection) }
-	method backToMenu() { screen.backToMenu() }
+	method enter() { self.press("enter") }
+	method arrow(direction) { self.press("arrow", direction) }
+	method back() { self.press("back") }
+	method toggleBook() { self.press("book") }
+	method pressI() { self.press("i") }
+	method pressS() { self.press("s") }
+
+	method speed(n) { self.press("speed", n) }
+	method toggleSimulation() { self.press("simulation") }
+	method nextLevel() { self.press("nextLevel") }
+	method restart() { self.press("restart") }
+	method toggleFreePlay() { self.press("freePlay") }
+	method skipTutorial() { self.press("skipTutorial") }
+	method chooseMachine(step) { self.press("chooseMachine", step) }
+	method rotateMachine() { self.press("rotate") }
+	method editMachine() { self.press("edit") }
+	method deleteMachine() { self.press("delete") }
+	method direction(aDirection) { self.press("direction", aDirection) }
+	method backToMenu() { self.press("menu") }
 }
 
 // La primera partida: arma los platitos y carga el nivel que toca.

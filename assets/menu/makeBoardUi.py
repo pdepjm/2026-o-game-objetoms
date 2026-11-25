@@ -22,13 +22,17 @@
 # - actions_all.png, actions_noedit.png, actions_editonly.png, actions_none.png (150x50): el menú de la
 #   máquina elegida: ROTAR (C), EDITAR (X) y BORRAR (V), una celda cada uno. Lo que no se puede, apagado.
 # - mode_placing.png y mode_editing.png (200x50): el cartel COLOCANDO / EDITANDO, arriba a la derecha.
-# - side_buttons.png (200x200) y speed_selected.png (50x50): los botones de abajo a la izquierda
-#   (recetario, menú, iniciar y las velocidades), uno por fila de celdas para que se puedan clickear.
+# - Los botones de abajo a la izquierda (recetario, menú, iniciar y las velocidades, 200x200, uno por fila
+#   de celdas para que se puedan clickear): no son una imagen aparte, se pegan en TODOS los cuadros de
+#   assets/background.gif (x 0 a 200, y 450 a 650). Ver bake_into_background. Si se vuelve a armar el
+#   fondo (assets/makeSmallScreen.py), correr después este script.
+# - speed_selected.png (50x50): el marco de la velocidad elegida.
 # - cover_focus.png (440x60): la opción marcada en la portada.
 # - option_focus.png (50x50): la opción marcada en el panel de editar.
 # - book_prev.png, book_next.png (y _off) (50x80) y book_close.png (100x100): los botones del recetario.
 #
 # Uso (desde la raíz del repositorio):   python assets/menu/makeBoardUi.py
+import io
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -152,11 +156,64 @@ def side_buttons():
         draw_key(im, (i * 50 + 8) * S, 158 * S, str(i + 1), 30 * S)
     d = ImageDraw.Draw(im)
     d.text((175 * S, 175 * S), 'VEL.', font=font(round(13 * S)), fill=LABEL, anchor='mm')
-    save(im, 'side_buttons.png')
+    bake_into_background(im.resize((200, 200), Image.LANCZOS), (0, 450))
 
     sel = canvas(50, 50)
     box(ImageDraw.Draw(sel), (3, 4, 49, 41), None, YELLOW, 3, 9)
     save(sel, 'speed_selected.png')
+
+
+# Sólo el primer cuadro del gif (que usa la paleta global) dibuja esa zona: los demás traen su propia paleta
+# y sólo cambian la parte de arriba (el título que se anima). Así que se rearma el primer cuadro con una
+# paleta que suma los colores de los botones, y el resto del archivo se copia tal cual (duraciones, loop).
+def bake_into_background(buttons, corner):
+    path = HERE.parent / 'background.gif'
+    data = path.read_bytes()
+    gif = Image.open(path)
+    zone = (corner[0], corner[1], corner[0] + buttons.width, corner[1] + buttons.height)
+    # los colores que el cuadro usa fuera de la zona de los botones se quedan con su índice nuevo
+    outside = gif.copy()
+    outside.paste(0, zone)
+    kept = sorted(index for _, index in outside.getcolors(256))
+    palette = gif.getpalette()
+    full = sum((palette[3 * i:3 * i + 3] for i in kept), [])
+    # con los lugares que quedan libres, los colores de los botones
+    region = buttons.convert('RGB')
+    extra = region.quantize(256 - len(kept), method=Image.Quantize.MEDIANCUT)
+    full += extra.getpalette()[:3 * len(extra.getcolors(256))]
+    full += [0] * (768 - len(full))
+    lookup = Image.new('P', (1, 1))
+    lookup.putpalette(full)
+    frame = outside.point([kept.index(i) if i in kept else 0 for i in range(256)])
+    frame.putpalette(full)
+    frame.paste(region.quantize(palette=lookup, dither=Image.Dither.NONE), corner)
+    buffer = io.BytesIO()
+    frame.save(buffer, 'GIF', optimize=False)
+    encoded = buffer.getvalue()
+    header, _, (new_start, new_end) = first_frame_blocks(encoded)
+    _, extensions, (start, end) = first_frame_blocks(data)
+    # cabecera y paleta nuevas, las extensiones de antes (loop, duración), el cuadro nuevo y el resto igual
+    path.write_bytes(b'GIF89a' + header[6:] + data[extensions:start] + encoded[new_start:new_end] + data[end:])
+
+
+def first_frame_blocks(data):
+    """(cabecera con la paleta global, dónde terminan, (dónde empieza y dónde termina el primer cuadro))"""
+    flags = data[10]
+    header_end = 13 + (3 * 2 ** ((flags & 7) + 1) if flags & 0x80 else 0)
+    p = header_end
+    while data[p] == 0x21:
+        p = skip_sub_blocks(data, p + 2)
+    frame_start = p
+    descriptor_flags = data[p + 9]
+    p += 10 + (3 * 2 ** ((descriptor_flags & 7) + 1) if descriptor_flags & 0x80 else 0)
+    frame_end = skip_sub_blocks(data, p + 1)
+    return data[:header_end], header_end, (frame_start, frame_end)
+
+
+def skip_sub_blocks(data, p):
+    while data[p]:
+        p += data[p] + 1
+    return p + 1
 
 
 # ----------- PORTADA, PANEL DE EDITAR Y RECETARIO -----------

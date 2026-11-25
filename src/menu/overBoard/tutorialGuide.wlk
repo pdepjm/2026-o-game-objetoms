@@ -20,10 +20,8 @@ import wollok.game.*
 import cellPosition.*
 import board.*
 import menu.drawing.visuals.*
-import menu.drawing.texts.*
-import menu.drawing.spriteFonts.*
-import menu.overBoard.bubbleTexts.*
 import levels.levelManager.*
+import levels.tutorial.*
 
 // Lo que dice el tutorial lo decide levels/tutorial.wlk: acá sólo se dibuja.
 
@@ -34,27 +32,16 @@ object chefBubble {
 	method handlesClick(pos) = levelManager.tutorial().waitsForContinue() && chefGuide.bubbleContains(pos)
 	method onClick(pos) { levelManager.continueTutorial() }
 }
+
+// El cocinero y su globo: UNA imagen ya dibujada por mensaje (assets/tutorial/steps/, ver el README)
 object chefGuide {
 	// Lo que entra en el globo (no se controla al dibujar: lo revisan los tests).
 	const property maxLines = 6
 	const property maxLength = 16
-
-	// El cocinero mide 120x160 px; la punta de la cuchara queda 25 px adentro de su borde
-	const chefWidth = 2.4
-	const chefHeight = 3.2
-	// El globo: 200 px de ancho más la cola (14 px).
-	const bubbleWidth = 4.28
-	const lineHeight = 0.55
-	// Hasta dónde puede llegar el globo a la derecha: el borde del panel de la derecha
-	const rightLimit = 18
-	const topLimit = 12.95
 	const errorMillis = 1700
 
-	// Lo que dice el paso (para los tests), y la celda que señala.
-	var lines = []
-	var stepLabel = ""
-	var keys = []
-	var focus = new CellPosition(x = 9, y = 5)
+	var speech = noSpeech
+	// Las líneas de la queja (para los tests): se dibuja siempre la misma imagen de error
 	var complaint = []
 	// Cada queja tiene un número: la que vence sólo borra la queja si no vino otra después
 	var complaintId = 0
@@ -62,27 +49,26 @@ object chefGuide {
 	// Mientras se cocina, el cocinero no se ve: sigue sabiendo qué dice
 	var silenced = false
 
-	method message() = lines
-	method stepLabel() = stepLabel
+	method message() = speech.lines()
+	method stepLabel() = speech.label()
 	// Las teclas que dice, por nombre
-	method keys() = keys
+	method keys() = speech.keys()
 	method complaint() = complaint
 	// Lo que tiene dibujado (para los tests de rendimiento)
 	method drawnVisuals() = drawn.visuals()
 
+	method layout() = self.layoutOf(speech)
+
+	method layoutOf(aSpeech) = new ChefLayout(focus = aSpeech.focus(), rows = aSpeech.lines().size() + aSpeech.keys().size())
+
+	// Lo que tiene que tener dibujado la imagen de ese mensaje (makeSteps.py la dibuja con esto, y un test lo compara)
+	method signatureOf(aSpeech) = self.layoutOf(aSpeech).signatureOf(aSpeech)
+
 	// El mensaje del paso. Si dice lo mismo que ya está diciendo, no redibuja nada
-	method say(stepLabels, newLines, newKeys, cells) {
-		const newLabel = stepLabels.join("")
-		const shownLines = newLines.take(maxLines)
-		const shownKeys = newKeys.take(maxLines - shownLines.size())
-		const newFocus = if (cells.isEmpty()) focus else cells.first()
-		const same = shownLines == lines && shownKeys == keys && newLabel == stepLabel
-			&& newFocus.x() == focus.x() && newFocus.y() == focus.y() && !self.isComplaining()
+	method say(newSpeech) {
+		const same = newSpeech.image() == speech.image() && newSpeech.lines() == speech.lines() && !self.isComplaining()
 		if (!same) {
-			lines = shownLines
-			keys = shownKeys
-			stepLabel = newLabel
-			focus = newFocus
+			speech = newSpeech
 			complaint = []
 			self.redraw()
 		}
@@ -90,8 +76,8 @@ object chefGuide {
 
 	// El jugador hizo algo que el paso no deja: lo dice un momento y vuelve al mensaje del paso
 	method complain(complaintLines) {
-		if (!complaintLines.isEmpty() && !lines.isEmpty()) {
-			complaint = complaintLines.take(maxLines)
+		if (!complaintLines.isEmpty() && !self.message().isEmpty()) {
+			complaint = complaintLines
 			complaintId += 1
 			const id = complaintId
 			self.redraw()
@@ -125,107 +111,118 @@ object chefGuide {
 	}
 
 	// ¿El clic cayó en una celda que toca el globo?
-	method bubbleContains(pos) = !lines.isEmpty() && !silenced && self.bubbleZone().contains(pos)
-
-	// Las celdas que toca el globo (tiene decimales: se cuentan las celdas que pisa aunque sea un poco)
-	method bubbleZone() {
-		const rows = lines.size() + keys.size()
-		const top = self.bubbleTop(rows)
-		const left = self.bubbleLeft()
-		const bottom = top - self.bubbleHeight(rows)
-		return new Zone(minX = left.truncate(0), maxX = (left + bubbleWidth).roundUp() - 1, minY = bottom.truncate(0), maxY = top.roundUp() - 1)
-	}
-
-	// ----------- DIBUJO -----------
+	method bubbleContains(pos) = !self.message().isEmpty() && !silenced && self.layout().bubbleZone().contains(pos)
 
 	method redraw() {
 		drawn.clear()
-		if (!lines.isEmpty() && !silenced) {
-			drawn.add(new Picture(image = self.chefImage(), position = new CellPosition(x = self.chefLeft(), y = self.chefBottom())))
-			// al quejarse dice sólo la queja, sin las teclas del paso
-			if (self.isComplaining()) self.drawBubble(complaint, []) else self.drawBubble(lines, keys)
-		}
+		if (!self.message().isEmpty() && !silenced) drawn.add(self.picture())
 	}
 
-	method mood() = if (self.isComplaining()) "oops" else if (stepLabel.isEmpty()) "happy" else "talk"
+	method picture() = if (self.isComplaining()) self.layout().errorPicture() else self.layout().pictureOf(speech)
+}
 
-	// ¿Hay lugar arriba de la celda?
-	method pose() = if (focus.y() + 1 + chefHeight <= topLimit) "down" else "up"
+// Dónde se paran el cocinero y su globo para señalar una celda, en celdas (makeSteps.py dibuja con estas medidas)
+class ChefLayout {
+	const focus
+	// Las líneas del globo más una por tecla
+	const rows
+	// El cocinero mide 120x160 px; la punta de la cuchara queda 25 px adentro de su borde
+	const chefWidth = 2.4
+	const chefHeight = 3.2
+	// El globo: 200 px de ancho más la cola (14 px), separado del cocinero
+	const bubbleWidth = 4.28
+	const gap = 0.05
+	// Hasta dónde puede llegar el globo a la derecha: el borde del panel de la derecha
+	const rightLimit = 18
+	const topLimit = 12.95
+
+	// Arriba de la celda si hay lugar; si no, abajo
+	method pose() = if (focus.y() + 1 + chefHeight <= topLimit) aboveCell else belowCell
 
 	// En las primeras columnas no entra a la izquierda de la celda: se para a su derecha
-	method facing() = if (focus.x() <= 6) "left" else "right"
+	method facing() = if (focus.x() <= 6) facingLeft else facingRight
 
-	method chefImage() = "tutorial/chef_" + self.mood() + "_" + self.pose() + "_" + self.facing() + ".png"
+	// La punta de la cuchara cae en el medio de la celda
+	method chefLeft() = self.facing().chefLeft(focus, chefWidth)
 
-	// La punta de la cuchara cae en el medio de la celda (de arriba o de abajo, según la pose)
-	method chefLeft() = if (self.facing() == "right") focus.x() + 0.5 - (chefWidth - 0.5) else focus.x()
-
-	method chefBottom() = if (self.pose() == "down") focus.y() + 0.9 else focus.y() + 0.1 - chefHeight
+	method chefBottom() = self.pose().chefBottom(focus, chefHeight)
 
 	method chefTop() = self.chefBottom() + chefHeight
 
-	// ¿El globo va a la derecha del cocinero?
-	method bubbleOnRight() = self.chefLeft() + chefWidth + 0.05 + bubbleWidth <= rightLimit
+	// A la derecha del cocinero si entra antes del panel de la derecha
+	method bubbleSide() = if (self.chefLeft() + chefWidth + gap + bubbleWidth <= rightLimit) bubbleOnRight else bubbleOnLeft
 
-	method bubbleLeft() = if (self.bubbleOnRight()) self.chefLeft() + chefWidth + 0.05 else self.chefLeft() - bubbleWidth - 0.05
+	method bubbleLeft() = self.bubbleSide().bubbleLeft(self.chefLeft(), chefWidth, bubbleWidth, gap)
 
-	// El alto del globo, como en makeChef.py: 16 px arriba de la etiqueta del paso
-	method bubbleHeight(lineCount) = (16 + 25 + (lineCount - 1) * lineHeight * 50 + 18) / 50
+	// 16 px arriba de la etiqueta del paso, 25 por la primera fila, 27.5 por cada otra y 18 abajo
+	method bubbleHeight() = (16 + 25 + (rows - 1) * 27.5 + 18).round() / 50
 
 	// El globo arranca a la altura de la cabeza del cocinero, sin salirse de la pantalla
-	method bubbleTop(lineCount) = self.chefTop().min(topLimit).max(self.bubbleHeight(lineCount) + 0.1)
+	method bubbleTop() = self.chefTop().min(topLimit).max(self.bubbleHeight() + 0.1)
 
-	// Las líneas y, debajo, una fila por tecla: el globo es el de tantas líneas como las dos cosas juntas
-	method drawBubble(shown, shownKeys) {
-		const rows = shown.size() + shownKeys.size()
-		const top = self.bubbleTop(rows)
-		const side = if (self.bubbleOnRight()) "left" else "right"
-		const kind = if (self.isComplaining()) "error_" else ""
-		drawn.add(new Picture(
-			image = "tutorial/bubble_" + side + "_" + kind + rows + ".png",
-			position = new CellPosition(x = self.bubbleLeft(), y = top - self.bubbleHeight(rows))
-		))
-		// el cuerpo del globo mide 4 celdas: con la cola a la izquierda, empieza 14 px más adentro
-		const centerX = self.bubbleLeft() + 2 + (if (side == "left") 0.28 else 0)
-		const label = if (self.isComplaining()) "¡UY!" else stepLabel
-		if (!label.isEmpty()) drawn.keep(spriteText.draw(label, labelFont, centerX, top - 0.32))
-		const firstLineY = top - 0.82
-		bubbleMessages.draw(shown, centerX, firstLineY, lineHeight, drawn)
-		// la fila de la tecla mide 200x25 px, como el cuerpo del globo: centrada en el lugar de una línea
-		var lineY = firstLineY - shown.size() * lineHeight
-		shownKeys.forEach({ key =>
-			drawn.add(new Picture(image = "tutorial/key_" + key + ".png", position = new CellPosition(x = centerX - 2, y = lineY - 0.25)))
-			lineY -= lineHeight
-		})
-	}
+	// La caja que ocupan el cocinero y el globo juntos: la imagen se dibuja en su esquina de abajo a la izquierda
+	method left() = self.chefLeft().min(self.bubbleLeft())
+	method top() = self.chefTop().max(self.bubbleTop())
+	method bottom() = self.chefBottom().min(self.bubbleTop() - self.bubbleHeight())
+
+	method pictureOf(speech) = new Picture(image = "tutorial/steps/" + speech.image() + ".png", position = new CellPosition(x = self.left(), y = self.bottom()))
+
+	// La queja: el cocinero en el mismo lugar, con el globo de error del mismo lado
+	method errorPicture() = new Picture(image = "tutorial/steps/oops_" + self.bubbleSide().name() + ".png", position = new CellPosition(x = self.left(), y = self.chefBottom()))
+
+	// Las celdas que toca el globo (tiene decimales: se cuentan las celdas que pisa aunque sea un poco)
+	method bubbleZone() = new Zone(
+		minX = self.bubbleLeft().truncate(0), maxX = (self.bubbleLeft() + bubbleWidth).roundUp() - 1,
+		minY = (self.bubbleTop() - self.bubbleHeight()).truncate(0), maxY = self.bubbleTop().roundUp() - 1
+	)
+
+	// En px desde la esquina de arriba a la izquierda de la imagen
+	method px(cells) = (cells * 50).round().toString()
+
+	// imagen;paso;líneas;teclas;cara;pose;mira;lado del globo;cocinero x;y;globo x;y;ancho;alto
+	method signatureOf(speech) = [
+		speech.image(), speech.label(), speech.lines().join("|"), speech.keys().join(","), speech.mood(),
+		self.pose().name(), self.facing().name(), self.bubbleSide().name(),
+		self.px(self.chefLeft() - self.left()), self.px(self.top() - self.chefTop()),
+		self.px(self.bubbleLeft() - self.left()), self.px(self.top() - self.bubbleTop()),
+		self.px(chefWidth + gap + bubbleWidth), self.px(self.top() - self.bottom())
+	].join(";")
 }
 
-// Los mensajes del globo ya escritos, una imagen por mensaje (assets/tutorial/messages/<número>.png)
-object bubbleMessages {
-	// El número de imagen de cada mensaje (sus líneas unidas con "|")
-	const indexes = new Dictionary()
+// Parado arriba de la celda, la señala hacia abajo (el nombre es el de sus imágenes)
+object aboveCell {
+	method name() = "down"
+	method chefBottom(focus, chefHeight) = focus.y() + 0.9
+}
 
-	override method initialize() {
-		(0 .. bubbleTexts.size() - 1).forEach({ index => indexes.put(bubbleTexts.get(index), index) })
-	}
+// Parado abajo de la celda, la señala hacia arriba
+object belowCell {
+	method name() = "up"
+	method chefBottom(focus, chefHeight) = focus.y() + 0.1 - chefHeight
+}
 
-	method has(lines) = indexes.containsKey(lines.join("|"))
+// A la izquierda de la celda, mirando a la izquierda
+object facingLeft {
+	method name() = "left"
+	method chefLeft(focus, chefWidth) = focus.x()
+}
 
-	method imageOf(lines) = "tutorial/messages/" + indexes.get(lines.join("|")) + ".png"
+// A la derecha de la celda, mirando a la derecha
+object facingRight {
+	method name() = "right"
+	method chefLeft(focus, chefWidth) = focus.x() + 0.5 - (chefWidth - 0.5)
+}
 
-	// Las líneas, centradas en centerX, con la primera centrada en firstLineY.
-	method draw(lines, centerX, firstLineY, lineHeight, group) {
-		if (self.has(lines)) {
-			const height = ((lines.size() - 1) * lineHeight * 50).roundUp() + 20
-			group.add(new Picture(image = self.imageOf(lines), position = new CellPosition(x = centerX - 2, y = firstLineY + 0.2 - height / 50)))
-		} else {
-			var lineY = firstLineY
-			lines.forEach({ line =>
-				group.keep(spriteText.draw(line, textFont, centerX, lineY))
-				lineY -= lineHeight
-			})
-		}
-	}
+// El globo a la derecha del cocinero
+object bubbleOnRight {
+	method name() = "right"
+	method bubbleLeft(chefLeft, chefWidth, bubbleWidth, gap) = chefLeft + chefWidth + gap
+}
+
+// El globo a la izquierda del cocinero
+object bubbleOnLeft {
+	method name() = "left"
+	method bubbleLeft(chefLeft, chefWidth, bubbleWidth, gap) = chefLeft - bubbleWidth - gap
 }
 
 // ----------- LAS MARCAS SOBRE EL TABLERO -----------

@@ -78,9 +78,6 @@ object simulationEngine {
 		agenda.get(dueStep % slotCount).add(new ScheduledAction(dueStep = dueStep, action = action))
 	}
 
-	// El paso en el que va
-	method currentStep() = currentStep
-
 	// Cantidad de pasos de simulación que equivalen a esos milisegundos
 	method stepsFor(milliseconds) = (milliseconds / tickMs).roundUp().max(1)
 

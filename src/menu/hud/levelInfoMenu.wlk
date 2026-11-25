@@ -21,7 +21,6 @@ import menu.hud.hud.*
 import levels.levelManager.*
 import menu.drawing.texts.*
 import cellPosition.*
-import menu.drawing.spriteFonts.*
 import menu.drawing.visuals.*
 
 // La información del nivel, en la zona de la izquierda (levelInfoZone: x 0 a 4, y 1 a 11).
@@ -32,43 +31,32 @@ object levelInfoMenu {
     const hintRow = 9
     const goalTitleRow = 8
     const firstProgressRow = 7
-    const completedRow = 5
-    // Los objetivos: el texto un poco arriba del centro de su fila y corrido a la derecha
-    const goalTextColumn = 2
-    const goalTextOffset = 0.18
-    const goalBarOffset = 0.14
-    const goalBarColumn = 1.3
-    // La tecla para seguir (assets/menu/key_*.png, 200x25)
-    const keyHintRow = 4.25
     // Los colores (RRGGBBAA) de los textos de Wollok: amarillo sobre la cinta, blanco sobre el azul.
     const yellow = "FFD015FF"
     const white = "FFFFFFFF"
     const red = "FF5A4DFF"
 
-    // Las imágenes de atrás
+    // Las imágenes de atrás y de los objetivos (assets/levels/info/, ver makeLevelImages.py)
     const imageColumn = 0.24
+    const folder = "levels/info/"
 
     // Lo dibujado, separado según cuándo se reemplaza
     const energyTexts = new VisualGroup()
     var skipButton = noSkipButton
+    const backgrounds = new VisualGroup()  // la cinta y el título de los objetivos
     const levelTexts = new VisualGroup()
-    const progressTexts = new VisualGroup()
-    const completedTexts = new VisualGroup()  // el mensaje de nivel completo
+    const goalPictures = new VisualGroup()  // una imagen por objetivo
 
     // Al cargar un nivel: borra todo lo anterior y dibuja el nombre y los objetivos.
     method show(level) {
-        [levelTexts, progressTexts, completedTexts, energyTexts].forEach({ group => group.clear() })
-        levelTexts.add(self.image("menu/info/ribbon.png", nameRow))
+        [backgrounds, levelTexts, goalPictures, energyTexts].forEach({ group => group.clear() })
+        skipButton.hide()
+        backgrounds.add(self.image(folder + "ribbon.png", nameRow))
         levelTexts.add(self.text(level.name().toUpperCase(), column, nameRow, yellow))
         // el botón de saltear, si el nivel tiene tutorial
         skipButton = level.tutorial().skipButton(self)
-        skipButton.showIn(levelTexts)
-        const goals = level.shownGoals().size()
-        if (goals > 0) {
-            // la tarjeta va del título hasta el borde de abajo de la fila del último objetivo
-            levelTexts.add(self.image("menu/info/card_" + goals + ".png", goalTitleRow - goals))
-            levelTexts.keep(self.spriteText("OBJETIVO", labelFont, column, goalTitleRow))
-        }
+        skipButton.show()
+        if (!level.shownGoals().isEmpty()) backgrounds.add(self.image(folder + "goal_title.png", goalTitleRow))
         self.drawProgress(level)
     }
 
@@ -76,11 +64,11 @@ object levelInfoMenu {
     method isSkipButton(pos) = skipButton.handlesClick(pos)
 
     // El botón de saltear el tutorial, todavía sin dibujar (lo pide el tutorial del nivel).
-    method newSkipButton() = new KeyHint(image = "menu/key_skip.png", descriptionText = "skip", position = self.exactPosition(0, hintRow + 0.2), zone = rectangle.of(0, hintRow, 4, 1))
+    method newSkipButton() = new SkipButton(image = "menu/key_skip.png", position = self.exactPosition(0, hintRow + 0.2), zone = rectangle.of(0, hintRow, 4, 1))
 
     // Una ayuda debajo del nombre (por ejemplo, "L: volver" en el modo libre).
     method showHint(text) {
-        levelTexts.add(self.text(text, hintRow))
+        levelTexts.add(self.text(text, column, hintRow, white))
     }
 
     // El contador de energía, debajo de la tarjeta de objetivos (rojo si se pasó del límite).
@@ -99,64 +87,30 @@ object levelInfoMenu {
 
     // Cambió el progreso (una entrega, o se apagó la simulación): reemplaza sólo los objetivos
     method updateProgress(level) {
-        progressTexts.clear()
+        goalPictures.clear()
         self.drawProgress(level)
     }
 
-    // Se ganó el nivel: el mensaje y la tecla para seguir
-    method showCompleted(ending) {
-        completedTexts.clear()
-        ending.showIn(self)
-    }
+    // Las imágenes de atrás: la cinta y el título de los objetivos (para los tests)
+    method backgroundImages() = backgrounds.visuals().map({ visual => visual.image() })
 
-    method showNextLevelHint() {
-        completedTexts.add(self.text("¡Nivel completo!", completedRow))
-        completedTexts.add(self.keyHint("menu/key_next.png", "N: siguiente", keyHintRow))
-    }
-
-    method showGameOverHint() {
-        completedTexts.add(self.text("¡Fin del juego!", completedRow))
-        completedTexts.add(self.keyHint("menu/key_restart.png", "0: reiniciar", keyHintRow))
-    }
-
-    // Lo que dice el mensaje de nivel completo, en orden (para los tests)
-    method completedMessage() = completedTexts.visuals().map({ visual => visual.description() })
-
-    // Los textos del nombre, la ayuda y el título del objetivo, en orden (para los tests)
-    method levelMessage() = levelTexts.visuals().flatMap({ visual => visual.textLines() })
-
-    // Lo que dicen los objetivos, en orden (para los tests)
-    method progressMessage() = progressTexts.visuals().flatMap({ visual => visual.textLines() })
-
-    // Las barras de los objetivos que se ven, en orden (para los tests)
-    method progressBars() = progressTexts.visuals().flatMap({ visual => visual.barImages() })
+    // Las imágenes de los objetivos que se ven, en orden (para los tests)
+    method goalImages() = goalPictures.visuals().map({ visual => visual.image() })
 
     // ----------- DIBUJO -----------
 
-    // Por cada objetivo, en su fila: la imagen del plato, su texto y su barra
+    // Por cada objetivo, en su fila: su imagen según cuántos van entregados (tarjeta, plato, texto y barra)
     method drawProgress(level) {
-        var row = firstProgressRow
-        level.shownGoals().forEach({ goal =>
-            progressTexts.add(self.image(goal.image(), row))
-            progressTexts.keep(self.spriteText(goal.progressText(), textFont, goalTextColumn, row + goalTextOffset))
-            progressTexts.add(new ProgressBarImage(image = "menu/info/bar_" + goal.progressTenths() + ".png", position = self.exactPosition(goalBarColumn, row + goalBarOffset)))
-            row -= 1
+        const goals = level.shownGoals()
+        goals.size().times({ number =>
+            goalPictures.add(self.image(goals.get(number - 1).progressImage(folder + level.imageKey() + "_goal" + number + "_"), firstProgressRow + 1 - number))
         })
     }
 
-    // Una imagen de 200x25 que empieza en el borde izquierdo, alineada con las teclas del fondo
-    method keyHint(image, description, row) = new KeyHint(image = image, descriptionText = description, position = self.exactPosition(0, row))
-
-    // Un texto en blanco, en la columna del centro (la ayuda y el mensaje de nivel completo)
-    method text(text, row) = self.text(text, column, row, white)
-
     method text(text, textColumn, row, color) = new MenuText(text = text, position = self.positionAt(textColumn, row), textColor = color)
 
-    // Un texto sin contorno (sobre el papel), centrado en esa columna y esa fila como los de Wollok.
-    method spriteText(text, font, textColumn, row) = spriteText.draw(text, font, textColumn + 0.5, row + 0.5)
-
-    // Una imagen de atrás (la cinta, la tarjeta, el globo) o un plato, con su borde de abajo en esa fila
-    method image(image, row) = new InfoImage(image = image, position = self.exactPosition(imageColumn, row))
+    // Una imagen de atrás o de un objetivo, con su borde de abajo en esa fila
+    method image(image, row) = new Picture(image = image, position = self.exactPosition(imageColumn, row))
 
     // Una posición con decimales que se respeta al dibujar: Wollok redondea a la celda las de game.at
     method exactPosition(x, y) = new CellPosition(x = x, y = y)
@@ -167,32 +121,18 @@ object levelInfoMenu {
     method positionAt(textColumn, row) = hud.levelInfoZone().at(textColumn, row - hud.levelInfoZone().origin().y())
 }
 
-// Una tecla con lo que hace, dibujada en una imagen con el estilo de las teclas del fondo.
+// Los niveles sin tutorial no tienen botón de saltear.
 object noSkipButton {
     method handlesClick(pos) = false
-    method showIn(group) {}
+    method show() {}
+    method hide() {}
 }
 
-// Una imagen de la info del nivel que no es un texto: la cinta, la tarjeta, el globo
-class InfoImage inherits Picture {
-    method textLines() = []
-    method barImages() = []
-    method description() = image
-}
+// El botón de saltear el tutorial: una imagen con su tecla, que también se clickea
+class SkipButton inherits Picture {
+    const zone
 
-class KeyHint inherits InfoImage {
-    const descriptionText
-    // Dónde se la clickea: sólo el botón de saltear el tutorial (las otras ayudas no se clickean)
-    const zone = nowhere
-
-    override method description() = descriptionText
     method handlesClick(pos) = zone.contains(pos)
-    method showIn(group) { group.add(self) }
-}
-
-// La barra de progreso de un objetivo
-class ProgressBarImage inherits InfoImage {
-    override method barImages() = [image]
 }
 
 // El botón de saltear el tutorial, como parte clickeable de la columna izquierda

@@ -18,7 +18,7 @@
 
 import wollok.game.*
 import cellPosition.*
-import input.clickManager.*
+import menu.screenClasses.*
 
 // Wollok le pide position() e image() a cada visual en cada frame
 
@@ -32,7 +32,7 @@ class Picture {
 	method hide() { if (game.hasVisual(self)) game.removeVisual(self) }
 }
 
-// Un botón: un lugar que se clickea (CellArea, input/clickManager.wlk), con su imagen.
+// Un botón: un lugar que se clickea (CellArea, menu/screenClasses.wlk), con su imagen.
 class Button inherits CellArea {
 	var image
 	var position = new CellPosition(x = 0, y = 0)
@@ -60,12 +60,6 @@ class VisualGroup {
 		game.addVisual(visual)
 		visuals.add(visual)
 		return visual
-	}
-
-	// Se acuerda de algo que ya se dibujó solo (un texto con una imagen por letra, el botón de saltear)
-	method keep(drawing) {
-		visuals.add(drawing)
-		return drawing
 	}
 
 	method clear() {

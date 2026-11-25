@@ -21,8 +21,8 @@
 # Genera las imágenes con teclas, con el mismo estilo que las teclas dibujadas en el fondo (F Recetario,
 # M Menú): una tecla gris oscura con la letra blanca y, al lado, lo que hace en amarillo.
 #
-# - key_<nombre>.png (200x25): una tecla con su texto. Las muestra la info del nivel: al ganar (N y 0) y
-#   el botón para saltear el tutorial (ver levelInfoMenu). Las teclas de los pasos del tutorial las dice el
+# - key_<nombre>.png (200x25): una tecla con su texto. Hoy sólo key_skip.png: el botón para saltear el
+#   tutorial, en la info del nivel (ver levelInfoMenu). Las teclas de los pasos del tutorial las dice el
 #   cocinero, en su globo (assets/tutorial/makeChef.py usa draw_key). La tecla empieza en x 6, como las del fondo.
 # - menu_controls.png: la pantalla de controles (la tecla I en la portada), con todas las teclas del juego.
 #   Se dibuja sobre menu_controls_base.png (el fondo con el título).
@@ -85,8 +85,6 @@ def key_hint(keys, label, path):
 
 # Las de la info del nivel: (nombre del archivo, teclas, texto)
 HINTS = [
-    ('next', ['N'], 'SIGUIENTE'),
-    ('restart', ['0'], 'REINICIAR'),
     # (las del tutorial las dice el cocinero: ver assets/tutorial/makeChef.py)
     # el botón para saltear el tutorial (también se clickea)
     ('skip', ['T'], 'SALTEAR TUTORIAL'),

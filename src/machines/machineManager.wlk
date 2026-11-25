@@ -44,6 +44,8 @@ object machineManager{
 	var machines = allMachines
 
 	var selectedMachine = machines.first()
+	// Una máquina de muestra por fábrica, para el menú (nombre e imagen): se crea una sola vez
+	const samples = new Dictionary()
 
 	method allMachines() = allMachines
 
@@ -56,8 +58,16 @@ object machineManager{
 	// Nueva instancia de la máquina seleccionada
 	method createMachine() = selectedMachine.apply()
 
+	// La muestra de esa fábrica (no se coloca: sólo da su nombre y su imagen)
+	method sampleOf(factory) {
+		if (!samples.containsKey(factory)) samples.put(factory, factory.apply())
+		return samples.get(factory)
+	}
+
+	method selectedSample() = self.sampleOf(selectedMachine)
+
 	// La máquina seleccionada se identifica por su nombre
-	method selectedName() = self.createMachine().name()
+	method selectedName() = self.selectedSample().name()
 
 	// Máquinas que se muestran en una página del menú (4 por página)
 	method machinesOfPage(page) = machines.drop(page * 4).take(4)

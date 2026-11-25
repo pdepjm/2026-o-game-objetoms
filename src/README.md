@@ -29,12 +29,12 @@ Código del juego. Cada carpeta agrupa una parte del juego y tiene su propio REA
 - El tablero jugable va de **x 5 a 16** y de **y 1 a 10** (12x10 celdas, `inBoard`). El resto de la pantalla son los menús.
 - Por dentro es una grilla de casillas (`Cell`) que se arma una sola vez. Buscar una máquina es ir directo a su casilla, sin recorrer nada. Por eso no es un `Dictionary`: el comentario del archivo explica por qué era lento.
 - `push(posición, máquina)` la coloca: le fija la posición del dibujo (con su `drawOffsetX`/`drawOffsetY`), la agrega a la pantalla y la anota en el `simulationEngine`. `pop(posición)` hace lo contrario, y se lleva los ingredientes que tenía encima. **`pop` saca la máquina aunque esté bloqueada**: el bloqueo es para el jugador y lo controlan las herramientas (con `isThereAMachineUnlocked(posición)`).
-- `machines()`: las máquinas colocadas, cada una una sola vez (una de 2x2 ocupa 4 casillas, pero aparece una vez).
+- `machines()`: las máquinas colocadas, cada una una sola vez (una de 2x2 ocupa 4 casillas, pero aparece una vez). El tablero las guarda en una lista que actualizan `push` y `pop`: recorrer la grilla para saberlas tardaba unos 100 ms en el intérprete, y se pide en cada colocación (el contador de energía).
 - `clear()`: saca todas las máquinas (hace `pop` de cada una), con los ingredientes que tengan encima. Sirve para empezar de cero, por ejemplo al cargar un nivel.
 - **Puntos de entrega:** los dos platitos del fondo, en (13, 11) y (14, 11), están **fuera** del tablero, pero las cintas y los brazos les entregan como a cualquier máquina (ver `DeliverySlot` en [`machines/README.md`](machines/README.md#types-las-máquinas)).
   - `addDeliverySlot(platito)`: lo anota en `deliverySlots` y lo registra en el `simulationEngine`, para que al apagar la simulación se borre el plato que estaba viajando hacia él y el platito quede vacío. Lo llama `deliveryPoints.setUp()`.
   - `machineAt(posición)`: dentro del tablero busca en la grilla; afuera, entre los `deliverySlots` (y si no hay ninguno ahí, `noMachine`: nunca devuelve `null`).
-  - Como `inBoard` no los incluye, no se puede colocar nada encima ni hacerles click. Tampoco están en la grilla, así que `machines()` y `clear()` no los ven: son parte del escenario, no del nivel.
+  - Como `inBoard` no los incluye, no se puede colocar nada encima ni hacerles click. Tampoco se colocan con `push`, así que `machines()` y `clear()` no los ven: son parte del escenario, no del nivel.
 - **Zonas donde se puede construir:** el tablero es el que sabe dónde se puede construir. El nivel le dice en qué celdas puede colocar máquinas el jugador (`buildZones(zonas)`, lo llama `levelManager.load`), como una lista de `Zone` (rectángulos de celdas, definidos en este mismo archivo). Por defecto, todo el tablero (`wholeBoard`).
   - `isBuildable(posición)`: está en el tablero y en alguna de las zonas.
   - `canBuild(posición, máquina)`: como `canPlace`, y además todas sus celdas están en alguna zona (una de 2x2 puede quedar repartida entre dos zonas pegadas). Lo usa la herramienta place.
@@ -88,4 +88,3 @@ Para no preguntar qué es algo, se le pide lo que se necesita (polimorfismo) en 
 - **Qué máquina pide un paso del tutorial:** `MachineStep.allowedMachines` guarda las fábricas del catálogo (`machineManager.beltFactory()`), y `tool.allowsMachine(...)` mira si está seleccionada. Ya no se compara `machine.name()`.
 - **Qué acción se usa:** `tool.canUseAnywhere()` (edit) en lugar de `tool == edit`. **Qué hace cada tecla según el modo:** `mode.arrow(...)`, `mode.enter(...)`, `mode.editKey(...)` en lugar de preguntar si se está editando.
 - **Cómo entrega el ensamblador:** `direction.outputEdgeShift(celda)`: cada dirección sabe por qué celda de su borde sale el plato (la que marca la flecha del sprite).
-- **Qué visual es un texto o una barra:** los visuales de la info del nivel responden `textLines()` y `barImages()` (listas, vacías si no corresponde).

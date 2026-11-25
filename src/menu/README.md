@@ -4,6 +4,7 @@ Las pantallas del juego y todo lo que se dibuja fuera de las máquinas. Está or
 
 ```
 menu/
+  screenClasses.wlk     Screen, OverlayScreen, CellArea, KeyAction (y nothingClicked, noKeyAction)
   screenManager.wlk     el que cambia de pantalla
   screens.wlk           las 5 pantallas (y la portada)
   recipeBook.wlk        las páginas del recetario (lo que muestra bookScreen)
@@ -18,15 +19,13 @@ menu/
     armMenu.wlk         el panel de EDITANDO de los brazos
   overBoard/            lo que va encima del tablero
     tutorialGuide.wlk   el cocinero con su globo (+ chefBubble, clickeable) y las marcas del tutorial
-    bubbleTexts.wlk     generado: los mensajes del globo
+    tutorialImages.wlk  generado: lo que dibuja cada imagen del cocinero
     actionsMenu.wlk     ROTAR / EDITAR / BORRAR debajo de la máquina elegida
   drawing/              herramientas de dibujo
     visuals.wlk         Picture, Button, VisualGroup
-    texts.wlk           MenuText, spriteText, SpriteFont
-    spriteFonts.wlk     generado: el ancho de cada letra
+    texts.wlk           MenuText
 ```
 
-Lo común de los clics (`ClickTargets`, `CellArea`, `nothingClicked`) está en [`input/clickManager.wlk`](../input/README.md).
 
 | Zona (`hud`) | Celdas | Qué muestra |
 |---|---|---|
@@ -34,11 +33,18 @@ Lo común de los clics (`ClickTargets`, `CellArea`, `nothingClicked`) está en [
 | `interactiveZone` | x 18 a 21, y 0 a 11 | El panel del modo: las máquinas para colocar, o los ajustes de la máquina que se edita |
 | `leftZone` | x 0 a 4, y 0 a 12 | La columna izquierda: `levelInfoZone` (y 1 a 11) y los botones de abajo (x 0 a 3, y 0 a 3) |
 
-`spriteFonts.wlk` y `bubbleTexts.wlk` son **generados** (`assets/menu/font/makeFont.py` y `assets/tutorial/makeBubbleTexts.py`): no se editan a mano.
+`tutorialImages.wlk` es **generado** (`assets/tutorial/makeSteps.py`): no se edita a mano.
 
-## Las pantallas: `screenManager.wlk` y `screens.wlk`
+## Las pantallas: `screenClasses.wlk`, `screenManager.wlk` y `screens.wlk`
 
-`screenManager` es **el único que cambia de pantalla**. Sabe cuál está activa y le pasa cada clic y cada tecla, con un mensaje que dice qué quiere el jugador (`enter()`, `toggleSimulation()`, `nextLevel()`...). La pantalla decide qué hacer: nadie pregunta en qué pantalla está.
+`screenManager` es **el único que cambia de pantalla**. Sabe cuál está activa y le pasa cada clic y cada tecla (por su nombre: `press("enter")`, `press("arrow", dirección)`...). La pantalla decide qué hacer: nadie pregunta en qué pantalla está.
+
+`Screen` (en `screenClasses.wlk`, no hereda de nadie) hace lo mismo para todas; cada pantalla sólo **declara** dos listas:
+
+- `clickableAreas()`: lo que se clickea, de lo que se ve más arriba a lo de más abajo. Un clic va a la primera zona que lo acepta (`handlesClick(pos)`), o a `nothingClicked`, que no hace nada: **CLIC → screenManager → pantalla activa → la acción de la zona, o nothingClicked**.
+- `keyActions()`: sus teclas (`KeyAction(key, action)`; la acción recibe el valor de la tecla: una dirección, un número). Después van las de todas (`sharedKeys()`: F abre el libro), así una pantalla puede redefinir una tecla común poniéndola en su lista. Una tecla que nadie declara no hace nada (`noKeyAction`).
+- Lo que se ve: `visuals()` (cada uno con `show()` y `hide()`) se agrega al entrar y se saca al salir. Las pantallas con un dibujo especial (el juego, el libro, el ticket) redefinen `show()` / `hide()`.
+- `MenuScreen` (portada y controles) deja siempre el fondo azul, también detrás del libro.
 
 | Pantalla | Cuándo | Clics | Teclas |
 |---|---|---|---|
@@ -50,27 +56,30 @@ Lo común de los clics (`ClickTargets`, `CellArea`, `nothingClicked`) está en [
 
 - Las tres primeras se reemplazan entre sí: `changeScreen` sale de la actual (`leave`) y entra en la nueva (`show`).
 - El libro y el ticket se abren **encima** (`cover`): guardan cuál quedó abajo (`under`), y al cerrarse (`uncover`) se vuelve a ella tal como estaba. La de abajo se entera con `hideUnderOverlay()` / `showAfterOverlay()`.
-- Todas heredan de `Screen`, que tiene **todas las teclas vacías por defecto**: cada pantalla redefine sólo las que usa. Por eso, con el libro abierto, S o Espacio no hacen nada.
+- Cada pantalla declara sólo las teclas que usa. Por eso, con el libro abierto, S o Espacio no hacen nada.
+- Con otra encima, la de abajo queda como está (`hideUnderOverlay()` / `showAfterOverlay()` no hacen nada), salvo las del menú, que se esconden detrás del libro.
 - La primera vez que se juega se arman los platitos y el primer nivel (`newGame`); las siguientes, se sigue donde estaba (`resumedGame`).
 - **M** vuelve a la portada y pausa la simulación. Con el ticket abierto, también lo cierra.
 
 ## Los clics
 
-Un clic baja de nivel en nivel con **la misma regla** (`ClickTargets`, en `input/clickManager.wlk`): cada grupo dice que un clic es suyo mirando **su zona**, y recién al recibirlo se lo pasa a la primera de sus partes que lo quiera, de la que se ve más arriba a la de más abajo. Cada uno es consultado una sola vez. Un clic que no es de nadie (la pared de la cocina) no hace nada (`nothingClicked`).
+Una zona clickeable es cualquier objeto que entiende `handlesClick(pos)` ("¿la celda es tuya?") y `onClick(pos)`. La más común es `CellArea(zone, action)`: una `Zone` (en `cellPosition.wlk`; `rectangle.of(x, y, ancho, alto)` arma una desde su esquina de abajo a la izquierda) y lo que hace. Un `CellArea` sin acción sólo se traga los clics de su zona.
 
-Por ejemplo, un clic en la flecha de arriba de "HACIA DÓNDE MIRA": `screenManager` → `playingScreen` (el globo no, `actionsMenu` no, el `hud` sí) → `hud` (`leftPanel` no, `rightPanel` sí) → `rightPanel` → el panel que se ve (`placeMenu`) → la flecha → `toolsManager.currentDirection(up)`.
+Las partes del HUD no son pantallas: cada una devuelve su lista (`clickableAreas()`), y `playingScreen` las junta en una sola, en orden: el globo del cocinero, `actionsMenu`, la columna izquierda (saltear, los botones de abajo y, al final, la columna entera), la derecha (las zonas del panel que se ve y, al final, la columna y el cartel enteros) y el tablero. Un clic que no es de nadie (la pared de la cocina) no hace nada.
+
+> **Rendimiento:** por clic se recorre una lista de unas 30 zonas y se corta en la primera que dice que sí. Los clics son pocos: no hace falta una tabla por celda.
 
 ## `drawing/visuals.wlk`: lo común a los menús
 
 Wollok le pide `position()` e `image()` a **cada visual en cada frame**, así que todo lo que se dibuja guarda las dos cosas: la posición es una constante (`CellPosition`, que no crea nada al dibujarse) y la imagen sólo cambia cuando alguien la cambia.
 
 - `Picture(image, position)`: una imagen fija. Sabe mostrarse y sacarse (`show()`, `hide()`). Las subclases cambian la imagen asignándola (`MenuItem`, `TutorialMark`, `BookButton`, `modeBanner`...).
-- `Button(image, zone, action)`: un `CellArea` (ver `input/clickManager.wlk`) con imagen, dibujada en la esquina de abajo a la izquierda de su zona (`CompassTile`, los botones del ticket).
-- `VisualGroup`: lo que dibujó un panel. `add(visual)` lo agrega a la pantalla; `keep(algo)` guarda algo que ya se dibujó solo (un texto de `spriteText`); `clear()` saca todo (cada cosa sabe sacarse con `hide()`).
+- `Button(image, zone, action)`: un `CellArea` (ver `screenClasses.wlk`) con imagen, dibujada en la esquina de abajo a la izquierda de su zona (`CompassTile`, los botones del ticket).
+- `VisualGroup`: lo que dibujó un panel. `add(visual)` lo agrega a la pantalla; `clear()` saca todo (cada cosa sabe sacarse con `hide()`).
 
 ## `hud/`: el HUD
 
-- **`hud`** junta las dos columnas: las muestra juntas (`show()`, lo llama `playingScreen`) y, en un clic, se lo pasa a la columna donde cayó. También sabe dónde está cada parte (las zonas de la tabla de arriba).
+- **`hud`** junta las dos columnas: las muestra juntas (`show()`, lo llama `playingScreen`) y junta sus zonas clickeables. También sabe dónde está cada parte (las zonas de la tabla de arriba).
 - **`leftPanel`**: la columna izquierda. La info del nivel la dibuja `levelManager` al cargar cada nivel (`levelInfoMenu`); acá están sus clics: el botón de saltear el tutorial (`skipTutorialButton`) y los botones de abajo (`sideButtons`).
 - **`rightPanel`**: la columna derecha. Tiene el cartel (`modeBanner`) y el panel que se ve, y recibe lo que avisa `toolsManager`:
   - `modeChanged(modo)`: el cartel y el panel. Cada modo dice qué panel le toca (`panelIn`): COLOCANDO, `placeMenu`; EDITANDO, el que eligió la máquina (`editor`);
@@ -78,26 +87,26 @@ Wollok le pide `position()` e `image()` a **cada visual en cada frame**, así qu
   - `chooseMachine(paso)`: teclas Q y E;
   - `moveFocus` / `chooseFocused`: las flechas y Enter mientras se edita.
 - **Editar una máquina (doble despacho):** `rightPanel.edit(máquina)` le dice a la máquina "abrite en mí" (`openEditorIn`), y la máquina contesta **qué es**: `editSettings` (horno, freidora, cortadora, dispenser, ensamblador), `editArm` (los brazos) o `nothingToEdit` (la cinta, el platito, una celda vacía). Cada uno de esos tres mensajes hace siempre lo mismo, así que **no hay `if`**: lo decide la clase de la máquina. La máquina no conoce ningún panel.
-- Los paneles (`placeMenu`, `editMenu`, `armMenu`, y `noPanel` antes de jugar) entienden los mismos mensajes (`show()`, `hide()`, y son `ClickTargets`), así nadie pregunta cuál se está viendo.
+- Los paneles (`placeMenu`, `editMenu`, `armMenu`, y `noPanel` antes de jugar) entienden los mismos mensajes (`show()`, `hide()` y `clickableAreas()`), así nadie pregunta cuál se está viendo.
 
 ## `placeMenu.wlk`
 
 - Se ve mientras el jugador está COLOCANDO (siempre, salvo mientras edita una máquina).
 - Muestra 4 máquinas por página, en casilleros de 2x2 celdas de a 2 por fila: el 1 arriba a la izquierda (x 18, y 10), el 2 a su derecha (x 20), y el 3 y el 4 abajo (y 8). Debajo va la ayuda (`menu/place_help.png`, fila 7). El orden sale de `machineManager` (ver [`machines/README.md`](../machines/README.md)).
 - Q y E eligen la máquina anterior o la siguiente del catálogo (`chooseNext`), y pasan de página solas. Cada página muestra 4 máquinas; `prev` y `next` avanzan de a una página, sin pasarse de la primera ni de la última.
-- Abajo, "HACIA DÓNDE MIRA" (fila 6) y la **brújula** (filas 2 a 5, `compassTiles`): arriba y abajo, botones de 2 celdas de ancho; izquierda y derecha, de 2 de alto; en el centro, la máquina elegida mirando hacia donde va a quedar (`compassMachine`). La dirección elegida va en amarillo. Las imágenes (`menu/compass_*.png`) las genera `assets/menu/makeArmAndTicket.py`.
+- Abajo, "HACIA DÓNDE MIRA" (fila 6) y la **brújula** (filas 2 a 5, `compassTiles`): arriba y abajo, botones de 2 celdas de ancho; izquierda y derecha, de 2 de alto; en el centro, la máquina elegida mirando hacia donde va a quedar (`compassMachine`). La dirección elegida va en amarillo. Las imágenes (`menu/compass_*.png`) las genera `assets/menu/makeArmAndCompass.py`.
 - `resetPage()`: vuelve a la primera página, y redibuja si el panel se está viendo. Se usa al cambiar el catálogo (`machineManager.changeCatalog`): si el nuevo tiene menos páginas, la página actual podría no existir.
 - Al hacer click en un casillero elige esa máquina (`machineManager.select`), mueve el marco amarillo encima y le avisa a `levelManager.machineSelected`: si el tutorial pide otra, el casillero se pone rojo un momento (`flashError`) y el cocinero dice cuál va.
-- `MenuItem`: cada máquina dibujada en el panel. Le pide la imagen a una máquina de muestra (`menuImage(dirección)`: la máquina en chico con su nombre abajo, ver `assets/menu/makePlaceSlots.py`), así cada tipo decide qué mostrar (el brazo, por ejemplo, por ahora siempre muestra la misma).
+- `MenuItem`: cada máquina dibujada en el panel. Le pide la imagen a la máquina de muestra de su fábrica (`machineManager.sampleOf`, se crea una sola vez; `menuImage(dirección)`: la máquina en chico con su nombre abajo, ver `assets/menu/makePlaceSlots.py`), así cada tipo decide qué mostrar (el brazo, por ejemplo, por ahora siempre muestra la misma).
 - `selectionFrame`: el marco amarillo sobre la máquina elegida. Sólo se dibuja si esa máquina está en la página que se ve.
 - `highlight(fábricas)`: las máquinas que pide el paso del tutorial; su casillero titila (`menu/slot_hint.gif`). Lo llama `levelManager` con cada aviso al tutorial.
 
-> **RENDIMIENTO:** las imágenes y la posición del marco se calculan sólo cuando cambia algo (dirección, página o máquina elegida), no en cada frame. `selectedSlot()` es caro porque crea máquinas para comparar nombres: no llamarlo desde algo que se dibuja.
+> **RENDIMIENTO:** las imágenes y la posición del marco se calculan sólo cuando cambia algo (dirección, página o máquina elegida), no en cada frame. Lo que más cuesta al dibujar el panel es agregar y sacar sus visuals (unos 60 ms por vez), no las máquinas de muestra.
 
 ## `hud/hud.wlk`: el cartel y los botones
 
 - `modeBanner`: muestra `menu/mode_placing.png` (COLOCANDO) o `menu/mode_editing.png` (EDITANDO, con la tecla Retroceso para salir). Lo cambia `rightPanel.modeChanged`. Las imágenes las genera `assets/menu/makeBoardUi.py`.
-- `sideButtons`: los botones de abajo a la izquierda, uno por fila de celdas: F RECETARIO (fila 3), M MENÚ (fila 2), ESPACIO INICIAR / PAUSA (fila 1) y 1, 2, 3 (fila 0, una celda cada uno). Cada uno es un `CellArea` con su zona y su acción, la misma que su tecla. La imagen (`menu/side_buttons.png`) tapa las teclas que trae dibujadas el fondo. `speedFrame` toma su posición de una lista armada una vez, según `simulationEngine.speed()`.
+- `sideButtons`: los botones de abajo a la izquierda, uno por fila de celdas: F RECETARIO (fila 3), M MENÚ (fila 2), ESPACIO INICIAR / PAUSA (fila 1) y 1, 2, 3 (fila 0, una celda cada uno). Cada uno es un `CellArea` con su zona y su acción, la misma que su tecla. **No es un visual**: los botones están dibujados en todos los cuadros del fondo (`background.gif`, los pega `assets/menu/makeBoardUi.py`), así que Wollok no tiene que dibujarlos en cada frame. `speedFrame` (el marco amarillo, un visual aparte) toma su posición de una lista armada una vez, según `simulationEngine.speed()`.
 
 ## `actionsMenu.wlk`
 
@@ -116,7 +125,7 @@ El panel de los brazos (X sobre un brazo: el brazo contesta `editArm`, ver `righ
 
 ## `levelComplete.wlk`
 
-Al completar un nivel se oscurece la pantalla y aparece una **comanda**: el nombre del nivel, lo entregado, el tiempo de cocina (los pasos de la simulación desde que se prendió), la energía usada y las máquinas que puso el jugador, y los botones **SIGUIENTE NIVEL** (N), **REPETIR** (0) y **MENÚ** (M) (en el último nivel, **JUGAR DE NUEVO**). **Sólo dibuja**: lo que dice lo arma el resultado del nivel (`LevelResult.lines()`, ver [`levels/README.md`](../levels/README.md#al-ganar-el-resultado-y-el-final)) y los botones los elige el final (`ending.showButtonsIn(ticket)`: `showNextLevelButtons()` o `showPlayAgainButtons()`). Lo dibuja `screenManager.showLevelComplete(resultado)` y lo muestra `levelCompleteScreen`, encima del juego: mientras se ve, los clics van sólo a sus botones. Siguiente, repetir y menú primero lo cierran y después hacen lo suyo. Las imágenes las genera `assets/menu/makeArmAndTicket.py`; los textos se escriben con las letras del papel (`spriteText`).
+Al completar un nivel se oscurece la pantalla y aparece una **comanda**: el nombre del nivel, lo entregado, el título del final ("PEDIDO COMPLETO", o "¡FIN DEL JUEGO!" en el último nivel) y los botones **SIGUIENTE NIVEL** (N), **REPETIR** (0) y **MENÚ** (M) (en el último nivel, **JUGAR DE NUEVO** y **MENÚ**). **Es una sola imagen por nivel** (`levels/complete/<nivel>.png`, con el oscurecido, el papel, el cocinero, los textos y los botones ya dibujados): los niveles son fijos y lo que dice no cambia, así que Wollok dibuja un visual en vez de uno por letra. La imagen la elige el resultado del nivel (`LevelResult.image()`, ver [`levels/README.md`](../levels/README.md#al-ganar-el-resultado-y-el-final)) y los botones el final (`ending.showButtonsIn(ticket)`: `showNextLevelButtons()` o `showPlayAgainButtons()`). Los botones son `CellArea` **sin imagen**, en las celdas donde están dibujados (SIGUIENTE / JUGAR DE NUEVO: x 9 a 12, y 3; REPETIR: x 9 y 10, y 2; MENÚ: x 11 y 12, o 10 y 11 en el último nivel, y 2). Lo dibuja `screenManager.showLevelComplete(resultado)` y lo muestra `levelCompleteScreen`, encima del juego: mientras se ve, los clics van sólo a sus botones, y Enter aprieta el primero (`pressFirstButton()`). Siguiente, repetir y menú primero lo cierran y después hacen lo suyo. `image()` devuelve la imagen que se ve (para los tests). Las imágenes las genera `assets/levels/makeLevelImages.py`: **si cambia un nivel o su objetivo, hay que volver a correrlo**.
 
 ## `editMenu.wlk`
 
@@ -147,6 +156,7 @@ Muestra los settings de la máquina que se edita (X sobre la elegida; ver [`mach
 - Click en una opción: se la aplica a su setting (`setting.select(option)`). `OptionSlot` recuerda qué opción de qué setting hay en cada celda, y es el click target de esa celda.
 - Hay una marca (`overlay_cell.png`) sobre cada opción elegida (`isSelected`) de **cada** setting. Un setting que permite elegir varias (`ItemSetSetting`) muestra varias marcas.
 - Se redibuja sólo cuando cambia la máquina elegida; un click sólo mueve las marcas.
+- Con el teclado: las flechas mueven una marca amarilla (`optionFocus`) que aparece recién al usarlas, como en `armMenu`; Enter aplica la opción marcada.
 - Una máquina sin settings no muestra nada.
 
 ## `levelInfoMenu.wlk`
@@ -157,41 +167,45 @@ Muestra la información del nivel en la zona `levelInfoZone` (x 0 a 4, y 1 a 11)
 |---|---|
 | 10 | El nombre del nivel, en mayúsculas y en amarillo, sobre una cinta roja como el título del juego |
 | 9 | Una ayuda (`showHint(texto)`): en el modo libre, `L: volver`. En los tutoriales, el botón **T SALTEAR TUTORIAL** (`assets/menu/key_skip.png`), que también se clickea (`skipTutorialButton`, en la columna izquierda: ver `leftPanel`). Se borra al cargar otro nivel |
-| 8 | `OBJETIVO`, en gris, arriba de una tarjeta de papel (como las hojas del recetario) que llega hasta el último objetivo. No aparece si el nivel no tiene objetivos con texto, como el modo libre |
-| 7 a 5 | Uno por objetivo (`level.shownGoals()`), como máximo 3: la imagen del plato a la izquierda, su texto en marrón y una barra de progreso que se llena por décimos (`goal.progressTenths()`) |
-| 4.5 y 3.7 | Al ganar: `¡Nivel completo!` y la tecla N (SIGUIENTE), o `¡Fin del juego!` y la tecla 0 (REINICIAR) si no hay otro nivel. Las teclas son imágenes (`assets/menu/key_next.png` y `key_restart.png`, las genera `makeKeyHints.py`) con el estilo de las teclas del fondo |
+| 8 | La parte de arriba de una tarjeta de papel (como las hojas del recetario), con `OBJETIVO` en gris (`levels/info/goal_title.png`). No aparece si el nivel no tiene objetivos con texto, como el modo libre |
+| 7 a 5 | Uno por objetivo (`level.shownGoals()`), como máximo 3: **una sola imagen por objetivo** con su pedazo de tarjeta (el último, con el borde de abajo), el plato, su texto en marrón (`Papas Fritas: 1/2`) y la barra de progreso (por décimos). Hay una imagen por cada cantidad entregada, de 0 a la pedida: `levels/info/<nivel>_goal<i>_<k>.png` (`goal.progressImage(prefijo)`) |
+| 6 a 4 | El contador de energía, debajo del último objetivo (si el nivel tiene límite: `updateEnergy`) |
 | 3.5 hacia abajo | Nada: el fondo (`background.gif`) tiene dibujadas las teclas F, M, Espacio y 1 2 3 |
 
 | Método | Lo llama | Qué hace |
 |---|---|---|
 | `show(nivel)` | `levelManager.load` | Borra todo lo que había y dibuja el nombre, el título y los objetivos |
-| `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Reemplaza sólo los objetivos (`progressMessage()` y `progressBars()` devuelven lo que se ve) |
-| `showCompleted(final)` | `levelManager.finishLevel` | El final elige qué se muestra (`showNextLevelHint()` o `showGameOverHint()`): el mensaje y la tecla para seguir (`completedMessage()` devuelve lo que dicen) |
+| `updateProgress(nivel)` | `levelManager`, al entregar algo y al apagar la simulación | Cambia sólo las imágenes de los objetivos (`goalImages()` devuelve las que se ven) |
+| `updateEnergy(nivel, total)` | `levelManager`, al cargar y al cambiar las máquinas | Reescribe el contador de energía (`energyMessage()` devuelve lo que dice) |
 
 - **Sólo se redibuja cuando lo llaman**, nunca en cada frame. Un `MenuText` tiene el texto fijo: para cambiarlo, se saca el visual y se agrega uno nuevo.
-- Guarda lo dibujado en grupos (`VisualGroup`: el nombre, la tarjeta y el título; los objetivos; el mensaje de nivel completo; y la energía) para reemplazar sólo lo que cambia.
-- **El estilo lo dan las imágenes de atrás** (`assets/menu/info/`: la cinta, las tarjetas para 1 a 3 objetivos, las barras de 0 a 10 décimos y los globos para 1 a 6 líneas, que genera `makeLevelInfo.py`) **y las letras**. Las imágenes se agregan antes que los textos, porque se dibujan en ese orden.
-- **Sobre el papel (la tarjeta y el globo) los textos se escriben con sprites** (`spriteText`, en `texts.wlk`), porque Wollok dibuja todos sus textos con un contorno oscuro que no se puede sacar, y ahí se ve raro. El nombre del nivel y los textos sobre el azul siguen siendo textos de Wollok (`MenuText`).
+- Guarda lo dibujado en grupos (`VisualGroup`: la cinta y el título de los objetivos, `backgroundImages()`; el nombre y la ayuda; los objetivos, `goalImages()`; y la energía, `energyMessage()`). El botón de saltear (`SkipButton`, o `noSkipButton` sin tutorial) se muestra y se saca solo para reemplazar sólo lo que cambia.
+- **Sobre el papel no se escribe nada en el juego**: el título y los objetivos ya vienen escritos en sus imágenes (`assets/levels/info/`, junto con la cinta; las genera `assets/levels/makeLevelImages.py`, que le pide los niveles a Wollok: **si cambia un objetivo, hay que volver a correrlo**, y un test avisa). Así cada objetivo es un visual, y no uno por letra. El nombre del nivel y los textos sobre el azul son textos de Wollok (`MenuText`). Las imágenes se agregan antes que los textos, porque se dibujan en ese orden.
 - **Las posiciones con decimales son `CellPosition`**, no `game.at`: Wollok redondea a la celda la posición de `game.at` al dibujar, y la imagen quedaría corrida.
 - Wollok no corta el texto en varias líneas: con 4 celdas de ancho, los textos tienen que ser cortos.
 - **Centrado:** Wollok dibuja cada texto centrado en su celda, y la parte azul va de x 0 a 4. Por eso los textos van en la columna 1.5: su centro cae en x = 2.
 
 ### `tutorialGuide.wlk`: `chefGuide`
 
-El cocinero que guía los tutoriales, sobre el tablero. Se para al lado de la celda del paso (la del recuadro, o la máquina que se explica) y la señala con la cuchara: arriba de ella si hay lugar, si no abajo; a su izquierda, salvo en las primeras columnas. Al costado tiene un globo con el paso (`PASO 2 DE 12`) y el mensaje (como máximo 6 líneas de 16 caracteres: `maxLines()` y `maxLength()`, lo revisa un test).
+El cocinero que guía los tutoriales, sobre el tablero. Se para al lado de la celda del paso (la del recuadro, o la máquina que se explica) y la señala con la cuchara: arriba de ella si hay lugar, si no abajo; a su izquierda, salvo en las primeras columnas. Al costado tiene un globo con el paso (`PASO 2 DE 12`), el mensaje (como máximo 6 líneas de 16 caracteres: `maxLines()` y `maxLength()`, lo revisa un test) y, debajo, una fila por tecla ("[ENTER] para seguir").
 
 | Método | Lo llama | Qué hace |
 |---|---|---|
-| `say(pasos, lineas, teclas, celdas)` | `levelManager`, con cada aviso al tutorial | Dibuja el cocinero y el globo, con las teclas del paso debajo del mensaje, una por fila (`tutorial/key_<nombre>.png`: "[ENTER] para seguir"). `message()`, `keys()` y `stepLabel()` devuelven lo que dice. Sin líneas (sin tutorial) no se ve; sin paso (`stepLabels()` vacío: terminó), festeja |
-| `complain(lineas)` | `levelManager`, cuando el jugador hizo algo que el paso no deja | Pone cara de "uy" y lo dice en un globo rojo un momento (1.7 s), y vuelve al mensaje del paso |
+| `say(speech)` | `levelManager`, con cada aviso al tutorial | Muestra lo que dice el tutorial ahora (`tutorial.speech()`, un `ChefSpeech`: imagen, paso, líneas, teclas y la celda que señala). `message()`, `keys()` y `stepLabel()` devuelven lo que dice. Sin líneas (sin tutorial) no se ve; sin paso (terminó), festeja |
+| `complain(lineas)` | `levelManager`, cuando el jugador hizo algo que el paso no deja | Muestra un momento (1.7 s) la queja genérica y vuelve al mensaje del paso. Las líneas se guardan (`complaint()`, para los tests), pero no se dibujan |
+| `bubbleContains(celda)` | `chefBubble` | Si la celda toca el globo: un clic ahí, mientras explica, es seguir (como Enter) |
 
-Lo que dice al quejarse lo decide el tutorial (`complaintFor`, `complaintForMachine`: ver [`levels/README.md`](../levels/README.md)). Las imágenes (12 del cocinero: 3 caras, 2 poses y 2 lados; y los globos) las genera `assets/tutorial/makeChef.py`.
+**Cada mensaje es UNA imagen ya dibujada** con el cocinero, el globo, el paso, las líneas y las teclas: `tutorial/steps/<tutorial>_<paso>.png` (`fries_3`, `hotDog_6`, `energy_2`) y `tutorial/steps/<tutorial>_done.png` para el final (el cocinero festeja, sin paso). La queja es siempre la misma imagen: `tutorial/steps/oops_right.png` u `oops_left.png` (cocinero "uy" y globo rojo con "¡UY! Así no: fijate qué te pido.", con el globo del mismo lado que el del mensaje).
 
-> **RENDIMIENTO:** si `say` recibe lo mismo que ya está diciendo (lo más común mientras se cocina: cada entrega le avisa al tutorial), no redibuja nada. **Cada mensaje es una sola imagen** (`bubbleMessages`: `assets/tutorial/messages/<n>.png`, la lista en `bubbleTexts.wlk`), en vez de una por letra (eran unas 60 por mensaje). Las genera `assets/tutorial/makeBubbleTexts.py` con los textos de `src/levels` y `src/tools`: **si se cambia o se agrega un mensaje, hay que volver a correrlo** (un test de `levelManagerTest` avisa si falta alguno). Un mensaje sin imagen (por ejemplo, "¡Esa no! Buscá la cinta.", que se arma con el nombre de la máquina) se escribe letra por letra, como antes.
+**Dónde se dibuja** (`ChefLayout`, con la celda que señala y la cantidad de filas del globo): la celda que señala un paso es la primera de su recuadro o de su flecha; si no marca ninguna (prender la simulación, el final), la del último paso que marcó (`StepTutorial.focusAt`). Con ella salen la pose (cuchara abajo o arriba), el lado al que mira, de qué lado va el globo (no pasa del panel de la derecha) y su alto. La imagen es la caja que ocupan el cocinero y el globo juntos, y se dibuja en su esquina de abajo a la izquierda (`left()`, `bottom()`). La de la queja mide lo mismo de ancho y se dibuja con el cocinero en el mismo lugar.
+
+**Las imágenes se generan** con `assets/tutorial/makeSteps.py`: le pide a Wollok (con un test temporal) la firma de cada mensaje (`chefGuide.signatureOf`: imagen, paso, líneas, teclas, cara, pose, lado y dónde van el cocinero y el globo, en px) y dibuja cada una con eso. Las firmas quedan en `src/menu/overBoard/tutorialImages.wlk` (**generado**): un test de `tutorialTest` avisa si un mensaje no tiene imagen o cambió desde que se dibujó. **Si se cambia un mensaje, un paso o una celda de un tutorial, hay que volver a correrlo.**
+
+> **RENDIMIENTO:** Wollok redibuja cada visual en cada frame: el cocinero es un solo visual (antes eran el cocinero, el globo, el paso letra por letra, el mensaje y las teclas). Si `say` recibe lo mismo que ya está diciendo (lo más común mientras se cocina: cada entrega le avisa al tutorial), no redibuja nada.
 
 ### `tutorialGuide.wlk`: `tutorialMarks`
 
-Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial; si las marcas quedan en los mismos lugares, no hace nada. Si el jugador hace algo que el paso no deja, `flashError()` pone los recuadros en rojo (`tutorial/place_error.gif`) un momento. Las imágenes se generan con `assets/tutorial/makeMarks.py` (la roja, con `makeChef.py`).
+Los indicadores del tutorial sobre el tablero: `show(celdasObjetivo, celdasSeñaladas)` saca los anteriores y dibuja un recuadro (`tutorial/place.gif`) en cada celda objetivo (las que marca el paso: con una máquina de 2x2, sólo la de abajo a la izquierda, donde se hace clic) y una flecha (`tutorial/look.gif`) arriba de la máquina de cada celda señalada (`arrowPosition`: con una de 2x2, arriba de su fila de arriba y centrada entre sus dos columnas). Lo llama `levelManager` con cada aviso al tutorial; si las marcas quedan en los mismos lugares, no hace nada. Si el jugador hace algo que el paso no deja, `flashError()` pone los recuadros en rojo (`tutorial/place_error.gif`) un momento. La roja se genera con `assets/tutorial/makeChef.py`.
 - `positionOfRow(fila)`: la posición en pantalla de una de sus filas (la usan los tests).
 
 ## `recipeBook.wlk`
@@ -277,12 +291,6 @@ CONSEJOS
 - Si un ingrediente se queda trabado, revisá hacia dónde apunta cada máquina.
 - Empezá por una línea simple y sumá máquinas de a una.
 
-## `drawing/texts.wlk`: `spriteText`
+## Textos sin contorno
 
-Escribe textos con una imagen por letra, **sin el contorno** que Wollok les pone a todos sus textos. Lo usa `levelInfoMenu` para lo que va sobre el papel.
-
-- `spriteText.draw(texto, estilo, centroX, centroY)`: escribe el texto centrado en ese punto (en celdas) y devuelve una `SpriteLine`, que sabe sacarse (`hide()`) y decir qué escribió (`description()`, para los tests).
-- Los estilos (`textFont`: marrón, 14 px; `labelFont`: gris, 11 px) y las letras están en `spriteFonts.wlk`, **que se genera** con `assets/menu/font/makeFont.py` junto con las imágenes de cada letra. Para cambiar un color o un tamaño, o agregar una letra, se cambia el script y se lo vuelve a correr.
-- Una letra que no está se escribe como `?`.
-- Cada letra es un visual: usarlo para textos cortos que se redibujan poco, no en cada frame. Para textos largos que no cambian (los mensajes del cocinero) conviene una imagen ya escrita, como `bubbleMessages`.
-
+Wollok dibuja todos sus textos con un contorno oscuro que no se puede sacar. Lo que va sobre papel (el globo del cocinero, los objetivos, la comanda) está **escrito en imágenes ya generadas** (`assets/tutorial/steps/` y `assets/levels/`), así cada cosa es un solo visual. Para cambiar un texto, se cambia el script que lo genera y se lo vuelve a correr. `MenuText` (`texts.wlk`) queda para los textos de Wollok sobre el azul.

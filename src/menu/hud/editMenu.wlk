@@ -19,7 +19,7 @@
 import machines.machineClasses.*
 import wollok.game.*
 import menu.hud.hud.*
-import input.clickManager.*
+import menu.screenClasses.*
 import menu.drawing.texts.*
 import board.*
 import levels.levelManager.*
@@ -28,7 +28,7 @@ import cellPosition.*
 import menu.drawing.visuals.*
 
 // Panel de la zona interactiva mientras el jugador está EDITANDO una máquina (X sobre la elegida).
-object editMenu inherits ClickTargets {
+object editMenu {
     var selectedMachine = noMachine
 
     // Todo lo que hay dibujado en el panel (títulos, nombres de settings y opciones)
@@ -38,6 +38,8 @@ object editMenu inherits ClickTargets {
     var slots = []
     // La opción marcada para el teclado (flechas y Enter): su índice en slots
     var focusIndex = 0
+    // La marca amarilla aparece recién cuando el jugador usa las flechas
+    var usingKeyboard = false
 
     // Sólo se dibuja mientras es el panel activo (EDITANDO)
     var visible = false
@@ -46,6 +48,7 @@ object editMenu inherits ClickTargets {
 
     method show() {
         visible = true
+        usingKeyboard = false
         self.render()
     }
 
@@ -63,8 +66,7 @@ object editMenu inherits ClickTargets {
     }
 
     // Los clics del panel: cada opción dibujada tiene su celda
-    override method zones() = [hud.interactiveZone()]
-    override method clickTargets() = slots
+    method clickableAreas() = slots
 
     // Aplica esa opción a su setting
     method choose(slot) {
@@ -125,6 +127,7 @@ object editMenu inherits ClickTargets {
     // Las flechas mueven la marca por las opciones, en el orden en que se dibujan
     method moveFocus(direction) {
         if (!slots.isEmpty()) {
+            usingKeyboard = true
             focusIndex = (focusIndex + direction.listStep() + slots.size()).rem(slots.size())
             self.updateFocus()
             sfx.directionChange()
@@ -144,7 +147,7 @@ object editMenu inherits ClickTargets {
     // La marca va sobre la opción marcada (y arriba de todo).
     method updateFocus() {
         if (game.hasVisual(optionFocus)) game.removeVisual(optionFocus)
-        if (!slots.isEmpty()) {
+        if (usingKeyboard && !slots.isEmpty()) {
             optionFocus.moveTo(slots.get(focusIndex).position())
             game.addVisual(optionFocus)
         }

@@ -147,13 +147,13 @@ describe "tests de los objetivos" {
 
   test "un objetivo nuevo no esta cumplido y arranca en cero" {
     assert.notThat(goal.isMet())
-    assert.equals("Papas cortadas: 0/3", goal.progressText())
+    assert.equals(0, goal.shownDelivered())
   }
 
   test "entregar lo que pide suma al progreso, y entregarlo todo lo cumple" {
     self.deliver(cutPotato, 2)
     assert.notThat(goal.isMet())
-    assert.equals("Papas cortadas: 2/3", goal.progressText())
+    assert.equals(2, goal.shownDelivered())
     self.deliver(cutPotato, 1)
     assert.that(goal.isMet())
   }
@@ -162,26 +162,26 @@ describe "tests de los objetivos" {
     self.deliver(potato, 3)
     self.deliver(friedPotato, 3)
     assert.notThat(goal.isMet())
-    assert.equals("Papas cortadas: 0/3", goal.progressText())
+    assert.equals(0, goal.shownDelivered())
   }
 
   test "el progreso no pasa de lo que pide aunque se entregue de mas" {
     self.deliver(cutPotato, 5)
     assert.that(goal.isMet())
-    assert.equals("Papas cortadas: 3/3", goal.progressText())
+    assert.equals(3, goal.shownDelivered())
   }
 
   test "reset vuelve el progreso a cero" {
     self.deliver(cutPotato, 3)
     goal.reset()
     assert.notThat(goal.isMet())
-    assert.equals("Papas cortadas: 0/3", goal.progressText())
+    assert.equals(0, goal.shownDelivered())
   }
 
-  test "noGoal nunca se cumple, no muestra nada y acepta entregas sin fallar" {
+  test "noGoal nunca se cumple, no se muestra y acepta entregas sin fallar" {
     noGoal.delivered(new Item(kind = cutPotato))
     noGoal.reset()
     assert.notThat(noGoal.isMet())
-    assert.equals("", noGoal.progressText())
+    assert.equals([], noGoal.displayed())
   }
 }

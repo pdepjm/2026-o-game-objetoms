@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Buffet Albert Einstein - genera el cocinero del tutorial, sus globos y el recuadro rojo.
+# Buffet Albert Einstein - dibuja el cocinero del tutorial, sus globos, sus teclas y el recuadro rojo.
 # Este archivo NO forma parte del juego: es una herramienta auxiliar para crear
 # sprites e imágenes del juego, y no se usa al jugarlo.
 #
@@ -20,31 +20,32 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Genera en esta carpeta lo que dibujan chefGuide y tutorialMarks (src/menu/overBoard/tutorialGuide.wlk). Los mensajes
-del globo, ya escritos, los genera makeBubbleTexts.py:
+Dibuja el cocinero del tutorial, sus globos y las filas de teclas del globo. makeSteps.py los usa para armar
+la imagen de cada mensaje (steps/), y este script guarda sólo lo que el juego usa suelto:
 
-- chef_<cara>_<pose>_<lado>.png (120x160): el cocinero.
+- chef_happy_up_left.png (120x160): el cocinero que festeja en la pantalla de nivel completo (levelComplete).
+- place_error.gif: el recuadro del tutorial (place.gif) en rojo.
+
+El cocinero (chef_image) tiene una cara y una pose, y mira a un lado:
     cara: talk (habla), oops (el jugador hizo algo que no va), happy (terminó el tutorial)
     pose: down (señala con la cuchara hacia abajo: se para arriba de la celda)
           up (señala hacia arriba: se para abajo de la celda)
     lado: right (mira a la derecha: se para a la izquierda de la celda), left (al revés, espejado)
   La punta de la cuchara queda 25 px adentro del borde del lado al que mira, y 5 px adentro del de
-  arriba o de abajo. Si cambia, cambiar chefGuide (chefWidth, chefHeight, chefLeft, chefBottom).
-- bubble_<cola>_<n>.png y bubble_<cola>_error_<n>.png: el globo para n líneas (1 a 6), con la cola a la
-  izquierda o a la derecha (hacia el cocinero). El de error es rojo. Mide 214 px de ancho (200 de globo y
-  14 de cola) y 16 + 25 + 27.5 por línea extra + 18 px de alto, como chefGuide.bubbleHeight.
-- key_<nombre>.png (200x25): la fila del globo con la tecla que hay que apretar y qué hace
-  ("[ENTER] para seguir"). Va en el globo debajo del mensaje, en el lugar de una línea (chefGuide usa el
-  globo de una línea más). La tecla se dibuja como las del fondo (assets/menu/makeKeyHints.py). Para una
-  tecla nueva, agregarla en KEYS y usar su nombre en keys de un paso (levels/levelsTypes.wlk).
-- place_error.gif: el recuadro del tutorial (place.gif) en rojo.
+  arriba o de abajo. Si cambia, cambiar ChefLayout (src/menu/overBoard/tutorialGuide.wlk).
+El globo (bubble) es para n filas, con la cola a la izquierda o a la derecha (hacia el cocinero); el de error
+es rojo. Mide 214 px de ancho (200 de globo y 14 de cola) y 16 + 25 + 27.5 por fila extra + 18 px de alto,
+como ChefLayout.bubbleHeight. Una fila de tecla (draw_key_row, 200x25) dice la tecla y qué hace
+("[ENTER] para seguir"); la tecla se dibuja como las del fondo (assets/menu/makeKeyHints.py). Para una tecla
+nueva, agregarla en KEYS y usar su nombre en keys de un paso (levels/levelsTypes.wlk).
 
 El cocinero se dibuja en SVG con un navegador (Edge, Chrome o Chromium) sin abrir ventanas, como
-assets/food/svgToSprite.py, a 4 veces el tamaño, y se achica para suavizar los bordes.
+assets/food/svgToSprite.py, a 4 veces el tamaño, y se achica para suavizar los bordes. Todo lo demás también
+se dibuja 4 veces más grande (S).
 
 Uso (desde la raíz del repositorio):   python assets/tutorial/makeChef.py
 """
-import os
+import math
 import subprocess
 import sys
 import tempfile
@@ -149,15 +150,21 @@ def render(svg, browser, work_dir):
         return big.convert("RGBA").resize((W, H), Image.LANCZOS)
 
 
-def chefs():
+def chef_images(wanted):
+    """{(cara, pose, lado): imagen} de los cocineros pedidos"""
     browser = find_browser(None)
+    images = {}
     with tempfile.TemporaryDirectory() as work_dir:
-        for mood in ["talk", "oops", "happy"]:
-            for pose in ["down", "up"]:
-                image = render(chef_svg(mood, pose), browser, Path(work_dir))
-                image.save(HERE / f"chef_{mood}_{pose}_right.png")
-                image.transpose(Image.FLIP_LEFT_RIGHT).save(HERE / f"chef_{mood}_{pose}_left.png")
-    print("  chef_*.png: 12")
+        for mood, pose in sorted({(mood, pose) for mood, pose, _ in wanted}):
+            image = render(chef_svg(mood, pose), browser, Path(work_dir))
+            images[(mood, pose, "right")] = image
+            images[(mood, pose, "left")] = image.transpose(Image.FLIP_LEFT_RIGHT)
+    return {key: images[key] for key in wanted}
+
+
+def chefs():
+    chef_images([("happy", "up", "left")])[("happy", "up", "left")].save(HERE / "chef_happy_up_left.png")
+    print("  chef_happy_up_left.png")
 
 
 # ----------- LOS GLOBOS -----------
@@ -171,10 +178,16 @@ TAIL = 14
 LINE = 0.55 * 50
 
 
-def bubble(lines, tail_side, error):
+def bubble_height(rows):
+    """Redondeado como en Wollok (ChefLayout.bubbleHeight): .5 para arriba"""
+    return math.floor(16 + 25 + (rows - 1) * LINE + 18 + 0.5)
+
+
+def bubble(rows, tail_side, error):
+    """El globo, S veces más grande"""
     fill, border = (ERROR_FILL, ERROR_BORDER) if error else (PARCHMENT, BORDER)
     w = BODY + TAIL
-    h = round(16 + 25 + (lines - 1) * LINE + 18)
+    h = bubble_height(rows)
     im = Image.new("RGBA", (w * S, h * S), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     x0 = TAIL if tail_side == "left" else 0
@@ -189,16 +202,7 @@ def bubble(lines, tail_side, error):
     d.polygon(tail, fill=fill)
     d.line([tail[0], tail[2]], fill=border, width=3 * S)
     d.line([tail[1], tail[2]], fill=border, width=3 * S)
-    name = f"bubble_{tail_side}_{'error_' if error else ''}{lines}.png"
-    im.resize((w, h), Image.LANCZOS).save(HERE / name)
-
-
-def bubbles():
-    for lines in range(1, 7):
-        for side in ["left", "right"]:
-            for error in [False, True]:
-                bubble(lines, side, error)
-    print("  bubble_*.png: 24")
+    return im
 
 
 # ----------- LAS TECLAS DEL GLOBO -----------
@@ -219,27 +223,21 @@ KEYS = [
     ("start", "ESPACIO", "para cocinar"),
     ("stop", "ESPACIO", "para apagar"),
 ]
-KEY_TEXT = (76, 48, 30, 255)     # el marrón de las letras del globo (menu/font/text)
+KEY_TEXT = (76, 48, 30, 255)     # el marrón de las letras del globo
+KEY_ROW = {name: (key, label) for name, key, label in KEYS}
 
 
-def key_line(name, key, label):
-    """La tecla y su texto, centrados en el ancho del globo"""
+def draw_key_row(im, left, top, name):
+    """La tecla y su texto, centrados en una fila de 200x25 px con la esquina en (left, top), en px x S"""
+    key, label = KEY_ROW[name]
     w, h = BODY, 25
-    im = Image.new("RGBA", (w * S, h * S), (0, 0, 0, 0))
     text_font = font(13 * S)
     key_h = 22 * S
     gap = 6 * S
     total = key_width(key, key_h) + gap + text_font.getlength(label)
-    x = round((w * S - total) / 2)
-    x = draw_key(im, x, (h * S - key_h) // 2, key, key_h) + gap
-    ImageDraw.Draw(im).text((x, h * S / 2), label, font=text_font, fill=KEY_TEXT, anchor="lm")
-    im.resize((w, h), Image.LANCZOS).save(HERE / f"key_{name}.png")
-
-
-def keys():
-    for name, key, label in KEYS:
-        key_line(name, key, label)
-    print(f"  key_*.png: {len(KEYS)}")
+    x = left + round((w * S - total) / 2)
+    x = draw_key(im, x, top + (h * S - key_h) // 2, key, key_h) + gap
+    ImageDraw.Draw(im).text((x, top + h * S / 2), label, font=text_font, fill=KEY_TEXT, anchor="lm")
 
 
 # ----------- EL RECUADRO ROJO -----------
@@ -267,7 +265,5 @@ def place_error():
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     chefs()
-    bubbles()
-    keys()
     place_error()
     print("ok")

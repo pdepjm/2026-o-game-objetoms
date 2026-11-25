@@ -27,21 +27,23 @@ class DeliveryGoal {
 
 	method delivered(item) { if (kind.accepts(item)) delivered += 1 }
 	method isMet() = delivered >= amount
-	method progressText() = label + ": " + delivered.min(amount) + "/" + amount
+	// Lo que se muestra: no pasa de lo que pide aunque se entregue de más
+	method shownDelivered() = delivered.min(amount)
 
 	// Los objetivos que se muestran en la info del nivel: éste, y noGoal ninguno
 	method displayed() = [self]
 	method reset() { delivered = 0 }
 
-	// Para la info del nivel: la imagen del plato y cuánto falta, en décimos (0 a 10) para la barra
-	method image() = kind.image()
-	method progressTenths() = (delivered.min(amount) * 10).div(amount)
+	// La imagen de la info del nivel según cuántos van entregados (assets/levels/makeLevelImages.py)
+	method progressImage(prefix) = prefix + self.shownDelivered() + ".png"
+
+	// Lo que dibuja su imagen: texto, cantidad y plato (ver Level.imageSignature)
+	method imageSignature() = label + "|" + amount + "|" + kind.image()
 }
 
 // Es modo libre, es preferible que entienda los mismos mensajes y nos ahorramos tener que definir sus atributos
 object noGoal{
     method isMet() = false
-    method progressText() = ""
     method displayed() = []
     method delivered(_) {}
     method reset() {}
@@ -58,8 +60,6 @@ class EnergyLimit {
 		menu.showEnergy(self.text(total), row, self.allows(total))
 	}
 	method text(total) = if (self.allows(total)) "Energía: " + total + "/" + max else "SIN ENERGÍA: " + total + "/" + max
-	// Lo que dice la comanda del nivel completo
-	method usedText(total) = "Energía usada: " + total + "/" + max
 }
 
 // El nivel sin límite de energía
@@ -68,7 +68,6 @@ object unlimitedEnergy {
 	method showIn(menu, total, row) {}
 	method allows(total) = true
 	method text(total) = ""
-	method usedText(total) = "Energía usada: " + total
 }
 
 class Level {
@@ -111,8 +110,11 @@ class Level {
 	// Los objetivos que se muestran en la info del nivel: noGoal no tiene texto, así que no se muestra
 	method shownGoals() = goals.flatMap({ goal => goal.displayed() })
 
-	// Una línea por objetivo que se muestra
-	method progressLines() = self.shownGoals().map({ goal => goal.progressText() })
+	// Cómo empiezan los nombres de sus imágenes: "Tutorial 1" -> tutorial_1
+	method imageKey() = name.toLowerCase().replace(" ", "_")
+
+	// Lo que dibujan su comanda y sus objetivos: makeLevelImages.py dibuja con esto, y un test lo compara
+	method imageSignature() = ([name] + self.shownGoals().map({ goal => goal.imageSignature() })).join(";")
 }
 
 class Placement {
@@ -126,36 +128,21 @@ class Placement {
 		return machine
 	}
 }
-// Cómo le fue al jugador en el nivel que ganó: lo que dice el ticket
+// El nivel que se ganó y cómo termina: lo que muestra la comanda
 class LevelResult {
 	const property level
-	const cookSeconds
 	const property ending
 
-	method lines() = level.progressLines() + [
-		"Tiempo de cocina: " + self.clock(),
-		level.energyLimit().usedText(board.totalEnergy()),
-		"Máquinas: " + board.machines().count({ machine => !machine.locked() }),
-		ending.title()
-	]
-
-	// Los segundos como minutos:segundos (0:38)
-	method clock() {
-		const rest = cookSeconds.rem(60)
-		return cookSeconds.div(60).toString() + ":" + (if (rest < 10) "0" else "") + rest.toString()
-	}
+	// La comanda ya dibujada, con lo entregado y el título del final (assets/levels/makeLevelImages.py)
+	method image() = "levels/complete/" + level.imageKey() + ".png"
 }
 
 // Hay otro nivel después del que se ganó
 object nextLevelEnding {
-	method title() = "PEDIDO COMPLETO"
 	method showButtonsIn(ticket) { ticket.showNextLevelButtons() }
-	method showIn(levelInfo) { levelInfo.showNextLevelHint() }
 }
 
 // Se ganó el último nivel
 object lastLevelEnding {
-	method title() = "¡FIN DEL JUEGO!"
 	method showButtonsIn(ticket) { ticket.showPlayAgainButtons() }
-	method showIn(levelInfo) { levelInfo.showGameOverHint() }
 }

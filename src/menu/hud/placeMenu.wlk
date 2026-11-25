@@ -20,14 +20,14 @@ import wollok.game.*
 import tools.toolsManager.*
 import machines.machineManager.*
 import menu.hud.hud.*
-import input.clickManager.*
+import menu.screenClasses.*
 import levels.levelManager.*
 import cellPosition.*
 import sound.sfx.*
 import directions.*
 import menu.drawing.visuals.*
 
-object placeMenu inherits ClickTargets {
+object placeMenu {
     var currentPage = 0
     // Todo lo dibujado en el panel (menos los marcos)
     const drawn = new VisualGroup()
@@ -69,8 +69,7 @@ object placeMenu inherits ClickTargets {
     }
 
     // Los clics del panel: los casilleros de las máquinas y la brújula (cada uno sabe qué hace)
-    override method zones() = [hud.interactiveZone()]
-    override method clickTargets() = slotAreas + compassTiles
+    method clickableAreas() = slotAreas + compassTiles
 
     // Q y E: la máquina anterior o la siguiente del catálogo (pasa de página si hace falta)
     method chooseNext(step) {
@@ -207,8 +206,8 @@ object placeMenu inherits ClickTargets {
 
         machineManager.machinesOfPage(currentPage).forEach({ factory =>
             slot += 1
-            // una máquina de muestra: da el nombre y la imagen del menú (queda guardada en el MenuItem)
-            const sample = factory.apply()
+            // la máquina de muestra (guardada en machineManager): da el nombre y la imagen del menú
+            const sample = machineManager.sampleOf(factory)
             const item = new MenuItem(name = sample.name(), machine = sample, position = self.slotPosition(slot))
             item.updateImage()
             items.add(drawn.add(item))
@@ -258,7 +257,7 @@ class MenuItem inherits Picture(image = "no_texture.png") {
 class CompassTile inherits Button(image = "menu/compass_right.png") {
     const property direction
 
-    override method press() { toolsManager.currentDirection(direction) }
+    override method onClick(pos) { toolsManager.currentDirection(direction) }
 
     method updateImage() {
         image = "menu/compass_" + direction.name() + (if (toolsManager.currentDirection() == direction) "_on" else "") + ".png"
@@ -267,7 +266,7 @@ class CompassTile inherits Button(image = "menu/compass_right.png") {
 
 // La máquina elegida, en el centro de la brújula, mirando hacia donde va a quedar.
 object compassMachine inherits Picture(image = "no_texture.png", position = new CellPosition(x = 19, y = 3)) {
-    method updateImage() { image = machineManager.createMachine().menuImage(toolsManager.currentDirection()) }
+    method updateImage() { image = machineManager.selectedSample().menuImage(toolsManager.currentDirection()) }
 }
 
 object selectionFrame {
