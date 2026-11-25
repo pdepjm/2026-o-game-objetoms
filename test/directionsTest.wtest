@@ -1,0 +1,39 @@
+// Buffet Albert Einstein - tests de las direcciones.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import src.directions.*
+describe "tests de directions" {
+
+  test "cada direccion se mueve una casilla hacia su lado" {
+    assert.equals(game.at(1, 0), right.move(game.at(0, 0)))
+    assert.equals(game.at(0, -1), down.move(game.at(0, 0)))
+    assert.equals(game.at(-1, 0), left.move(game.at(0, 0)))
+    assert.equals(game.at(0, 1), up.move(game.at(0, 0)))
+  }
+
+  test "next rota en el orden right -> down -> left -> up -> right" {
+    assert.equals(down, right.next())
+    assert.equals(left, down.next())
+    assert.equals(up, left.next())
+    assert.equals(right, up.next())
+  }
+
+  test "previous deshace lo que hace next" {
+    [right, down, left, up].forEach({ direction => assert.equals(direction, direction.next().previous()) })
+  }
+}

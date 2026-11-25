@@ -1,0 +1,121 @@
+// Buffet Albert Einstein - tests de las máquinas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import src.machines.types.arms.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.assembler.*
+import src.machines.types.processing.*
+import src.tools.toolsManager.*
+import src.directions.*
+import wollok.game.*
+import src.board.*
+import src.food.foodTypes.*
+import src.food.recipes.*
+
+describe "tests de Machine" {
+
+  // Wollok inicializa los atributos al leerlos por primera vez: la máquina tiene que
+  // quedarse con la dirección que había al crearla, aunque después cambie
+  test "una maquina conserva la direccion con la que se creo aunque despues cambie la actual" {
+    toolsManager.currentDirection(up)
+    const oven = new Oven()
+    toolsManager.currentDirection(left)
+    assert.equals("machines/Oven/up_game.png", oven.image())
+  }
+
+  test "rotate gira solo esa maquina: de right a down, y las demas quedan igual" {
+    toolsManager.currentDirection(right)
+    const belt1 = new Belt()
+    const belt2 = new Belt()
+    belt1.rotate()
+    assert.equals("machines/Belt/down_game.png", belt1.image())
+    assert.equals("machines/Belt/right_game.png", belt2.image())
+  }
+
+  // La cinta y el dispenser se animan con GIF; la cortadora es frame a frame: sigue quieta hasta que corta
+  test "al prender la simulacion cada maquina pasa a su imagen andando" {
+    toolsManager.currentDirection(right)
+    const belt = new Belt()
+    const dispenser = new Dispenser()
+    const cutter = new CuttingMachine()
+    [belt, dispenser, cutter].forEach({ machine => machine.start() })
+    assert.equals("machines/Belt/right.gif", belt.image())
+    assert.equals("machines/Dispenser/right.gif", dispenser.image())
+    assert.equals("machines/CuttingMachine/right_game.png", cutter.image())
+  }
+
+  test "al apagar la simulacion una maquina vuelve a la imagen quieta" {
+    toolsManager.currentDirection(right)
+    const belt = new Belt()
+    belt.start()
+    belt.reset()
+    assert.equals("machines/Belt/right_game.png", belt.image())
+  }
+}
+
+// La insignia (Badge): lo que la máquina tiene elegido, en su esquina de arriba a la derecha
+describe "tests de la insignia" {
+
+  method initialize() {
+    board.clear()
+    recipeBook.changeAvailable(recipeBook.all())
+  }
+
+  test "al colocar la maquina se dibuja su insignia, con lo que tiene elegido" {
+    const dispenser = new Dispenser(direction = down)
+    const assembler = new Assembler(direction = up)
+    board.push(game.at(8, 5), dispenser)
+    board.push(game.at(10, 5), assembler)
+    assert.that(game.hasVisual(dispenser.badge()))
+    assert.equals("machines/badge/food/Ingredients/potatoes/potato_raw.png", dispenser.badge().image())
+    assert.equals("machines/badge/food/Dishes/burgers/burger.png", assembler.badge().image())
+  }
+
+  test "al cambiar lo elegido cambia la insignia" {
+    const dispenser = new Dispenser(direction = down)
+    const assembler = new Assembler(direction = up)
+    board.push(game.at(8, 5), dispenser)
+    board.push(game.at(10, 5), assembler)
+    dispenser.product(tomato)
+    assembler.settings().first().value(hotDogRecipe)
+    assembler.settingChanged()
+    assert.equals("machines/badge/food/Ingredients/tomatoes/tomato_whole.png", dispenser.badge().image())
+    assert.equals("machines/badge/food/Dishes/hot-dog/hot-dog.png", assembler.badge().image())
+  }
+
+  test "va arriba a la derecha segun el tamaño de la maquina, y no se mueve al rotarla" {
+    const dispenser = new Dispenser(direction = down)
+    const assembler = new Assembler(direction = up)
+    board.push(game.at(8, 5), dispenser)
+    board.push(game.at(10, 5), assembler)
+    dispenser.rotate()
+    assembler.rotate()
+    assert.equals(8.58, dispenser.badge().position().x())
+    assert.equals(5.6, dispenser.badge().position().y())
+    assert.equals(11.58, assembler.badge().position().x())
+    assert.equals(6.6, assembler.badge().position().y())
+  }
+
+  test "al sacar la maquina se va su insignia" {
+    const dispenser = new Dispenser(direction = down)
+    board.push(game.at(8, 5), dispenser)
+    board.pop(game.at(8, 5))
+    assert.notThat(game.hasVisual(dispenser.badge()))
+  }
+}

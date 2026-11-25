@@ -1,0 +1,370 @@
+// Buffet Albert Einstein - tests de las máquinas que procesan ingredientes y de las animaciones por tiempo.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.machines.machineClasses.*
+import src.machines.types.processing.*
+import src.tools.toolsManager.*
+import src.directions.*
+import src.board.*
+import src.simulation.simulationEngine.*
+import src.simulation.animationEngine.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+
+// Un ingrediente que tarda 30 pasos (más que los 15 que antes permitía la agenda)
+object slowIngredient inherits IngredientKind {
+override method image() = "no_texture.png"
+override method processTime() = 30
+override method initialize() {
+    self.turnsInto(cutting, cutPotato)
+    self.turnsInto(cooking, cookedMeat)
+}
+}
+
+// Una máquina que procesa sin definir workImages: se queda quieta, pero respeta el tiempo
+class DummyProcessor inherits ProcessingMachine {
+override method name() = "DummyProcessor"
+override method foodProcess() = cutting
+}
+
+// Recibe lo que le entrega la máquina de atrás, sin animarlo
+class ReceivingSink inherits Machine {
+const property received = []
+
+override method name() = "ReceivingSink"
+override method canReceive(item) = true
+override method onReceive(item) {
+    received.add(item)
+}
+}
+
+describe "tests de TimedAnimation" {
+
+const images17 = (0..16).map({ i => "i" + i })
+
+test "dura exactamente la cantidad de pasos pedida" {
+    const animation = new TimedAnimation(images = ["a", "b", "c"], steps = 10)
+    assert.equals(10, animation.size())
+    assert.equals(10, animation.frames().size())
+}
+
+test "empieza en la primera imagen" {
+    const animation = new TimedAnimation(images = ["a", "b", "c"], steps = 10)
+    assert.equals("a", animation.frames().first())
+}
+
+test "con mas imagenes que pasos saltea imagenes en una sola vuelta" {
+    const animation = new TimedAnimation(images = images17, steps = 4)
+    assert.equals(["i0", "i4", "i8", "i12"], animation.frames())
+}
+
+test "con el doble de pasos que imagenes hace dos vueltas exactas" {
+    const animation = new TimedAnimation(images = images17, steps = 34)
+    assert.equals(2, animation.frames().count({ frame => frame == "i16" }))
+    assert.equals("i0", animation.frames().first())
+    assert.equals("i16", animation.frames().last())
+}
+
+test "con menos imagenes que pasos repite las vueltas y termina en la ultima imagen" {
+    const animation = new TimedAnimation(images = ["a", "b", "c"], steps = 10)
+    assert.equals(["a", "a", "b", "c", "a", "b", "c", "a", "b", "c"], animation.frames())
+}
+
+test "con una sola imagen todos los pasos muestran esa imagen" {
+    const animation = new TimedAnimation(images = ["solo"], steps = 6)
+    assert.equals(6, animation.size())
+    assert.that(animation.frames().all({ frame => frame == "solo" }))
+}
+}
+
+describe "tests de la cortadora: tiempo de procesamiento" {
+
+const cutter = new CuttingMachine()
+const cellSteps = animationEngine.stepsPerCell()
+
+method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(7, 5), cutter)
+}
+
+method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+}
+
+  // Le entrega un item a la cortadora, como haria la maquina de atras
+method feed(item) {
+    item.position(cutter.position())
+    simulationEngine.addItem(item)
+    cutter.receive(item)
+}
+
+test "un tomate tarda 4 pasos en cortarse desde que llega" {
+    const piece = new Item(kind = tomato)
+    simulationEngine.run()
+    self.feed(piece)
+    self.steps(cellSteps + 3)
+    assert.equals(tomato, piece.kind())
+    self.steps(1)
+    assert.equals(cutTomato, piece.kind())
+}
+
+test "una papa tarda 5 pasos, el tiempo por defecto" {
+    const piece = new Item(kind = potato)
+    simulationEngine.run()
+    self.feed(piece)
+    self.steps(cellSteps + 4)
+    assert.equals(potato, piece.kind())
+    self.steps(1)
+    assert.equals(cutPotato, piece.kind())
+}
+
+test "un ingrediente que tarda mas de 15 pasos se corta igual" {
+    const piece = new Item(kind = slowIngredient)
+    simulationEngine.run()
+    self.feed(piece)
+    self.steps(cellSteps + 29)
+    assert.equals(slowIngredient, piece.kind())
+    self.steps(1)
+    assert.equals(cutPotato, piece.kind())
+}
+
+test "al empezar a cortar muestra el primer frame de la animacion de corte" {
+    simulationEngine.run()
+    self.feed(new Item(kind = potato))
+    self.steps(cellSteps)
+    assert.equals("machines/CuttingMachine/right_cut/0.png", cutter.image())
+}
+
+}
+
+describe "tests del horno: tiempo de procesamiento" {
+
+const oven = new Oven()
+const cellSteps = animationEngine.stepsPerCell()
+
+method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(7, 5), oven)
+}
+
+method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+}
+
+  // Le entrega un item al horno, como haria la maquina de atras
+method feed(item) {
+    item.position(oven.position())
+    simulationEngine.addItem(item)
+    oven.receive(item)
+}
+
+test "acepta carne cruda pero no tomate" {
+    assert.that(oven.canReceive(new Item(kind = meat)))
+    assert.notThat(oven.canReceive(new Item(kind = tomato)))
+}
+
+test "la carne tarda 8 pasos en cocinarse desde que llega" {
+    const piece = new Item(kind = meat)
+    simulationEngine.run()
+    self.feed(piece)
+    self.steps(cellSteps + 7)
+    assert.equals(meat, piece.kind())
+    self.steps(1)
+    assert.equals(cookedMeat, piece.kind())
+}
+
+test "vacio se ve quieto" {
+    simulationEngine.run()
+    self.steps(10)
+    assert.equals(oven.staticImage(), oven.image())
+}
+
+test "mientras cocina muestra el GIF" {
+    simulationEngine.run()
+    self.feed(new Item(kind = meat))
+    self.steps(cellSteps)
+    assert.equals("machines/Oven/right.gif", oven.image())
+}
+
+test "al terminar de cocinar vuelve a la imagen quieta" {
+    simulationEngine.run()
+    self.feed(new Item(kind = meat))
+    self.steps(cellSteps + 8)
+    assert.equals(oven.staticImage(), oven.image())
+}
+
+test "al apagar la simulacion a mitad de la coccion no procesa nada ni da error" {
+    const piece = new Item(kind = meat)
+    simulationEngine.run()
+    self.feed(piece)
+    self.steps(cellSteps + 3)
+    simulationEngine.stop()
+    self.steps(20)
+    assert.that(oven.heldItems().isEmpty())
+    assert.equals(oven.staticImage(), oven.image())
+    assert.equals(meat, piece.kind())
+}
+}
+
+describe "tests de una ProcessingMachine sin workImages" {
+
+const processor = new DummyProcessor()
+const sink = new ReceivingSink()
+const cellSteps = animationEngine.stepsPerCell()
+
+method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(9, 5), processor)
+    board.push(game.at(10, 5), sink)
+}
+
+method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+}
+
+method feed(item) {
+    item.position(processor.position())
+    simulationEngine.addItem(item)
+    processor.receive(item)
+}
+
+test "acepta lo que puede procesar y rechaza el resto" {
+    assert.that(processor.canReceive(new Item(kind = potato)))
+    assert.notThat(processor.canReceive(new Item(kind = cutPotato)))
+}
+
+test "entrega el item procesado justo cuando termina el tiempo, no antes" {
+    simulationEngine.run()
+    self.feed(new Item(kind = potato))
+    self.steps(cellSteps + 4)
+    assert.that(sink.received().isEmpty())
+    self.steps(1)
+    assert.equals(1, sink.received().size())
+    assert.equals(cutPotato, sink.received().first().kind())
+}
+}
+
+describe "tests de CuttingMachine: que acepta" {
+
+  test "acepta una papa cruda, pero no una ya cortada ni un plato terminado" {
+    assert.that(new CuttingMachine().canReceive(new Item(kind = potato)))
+    assert.notThat(new CuttingMachine().canReceive(new Item(kind = cutPotato)))
+    assert.notThat(new CuttingMachine().canReceive(new Item(kind = friedPotato)))
+  }
+}
+
+describe "tests de la cortadora en una cadena" {
+
+  const dispenser = new Dispenser()
+  const beltBefore = new Belt()
+  const cutter = new CuttingMachine()
+  const beltAfter = new Belt()
+
+  const dispenseSteps = dispenser.intervalSteps()
+  const cellSteps = animationEngine.stepsPerCell()
+
+  method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(5, 5), dispenser)
+    board.push(game.at(6, 5), beltBefore)
+    board.push(game.at(7, 5), cutter)
+    board.push(game.at(8, 5), beltAfter)
+  }
+
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+
+  // Avanza de a un paso hasta que se cumpla la condicion (con un tope de 300 pasos)
+  method stepsUntil(condition) {
+    (1..300).forEach({ _ => if (!condition.apply()) simulationEngine.step() })
+  }
+
+  test "una papa cruda sale cortada hacia la cinta de adelante" {
+    simulationEngine.run()
+    self.stepsUntil({ !beltAfter.heldItems().isEmpty() })
+    assert.equals(1, beltAfter.heldItems().size())
+    assert.equals(cutPotato, beltAfter.heldItems().first().kind())
+  }
+
+  test "mientras corta, la papa todavia esta cruda y no acepta otra" {
+    simulationEngine.run()
+    self.steps(dispenseSteps + cellSteps * 2)
+    assert.that(cutter.animating())
+    assert.equals(potato, cutter.heldItems().first().kind())
+    assert.that(beltAfter.heldItems().isEmpty())
+    assert.notThat(cutter.canReceive(new Item(kind = potato)))
+  }
+
+  test "al terminar de cortar queda libre, deja de animarse y vuelve a la imagen quieta" {
+    simulationEngine.run()
+    self.stepsUntil({ !beltAfter.heldItems().isEmpty() })
+    assert.that(cutter.heldItems().isEmpty())
+    assert.notThat(cutter.animating())
+    assert.equals(cutter.staticImage(), cutter.image())
+  }
+}
+
+describe "tests de la cortadora con items puestos a mano" {
+
+  const beltBefore = new Belt()
+  const cutter = new CuttingMachine()
+  const cellSteps = animationEngine.stepsPerCell()
+
+  method initialize() {
+    toolsManager.currentDirection(right)
+    board.push(game.at(6, 5), beltBefore)
+    board.push(game.at(7, 5), cutter)
+  }
+
+  method steps(amount) {
+    amount.times({ _ => simulationEngine.step() })
+  }
+
+  // Le entrega un item a una maquina, como haria la de atras
+  method feed(machine, item) {
+    item.position(machine.position())
+    simulationEngine.addItem(item)
+    machine.receive(item)
+  }
+
+  test "una papa ya cortada no pasa de la cinta a la cortadora" {
+    const cut = new Item(kind = cutPotato)
+    simulationEngine.run()
+    self.feed(beltBefore, cut)
+    self.steps(cellSteps * 3)
+    assert.equals([cut], beltBefore.heldItems())
+    assert.that(cutter.heldItems().isEmpty())
+  }
+
+  test "al apagar la simulacion en medio del corte, la cortadora queda vacia y quieta" {
+    const raw = new Item(kind = potato)
+    simulationEngine.run()
+    self.feed(cutter, raw)
+    self.steps(cellSteps + 3)
+    assert.that(cutter.animating())
+    simulationEngine.stop()
+    assert.notThat(cutter.animating())
+    assert.that(cutter.heldItems().isEmpty())
+    assert.equals(cutter.staticImage(), cutter.image())
+    assert.equals(potato, raw.kind())
+  }
+}

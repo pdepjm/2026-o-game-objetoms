@@ -1,0 +1,17 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="lechuga-entera">
+<path id="Lechuga - silueta" d="M10 30C6 24 9 16 15 14C17 9 23 7 27 10C31 7 38 9 39 14C44 16 46 23 42 28C44 34 39 40 33 39C30 43 21 43 18 39C12 40 8 35 10 30Z" fill="#6FB33F" stroke="#2F5A1C" stroke-width="1.3" stroke-linejoin="round"/>
+<path id="Lechuga - hoja exterior" d="M10 30C13 26 17 25 19 27M42 28C38 25 34 25 32 27M15 14C18 17 19 20 19 23M39 14C36 17 33 19 32 22" stroke="#2F5A1C" stroke-width="0.8" stroke-linecap="round"/>
+<path id="Lechuga - corazon" d="M17 26C16 20 21 16 25 18C29 15 34 19 33 24C36 28 32 33 27 32C24 35 18 33 17 29C15.5 28.3 15.8 26.6 17 26Z" fill="#A6D96A" stroke="#2F5A1C" stroke-width="0.8" stroke-linejoin="round"/>
+<path id="Lechuga - nervaduras" d="M25 39C25 34 24.5 29 25 23M25 36C22 33.5 17 32 13 30M25 36C28 33.5 33 32 37 30M25 29C23 27 21 26 19.5 25.5M25 29C27 27 29 26 30.5 25.5" stroke="#3E7A24" stroke-width="0.8" stroke-linecap="round"/>
+<path id="Lechuga - sombra de volumen" opacity="0.34" d="M11 31C14 37 22 41 30 39C36 39 41 34 42 28C44 34 39 40 33 39C30 43 21 43 18 39C12 40 9.5 35.5 11 31Z" fill="#234A12"/>
+<path id="Lechuga - luz suave" opacity="0.48" d="M14 18C17 13 23 11 27 12C23 13 19 15 17 19C16 21 14 21 14 18Z" fill="#E8F7B0"/>
+<path id="Lechuga - luz corazon" opacity="0.48" d="M20 21C21.5 19 24 18.5 25.5 19.5C23.5 19.8 22 20.8 21 22.5C20.4 23.3 19.6 22.3 20 21Z" fill="#F2FBC8"/>
+<ellipse id="Lechuga - textura 1" opacity="0.45" cx="12" cy="24" rx="0.45" ry="0.32" fill="#2F5A1C"/>
+<ellipse id="Lechuga - textura 2" opacity="0.45" cx="36" cy="18" rx="0.4" ry="0.3" fill="#2F5A1C"/>
+<ellipse id="Lechuga - textura 3" opacity="0.45" cx="39" cy="23" rx="0.5" ry="0.36" fill="#2F5A1C"/>
+<ellipse id="Lechuga - textura 4" opacity="0.45" cx="18" cy="36" rx="0.45" ry="0.32" fill="#2F5A1C"/>
+<ellipse id="Lechuga - textura 5" opacity="0.45" cx="31" cy="36" rx="0.4" ry="0.3" fill="#2F5A1C"/>
+<ellipse id="Lechuga - textura 6" opacity="0.45" cx="29" cy="12" rx="0.35" ry="0.26" fill="#2F5A1C"/>
+</g>
+</svg>

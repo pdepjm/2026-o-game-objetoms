@@ -1,0 +1,264 @@
+// Buffet Albert Einstein - tests de la energía: consumo de las máquinas, límite de los niveles y el tutorial 3.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+import wollok.game.*
+import src.board.*
+import src.cellPosition.*
+import src.directions.*
+import src.machines.machineManager.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.processing.*
+import src.machines.types.arms.*
+import src.machines.types.assembler.*
+import src.machines.types.deliverySlot.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.levelInfoMenu.*
+import src.menu.overBoard.tutorialGuide.*
+import src.simulation.simulationEngine.*
+import test.runner.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.food.foodTypes.*
+import src.levels.levelClasses.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+
+// Un nivel sólo para estos tests: con una cinta fija y un límite de 3 de energía
+const limitedLevel = new Level(
+  name = "Limitado",
+  availableMachines = [{ => new Belt() }, { => new Oven() }],
+  availableRecipes = [],
+  goals = [noGoal],
+  energyLimit = new EnergyLimit(max = 3),
+  fixedMachines = [new Placement(position = new CellPosition(x = 5, y = 5), factory = { => new Belt(direction = right) })]
+)
+
+describe "tests del consumo de energia de las maquinas" {
+
+  test "las maquinas con velocidad gastan su base mas la de la velocidad: a mas velocidad, mas energia" {
+    [new Dispenser(), new CuttingMachine(), new Oven(), new Fryer(), new Assembler()].forEach({ machine =>
+      const speed = machine.settings().last()
+      speed.value(0.5)
+      assert.equals(machine.baseEnergy() + 1, machine.energyConsumption())
+      speed.value(1)
+      assert.equals(machine.baseEnergy() + 2, machine.energyConsumption())
+      speed.value(2)
+      assert.equals(machine.baseEnergy() + 4, machine.energyConsumption())
+    })
+  }
+
+  test "a velocidad normal el tiempo de trabajo no cambia; al doble tarda la mitad y a la mitad el doble" {
+    const oven = new Oven()
+    assert.equals(8, oven.workSteps(8))
+    oven.settings().last().value(2)
+    assert.equals(4, oven.workSteps(8))
+    oven.settings().last().value(0.5)
+    assert.equals(16, oven.workSteps(8))
+  }
+
+  test "el tiempo de trabajo nunca baja de un paso" {
+    const cutter = new CuttingMachine()
+    cutter.settings().last().value(2)
+    assert.equals(1, cutter.workSteps(1))
+  }
+
+  test "una maquina sin velocidad trabaja a velocidad normal" {
+    assert.equals(1, new Belt().speed())
+    assert.equals(5, new Belt().workSteps(5))
+  }
+
+  test "el tablero suma la energia de todas las maquinas colocadas" {
+    board.clear()
+    assert.equals(0, board.totalEnergy())
+    board.push(game.at(6, 5), new Belt())
+    board.push(game.at(7, 5), new Oven())
+    assert.equals(5, board.totalEnergy())
+  }
+}
+
+describe "tests del limite de energia" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+  }
+
+  test "se puede gastar hasta el maximo inclusive" {
+    const limit = new EnergyLimit(max = 3)
+    assert.that(limit.allows(2))
+    assert.that(limit.allows(3))
+    assert.notThat(limit.allows(4))
+  }
+
+  test "el contador muestra lo gastado y el limite, con las maquinas fijas" {
+    levelManager.load(limitedLevel)
+    assert.equals(["Energía: 1/3"], levelInfoMenu.energyMessage())
+  }
+
+  test "al colocar y borrar maquinas el contador se actualiza" {
+    levelManager.load(limitedLevel)
+    machineManager.select(limitedLevel.availableMachines().first())
+    toolsManager.useAt(place, game.at(6, 5))
+    assert.equals(["Energía: 2/3"], levelInfoMenu.energyMessage())
+    toolsManager.useAt(delete, game.at(6, 5))
+    assert.equals(["Energía: 1/3"], levelInfoMenu.energyMessage())
+  }
+
+  test "si se pasa del limite el contador avisa que no hay energia" {
+    levelManager.load(limitedLevel)
+    machineManager.select(limitedLevel.availableMachines().get(1))
+    toolsManager.useAt(place, game.at(6, 5))
+    assert.equals(["SIN ENERGÍA: 5/3"], levelInfoMenu.energyMessage())
+  }
+
+  test "un nivel sin limite no muestra contador" {
+    levelManager.load(level1)
+    assert.equals([], levelInfoMenu.energyMessage())
+  }
+
+  test "el contador se va al cargar otro nivel" {
+    levelManager.load(limitedLevel)
+    levelManager.load(level1)
+    assert.equals([], levelInfoMenu.energyMessage())
+  }
+
+  test "justo en el limite se puede prender" {
+    levelManager.load(limitedLevel)
+    board.push(game.at(6, 5), new Belt())
+    board.push(game.at(7, 5), new Belt())
+    assert.equals(3, board.totalEnergy())
+    levelManager.toggleSimulation()
+    assert.that(simulationEngine.running())
+  }
+
+  test "si se pasa del limite no se puede prender la simulacion" {
+    levelManager.load(limitedLevel)
+    board.push(game.at(6, 5), new Oven())
+    levelManager.toggleSimulation()
+    assert.notThat(simulationEngine.running())
+  }
+
+  test "apagar la simulacion siempre se puede" {
+    levelManager.load(limitedLevel)
+    levelManager.toggleSimulation()
+    board.push(game.at(6, 5), new Oven())
+    levelManager.toggleSimulation()
+    assert.notThat(simulationEngine.running())
+  }
+
+  test "sin limite se puede prender gaste lo que gaste" {
+    levelManager.load(freePlay)
+    (6 .. 12).forEach({ x => board.push(game.at(x, 5), new Oven()) })
+    levelManager.toggleSimulation()
+    assert.that(simulationEngine.running())
+  }
+
+  test "si con la simulacion prendida un ajuste hace que se pase, se apaga" {
+    levelManager.load(limitedLevel)
+    const dispenser = new Dispenser()
+    const speed = dispenser.settings().last()
+    speed.value(0.5)
+    board.push(game.at(6, 5), dispenser)
+    levelManager.toggleSimulation()
+    assert.that(simulationEngine.running())
+    speed.value(2)
+    levelManager.settingChanged(dispenser, speed)
+    assert.notThat(simulationEngine.running())
+  }
+}
+
+describe "tests del tutorial de energia" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(energyTutorialLevel)
+  }
+
+  method useTool(tool, pos) {
+    toolsManager.useAt(tool, pos)
+  }
+
+  method placeMachine(index, pos) {
+    levelManager.continueTutorial()
+    machineManager.select(energyTutorialLevel.availableMachines().get(index))
+    self.useTool(place, pos)
+  }
+
+  // Con edit, toca la máquina y elige en el panel esa opción de ese setting
+  method chooseOption(machinePos, settingName, value) {
+    self.useTool(edit, machinePos)
+    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == settingName })
+    const pos = (17 .. 21).flatMap({ x => (0 .. 12).map({ y => game.at(x, y) }) }).find({ pos =>
+      const slot = editMenu.slotAt(pos)
+      return slot.matches(setting, value)
+    })
+    playingScreen.onClick(pos)
+  }
+
+  method message() = chefGuide.message()
+
+  method build() {
+    self.placeMachine(0, energyTutorialCells.belt())
+    self.placeMachine(1, energyTutorialCells.cutter())
+    self.chooseOption(energyTutorialCells.dispenser(), "Velocidad", 0.5)
+  }
+
+  test "arranca explicando la energia" {
+    assert.equals("Cada máquina", self.message().first())
+  }
+
+  test "con las maquinas fijas ya se gasta energia" {
+    assert.equals(["Energía: 6/9"], levelInfoMenu.energyMessage())
+  }
+
+  test "armado a velocidad normal se pasa del limite" {
+    self.placeMachine(0, energyTutorialCells.belt())
+    self.placeMachine(1, energyTutorialCells.cutter())
+    assert.equals(["SIN ENERGÍA: 10/9"], levelInfoMenu.energyMessage())
+    assert.equals("¡Te pasaste del", self.message().first())
+  }
+
+  test "no se puede prender la simulacion hasta bajar la velocidad" {
+    self.placeMachine(0, energyTutorialCells.belt())
+    self.placeMachine(1, energyTutorialCells.cutter())
+    levelManager.toggleSimulation()
+    assert.notThat(simulationEngine.running())
+  }
+
+  test "bajar la velocidad a x0.5 deja justo en el limite y pasa a prender" {
+    self.build()
+    assert.equals(["Energía: 9/9"], levelInfoMenu.energyMessage())
+    assert.equals("¡Listo! Ya se", self.message().first())
+  }
+
+  test "armado como dice el tutorial, entrega las papas cortadas y se gana" {
+    self.build()
+    levelManager.toggleSimulation()
+    assert.that(simulationEngine.running())
+    runner.runUntilWon()
+    assert.that(levelManager.completed())
+  }
+}

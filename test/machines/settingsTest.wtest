@@ -1,0 +1,267 @@
+// Buffet Albert Einstein - tests de las configuraciones de las máquinas y del panel de edición.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.cellPosition.*
+import src.board.*
+import src.directions.*
+import src.machines.settings.*
+import src.machines.machineClasses.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.machines.types.arms.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.armMenu.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+
+describe "tests de los settings de las maquinas" {
+
+  const dispenser = new Dispenser()
+
+  test "una maquina sin settings no tiene ninguno y consume solo su energia base" {
+    const belt = new Belt()
+    assert.that(belt.settings().isEmpty())
+    assert.equals(belt.baseEnergy(), belt.energyConsumption())
+  }
+
+  test "elegir una opcion cambia el valor del setting" {
+    const product = dispenser.settings().first()
+    const lettuceOption = product.options().find({ option => option.value() == lettuce })
+    product.select(lettuceOption)
+    assert.equals(lettuce, dispenser.product())
+  }
+
+  test "las opciones del ingrediente se dibujan con la imagen del ingrediente" {
+    const product = dispenser.settings().first()
+    assert.that(product.options().all({ option => option.image() == option.value().image() }))
+  }
+
+  test "solo esta elegida la opcion del valor actual" {
+    const product = dispenser.settings().first()
+    const selected = product.options().filter({ option => product.isSelected(option) })
+    assert.equals([potato], selected.map({ option => option.value() }))
+  }
+
+  test "a velocidad normal el dispenser tarda 5 segundos; a rapida, menos, y a lenta, mas" {
+    const speed = dispenser.settings().last()
+    assert.equals(5000, dispenser.intervalMs())
+    speed.value(2)
+    assert.equals(2500, dispenser.intervalMs())
+    speed.value(0.5)
+    assert.equals(10000, dispenser.intervalMs())
+  }
+
+  test "un valor que no es una de las opciones no suma energia" {
+    dispenser.product(cutBun)
+    assert.equals(0, dispenser.settings().first().energyCost())
+  }
+
+  test "la configuracion sobrevive a apagar la simulacion" {
+    dispenser.product(tomato)
+    dispenser.reset()
+    assert.equals(tomato, dispenser.product())
+  }
+
+  test "cada maquina tiene su propia configuracion" {
+    const other = new Dispenser()
+    dispenser.product(tomato)
+    assert.equals(potato, other.product())
+  }
+
+  test "recto entrega del lado contrario al de entrada" {
+    assert.equals(right, straightOut.sideFor(left))
+    assert.equals(up, straightOut.sideFor(down))
+  }
+
+  test "izquierda y derecha son las del recorrido del item" {
+    // entra por la izquierda, viaja hacia la derecha: su izquierda es arriba y su derecha, abajo
+    assert.equals(up, leftOut.sideFor(left))
+    assert.equals(down, rightOut.sideFor(left))
+    // entra por arriba, viaja hacia abajo: su izquierda es la derecha de la pantalla
+    assert.equals(right, leftOut.sideFor(up))
+    assert.equals(left, rightOut.sideFor(up))
+  }
+
+  test "el brazo entrega recto por defecto" {
+    const arm = new AutomaticArm()
+    4.times({ _ => if (arm.inputSide() != left) arm.rotate() })
+    assert.equals(right, arm.outputSide())
+  }
+}
+
+// El panel de la herramienta edit. La zona interactiva ocupa x 18 a 21; arriba de todo (y 11)
+// va el título de la categoría, abajo el nombre del setting y después sus opciones, de a 4 por fila.
+describe "tests del panel de edit" {
+
+  const dispenser = new Dispenser()
+  const arm = new AutomaticArm()
+
+  method initialize() {
+    playingScreen.show()
+    board.push(game.at(8, 8), dispenser)
+    4.times({ _ => if (arm.inputSide() != left) arm.rotate() })
+    board.push(game.at(8, 4), arm)
+  }
+
+  // Elige la máquina de esa celda con un clic y aprieta X: se abre su panel
+  method editAt(x, y) {
+    playingScreen.onClick(game.at(x, y))
+    toolsManager.editKey()
+  }
+
+  // un click en una celda de la zona interactiva
+  method clickPanel(x, y) {
+    playingScreen.onClick(game.at(x, y))
+  }
+
+  method panelVisuals() = (18..21).flatMap({ x => (0..11).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
+
+  method markers() = editMenu.markers()
+
+  method texts() = self.panelVisuals().filter({ visual => visual.className().endsWith("MenuText") })
+
+  test "sin editar ninguna maquina, el panel de edit no muestra nada" {
+    assert.notThat(toolsManager.isEditing())
+    assert.equals(0, self.markers().size())
+  }
+
+  test "elegir el dispenser muestra los titulos, los nombres y una marca por setting" {
+    self.editAt(8, 8)
+    assert.equals(2, self.markers().size())
+    assert.equals("PRODUCCION", self.texts().find({ t => t.position().y() == 11 }).text())
+    assert.equals("Ingrediente", self.texts().find({ t => t.position().y() == 10 }).text())
+    // 13 ingredientes, de a 4 por fila: ocupan las filas 9 a 6
+    assert.equals("Velocidad", self.texts().find({ t => t.position().y() == 5 }).text())
+  }
+
+  test "la categoria se muestra una sola vez aunque tenga dos settings" {
+    self.editAt(8, 8)
+    const titles = self.texts().filter({ text => text.text() == "PRODUCCION" })
+    assert.equals(1, titles.size())
+  }
+
+  test "clickear un ingrediente se lo aplica al dispenser" {
+    self.editAt(8, 8)
+    self.clickPanel(18, 9)
+    assert.equals(lettuce, dispenser.product())
+  }
+
+  test "el ingrediente que no entra en la primera fila va abajo" {
+    self.editAt(8, 8)
+    self.clickPanel(18, 8)
+    assert.equals(tomato, dispenser.product())
+  }
+
+  test "clickear una velocidad se la aplica al dispenser" {
+    self.editAt(8, 8)
+    self.clickPanel(20, 4)
+    assert.equals(2, dispenser.settings().last().value())
+  }
+
+  test "la marca se mueve a la opcion clickeada y sigue habiendo una por setting" {
+    self.editAt(8, 8)
+    self.clickPanel(19, 9)
+    assert.equals(2, self.markers().size())
+    assert.that(self.markers().any({ marker => marker.position() == new CellPosition(x = 19, y = 9) }))
+  }
+
+  test "clickear en un lugar sin opcion no cambia nada" {
+    self.editAt(8, 8)
+    self.clickPanel(21, 9)
+    self.clickPanel(19, 0)
+    assert.equals(potato, dispenser.product())
+  }
+
+  // El brazo abre su propio panel (armMenu): las cuatro direcciones del tablero en la fila 7,
+  // ↑ (x 18), → (x 19), ↓ (x 20) y ← (x 21). Este brazo agarra de la izquierda.
+  test "el brazo abre el panel del brazo, con las cuatro direcciones" {
+    self.editAt(8, 4)
+    assert.equals(armMenu, rightPanel.editor())
+    assert.equals(4, armMenu.choices().size())
+  }
+
+  test "clickear una direccion del brazo hace que deje todo hacia ahi" {
+    self.editAt(8, 4)
+    self.clickPanel(18, 7)
+    assert.equals(up, arm.outputSide())
+  }
+
+  test "clickear la direccion de donde agarra el brazo no cambia nada" {
+    self.editAt(8, 4)
+    const before = arm.outputSide()
+    self.clickPanel(21, 7)
+    assert.equals(before, arm.outputSide())
+  }
+
+  test "elegir otra maquina cambia lo que se muestra" {
+    self.editAt(8, 8)
+    self.editAt(8, 4)
+    assert.equals(armMenu, rightPanel.editor())
+    assert.equals(0, self.markers().size())
+  }
+
+  test "clickear una celda vacia del tablero saca lo que se mostraba" {
+    self.editAt(8, 8)
+    playingScreen.onClick(game.at(15, 3))
+    assert.equals(0, self.markers().size())
+  }
+
+  // El brazo inteligente: un casillero por ingrediente, de a 4 por fila desde (18, 7). Mira a la derecha
+  // (la dirección con la que se colocan las máquinas): agarra de la derecha y sale ↑, ↓ o ←.
+  test "el brazo inteligente muestra un casillero por ingrediente" {
+    const smart = new SmartRoboticArm()
+    board.push(game.at(14, 8), smart)
+    self.editAt(14, 8)
+    assert.equals(smart.editKinds().size(), armMenu.choices().size())
+  }
+
+  test "cada clic en un ingrediente lo manda al lado siguiente, y al final a ningun lado" {
+    const smart = new SmartRoboticArm()
+    board.push(game.at(14, 8), smart)
+    self.editAt(14, 8)
+    const kind = smart.editKinds().first()
+    self.clickPanel(18, 7)
+    assert.equals(up, smart.sideOf(kind))
+    assert.that(smart.takes(kind))
+    self.clickPanel(18, 7)
+    assert.equals(down, smart.sideOf(kind))
+    self.clickPanel(18, 7)
+    assert.equals(left, smart.sideOf(kind))
+    self.clickPanel(18, 7)
+    assert.equals(noSide, smart.sideOf(kind))
+    assert.notThat(smart.takes(kind))
+  }
+
+  test "un ingrediente sale por un solo lado" {
+    const smart = new SmartRoboticArm()
+    board.push(game.at(14, 8), smart)
+    self.editAt(14, 8)
+    self.clickPanel(18, 7)
+    self.clickPanel(18, 7)
+    const kind = smart.editKinds().first()
+    assert.equals(1, smart.settings().count({ setting => setting.contains(kind) }))
+  }
+}

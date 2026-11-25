@@ -1,0 +1,84 @@
+// Buffet Albert Einstein - las cuatro direcciones (derecha, abajo, izquierda y arriba) y cómo rotar entre ellas.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// Este archivo maneja las direcciones de las maquinas
+import wollok.game.*
+object right {
+	method name() = "right"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) {}
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) { book.nextPage() }
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven
+	method listStep() = 1
+    method next() = down
+	method previous() = up		// El giro contrario a next
+	method move(position) = position.right(1)
+	method invert() = left
+	method output(startPoint, width, height) = startPoint.right(width)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida
+	method outputEdgeShift(position) = position.up(1)
+}
+object down {
+	method name() = "down"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) { menu.move(1) }
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) {}
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven
+	method listStep() = 1
+    method next() = left
+	method previous() = right		// El giro contrario a next
+	method move(position) = position.down(1)
+	method invert() = up
+	method output(startPoint, width, height) = startPoint.down(1)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida
+	method outputEdgeShift(position) = position.right(1)
+}
+object left {
+	method name() = "left"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) {}
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) { book.prevPage() }
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven
+	method listStep() = -1
+    method next() = up
+	method previous() = down		// El giro contrario a next
+	method move(position) = position.left(1)
+	method invert() = right
+	method output(startPoint, width, height) = startPoint.left(1)
+	// Una máquina de 2x2 entrega por la celda de abajo de su borde izquierdo (ahí dibuja la flecha)
+	method outputEdgeShift(position) = position
+}
+object up {
+	method name() = "up"
+	// En la portada, arriba y abajo mueven la opción marcada
+	method moveCoverFocus(menu) { menu.move(-1) }
+	// Con el recetario abierto, las flechas de los costados pasan de página
+	method turnPage(book) {}
+	// Para recorrer una lista con las flechas (el panel de editar): arriba e izquierda vuelven
+	method listStep() = -1
+    method next() = right
+	method previous() = left		// El giro contrario a next
+	method move(position) = position.up(1)
+	method invert() = down
+	method output(startPoint, width, height) = startPoint.up(height)
+	// Una máquina de 2x2 entrega por la segunda celda de su borde de salida
+	method outputEdgeShift(position) = position
+}

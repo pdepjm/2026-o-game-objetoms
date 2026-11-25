@@ -1,0 +1,801 @@
+// Buffet Albert Einstein - tests de los tutoriales.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.board.*
+import src.directions.*
+import src.machines.machineManager.*
+import src.machines.types.belt.*
+import src.machines.types.dispenser.*
+import src.food.recipes.*
+import src.machines.types.assembler.*
+import src.machines.types.arms.*
+import src.machines.types.deliverySlot.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.levelInfoMenu.*
+import src.menu.overBoard.tutorialGuide.*
+import src.menu.overBoard.tutorialImages.*
+import src.menu.hud.placeMenu.*
+import src.simulation.simulationEngine.*
+import src.tools.toolsManager.*
+import src.tools.userTools.*
+import src.food.foodClasses.*
+import src.food.foodTypes.*
+import src.levels.levelClasses.*
+import src.levels.levelsTypes.*
+import src.levels.levelManager.*
+import test.runner.*
+import src.levels.tutorial.*
+import src.input.userController.*
+import src.menu.hud.armMenu.*
+import src.menu.levelComplete.*
+import src.machines.settings.*
+import src.menu.overBoard.actionsMenu.*
+
+// Fase 5 del plan de niveles: lo que el juego le avisa al tutorial, sus permisos y su mensaje.
+
+// Un tutorial de prueba: guarda los eventos que recibe y no deja usar delete
+object recordingTutorial inherits Tutorial {
+  const property events = []
+
+  override method onMachinePlaced(machine) { events.add("placed") }
+  override method onMachineRotated(machine) { events.add("rotated") }
+  override method onMachineRemoved(machine) { events.add("removed") }
+  override method onSimulationToggled(running) { events.add("simulation " + running) }
+
+  override method allowsTool(tool, pos) = tool != delete
+
+  override method speech() = new ChefSpeech(image = "prueba", lines = ["Linea 1", "Linea 2"])
+}
+
+// Un tutorial con un paso que se cumple con un evento (Enter para seguir) y uno que pide una máquina de 2x2
+const stepKindsLevel = new Level(
+  name = "Pasos",
+  availableMachines = [{ => new Assembler(direction = up) }],
+  availableRecipes = [hotDogRecipe],
+  goals = [noGoal],
+  tutorial = new StepTutorial(
+    name = "pasos",
+    steps = [
+      new ExplainStep(lines = ["Apreta Enter"], pointsAt = [game.at(8, 8)]),
+      new MachineStep(
+        lines = ["Pone el Assembler"],
+        cells = [game.at(8, 8), game.at(9, 8), game.at(8, 9), game.at(9, 9)],
+        condition = { machine => machine.name() == "Assembler" }
+      ),
+      new TutorialStep(lines = ["Fin"])
+    ],
+    finishedLines = ["Ganaste"]
+  )
+)
+
+// Un tutorial que se puede cumplir entero sin ganar: un solo paso, que se cumple al prender la simulación
+const onlyRunLevel = new Level(
+  name = "Correr",
+  availableMachines = [{ => new Belt() }],
+  availableRecipes = [],
+  goals = [noGoal],
+  tutorial = new StepTutorial(name = "correr", steps = [new RunStep(lines = ["Apreta 5"])], finishedLines = ["Ganaste"])
+)
+
+const recordingLevel = new Level(
+  name = "Prueba",
+  availableMachines = [{ => new Belt() }],
+  availableRecipes = [],
+  goals = [noGoal],
+  tutorial = recordingTutorial
+)
+
+describe "tests de los eventos del tutorial" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(recordingLevel)
+    recordingTutorial.events().clear()
+  }
+
+  method useTool(tool, pos) {
+    toolsManager.useAt(tool, pos)
+  }
+
+  test "colocar, rotar y borrar una maquina le llega al tutorial, en ese orden" {
+    self.useTool(place, game.at(8, 8))
+    self.useTool(rotate, game.at(8, 8))
+    // delete directo: este tutorial no deja usarlo desde toolsManager
+    delete.onClick(game.at(8, 8))
+    assert.equals(["placed", "rotated", "removed"], recordingTutorial.events())
+  }
+
+  test "con un tutorial que no deja usar delete, la herramienta no borra" {
+    self.useTool(place, game.at(8, 8))
+    self.useTool(delete, game.at(8, 8))
+    assert.that(board.isThereAMachine(game.at(8, 8)))
+  }
+
+  test "prender la simulacion le llega como onSimulationToggled(true)" {
+    levelManager.toggleSimulation()
+    assert.equals(["simulation true"], recordingTutorial.events())
+  }
+
+  test "su mensaje se ve desde la fila 7, una linea debajo de la otra" {
+    assert.equals(["Linea 1", "Linea 2"], chefGuide.message())
+  }
+
+  test "un nivel sin tutorial no muestra mensaje ni indicadores" {
+    levelManager.load(tutorialLevel)
+    levelManager.load(level1)
+    assert.equals([], chefGuide.message())
+    assert.equals([], tutorialMarks.marks())
+  }
+
+  test "Enter en un nivel sin tutorial no hace nada" {
+    levelManager.load(level1)
+    levelManager.continueTutorial()
+    assert.equals([], chefGuide.message())
+  }
+
+  test "todos los niveles menos el tutorial usan noTutorial" {
+    const tutorials = [tutorialLevel, hotDogTutorialLevel, energyTutorialLevel]
+    assert.that((levelManager.levels() + [freePlay]).filter({ level => !tutorials.contains(level) }).all({ level => level.tutorial() == noTutorial }))
+  }
+}
+
+describe "tests del tutorial de papas fritas" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(tutorialLevel)
+  }
+
+  method useTool(tool, pos) {
+    toolsManager.useAt(tool, pos)
+  }
+
+  // Sigue después de la explicación (si hay una), elige en el menú la máquina de esa posición del
+  // catálogo del nivel y la coloca
+  method placeMachine(index, pos) {
+    levelManager.continueTutorial()
+    machineManager.select(tutorialLevel.availableMachines().get(index))
+    self.useTool(place, pos)
+  }
+
+  // En qué paso va (el número, no el texto: así cambiar un mensaje no rompe ningún test)
+  method step() = levelManager.tutorial().stepNumber()
+
+  // Dónde están los indicadores de esa imagen (place.gif o look.gif), como [x, y]
+  method marksOf(image) = tutorialMarks.marks().filter({ mark => mark.image() == "tutorial/" + image }).map({ mark => [mark.position().x(), mark.position().y()] })
+
+  // Arma todo lo que pide el tutorial, hasta antes de prender la simulación
+  method build() {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.placeMachine(2, game.at(10, 5))
+    self.placeMachine(3, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.chooseRecto(game.at(11, 5), friedPotato)
+  }
+
+  // Manda un ingrediente por la salida Recto del brazo inteligente (el lado opuesto a donde agarra),
+  // clickeando su casillero en el panel del brazo hasta que salga por ahí
+  method chooseRecto(machinePos, kind) {
+    self.useTool(edit, machinePos)
+    const arm = board.machineAt(machinePos)
+    const index = (0 .. arm.editKinds().size() - 1).find({ i => arm.editKinds().get(i) == kind })
+    const target = straightOut.sideFor(arm.inputSide())
+    4.times({ _ => if (arm.sideOf(kind) != target) playingScreen.onClick(armMenu.cellOf(index)) })
+  }
+
+  test "arriba del mensaje muestra en que paso va" {
+    assert.equals("PASO 1 DE 12", chefGuide.stepLabel())
+    levelManager.continueTutorial()
+    assert.equals("PASO 2 DE 12", chefGuide.stepLabel())
+  }
+
+  test "al explicar el cocinero dice la tecla para seguir" {
+    assert.equals(["continue"], chefGuide.keys())
+  }
+
+  test "al pedir la cinta el cocinero dice la tecla para colocar, y al colocarla cambia" {
+    levelManager.continueTutorial()
+    assert.equals(["place"], chefGuide.keys())
+    self.placeMachine(0, game.at(6, 5))
+    assert.equals(["continue"], chefGuide.keys())
+  }
+
+  test "al prender la simulacion se van el cocinero, las marcas, el menu de la maquina y el panel de editar" {
+    self.build()
+    playingScreen.onClick(game.at(11, 5))
+    toolsManager.editKey()
+    assert.that(toolsManager.isEditing())
+    levelManager.toggleSimulation()
+    assert.that(chefGuide.isSilenced())
+    assert.notThat(toolsManager.isEditing())
+    assert.notThat(actionsMenu.isShown())
+    assert.that(tutorialMarks.marks().all({ mark => !game.hasVisual(mark) }))
+  }
+
+  // RENDIMIENTO: con cada entrega se le avisa al tutorial, pero si no cambia nada no se redibuja nada
+  test "un aviso al tutorial que no cambia el paso no redibuja las marcas ni el cocinero" {
+    self.build()
+    const marks = tutorialMarks.marks()
+    const drawn = chefGuide.drawnVisuals()
+    const tutorial = levelManager.tutorial()
+    tutorialMarks.show(tutorial.targetCells(), tutorial.pointedCells())
+    chefGuide.say(tutorial.speech())
+    assert.that(marks == tutorialMarks.marks())
+    assert.that(drawn == chefGuide.drawnVisuals())
+  }
+
+  // RENDIMIENTO: el cocinero, el globo, el paso, el mensaje y las teclas son una sola imagen
+  test "el cocinero dibuja cada paso con una sola imagen" {
+    assert.equals(["tutorial/steps/fries_1.png"], chefGuide.drawnVisuals().map({ visual => visual.image() }))
+    levelManager.continueTutorial()
+    assert.equals(["tutorial/steps/fries_2.png"], chefGuide.drawnVisuals().map({ visual => visual.image() }))
+  }
+
+  // Si falla: correr assets/tutorial/makeSteps.py (se cambió un mensaje, una celda o un paso)
+  test "cada mensaje de los tutoriales tiene su imagen, dibujada como se ve hoy" {
+    const missing = levelManager.levels().flatMap({ level => level.tutorial().allMessages() })
+      .map({ speech => chefGuide.signatureOf(speech) })
+      .filter({ signature => !tutorialImages.contains(signature) })
+    assert.equals([], missing)
+  }
+
+  test "al ganar el cocinero festeja con la imagen del final, donde estaba" {
+    const tutorial = levelManager.tutorial()
+    assert.equals("fries_done", tutorial.finishedSpeech().image())
+    assert.equals("happy", tutorial.finishedSpeech().mood())
+    assert.equals(tutorial.stepSpeech(12).focus(), tutorial.finishedSpeech().focus())
+  }
+
+  test "un paso que no marca nada señala la celda del paso anterior" {
+    const tutorial = levelManager.tutorial()
+    assert.equals(friesTutorialCells.smartArm(), tutorial.stepSpeech(11).focus())
+  }
+
+  test "mientras se cocina, un clic en una maquina no la elige ni muestra su menu" {
+    self.build()
+    levelManager.toggleSimulation()
+    playingScreen.onClick(game.at(11, 5))
+    assert.notThat(actionsMenu.isShown())
+  }
+
+  test "al apagar la simulacion vuelven el cocinero y las marcas" {
+    self.build()
+    levelManager.toggleSimulation()
+    levelManager.toggleSimulation()
+    assert.notThat(chefGuide.isSilenced())
+    assert.that(tutorialMarks.marks().all({ mark => game.hasVisual(mark) }))
+  }
+
+  test "con la linea armada, el boton INICIAR (abajo a la izquierda) prende la cocina" {
+    self.build()
+    toolsManager.startEditing()
+    playingScreen.onClick(game.at(2, 1))
+    assert.that(simulationEngine.running())
+  }
+
+  test "al explicar muestra solo la flecha, arriba del dispenser" {
+    assert.equals([], self.marksOf("place.gif"))
+    assert.equals([[5, 6]], self.marksOf("look.gif"))
+  }
+
+  test "con Enter pasa a pedir la cinta, y muestra solo el recuadro donde va" {
+    levelManager.continueTutorial()
+    assert.equals(2, self.step())
+    assert.equals([[6, 5]], self.marksOf("place.gif"))
+    assert.equals([], self.marksOf("look.gif"))
+  }
+
+  test "al colocar la cinta explica la cinta, con la flecha arriba de ella" {
+    self.placeMachine(0, game.at(6, 5))
+    assert.equals([], self.marksOf("place.gif"))
+    assert.equals([[6, 6]], self.marksOf("look.gif"))
+  }
+
+  test "una explicacion ya vista no se repite al volver a un paso anterior" {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.placeMachine(2, game.at(10, 5))
+    self.placeMachine(3, game.at(11, 5))
+    self.useTool(delete, game.at(11, 5))
+    assert.equals(8, self.step())
+  }
+
+  test "no deja colocar fuera de la celda del paso" {
+    self.placeMachine(0, game.at(7, 5))
+    assert.notThat(board.isThereAMachine(game.at(7, 5)))
+  }
+
+  test "colocar la cinta pasa al paso de la cortadora" {
+    self.placeMachine(0, game.at(6, 5))
+    assert.equals(3, self.step())
+  }
+
+  test "una maquina equivocada no cumple el paso, y se puede borrar" {
+    self.placeMachine(1, game.at(6, 5))
+    assert.equals(2, self.step())
+    self.useTool(delete, game.at(6, 5))
+    assert.notThat(board.isThereAMachine(game.at(6, 5)))
+  }
+
+  test "no deja borrar lo que se coloco en un paso anterior" {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.useTool(delete, game.at(6, 5))
+    assert.that(board.isThereAMachine(game.at(6, 5)))
+  }
+
+  test "no deja prender la simulacion antes de terminar de armar" {
+    levelManager.toggleSimulation()
+    assert.notThat(simulationEngine.running())
+  }
+
+  test "el brazo inteligente hay que rotarlo" {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.placeMachine(2, game.at(10, 5))
+    self.placeMachine(3, game.at(11, 5))
+    assert.equals(9, self.step())
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    assert.equals(10, self.step())
+  }
+
+  test "en el paso del brazo, el primer clic manda la papa frita hacia arriba y todavia no alcanza" {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.placeMachine(2, game.at(10, 5))
+    self.placeMachine(3, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(edit, game.at(11, 5))
+    playingScreen.onClick(armMenu.cellOf(0))
+    assert.equals(up, board.machineAt(game.at(11, 5)).sideOf(friedPotato))
+    assert.equals(10, self.step())
+    playingScreen.onClick(armMenu.cellOf(0))
+    assert.equals(11, self.step())
+  }
+
+  test "el brazo inteligente hay que editarlo para que deje salir la papa frita" {
+    self.placeMachine(0, game.at(6, 5))
+    self.placeMachine(1, game.at(7, 5))
+    self.placeMachine(2, game.at(10, 5))
+    self.placeMachine(3, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.useTool(rotate, game.at(11, 5))
+    self.chooseRecto(game.at(11, 5), friedPotato)
+    assert.equals(11, self.step())
+  }
+
+  test "con todo armado pide prender la simulacion" {
+    self.build()
+    assert.equals(11, self.step())
+  }
+
+  // Una sola partida para todo lo que pasa al ganar: jugarla entera es lo que más tarda
+  test "armado como dice el tutorial, entrega las papas fritas y se gana: comanda, cocinero sin teclas, sin marcas y SIGUIENTE" {
+    self.build()
+    levelManager.toggleSimulation()
+    assert.equals(12, self.step())
+    runner.runUntilWon()
+    assert.that(levelManager.completed())
+    assert.that(chefGuide.keys().isEmpty())
+    assert.equals([], tutorialMarks.marks())
+    assert.that(levelComplete.isShown())
+    assert.equals("levels/complete/tutorial_1.png", levelComplete.image())
+    screenManager.onClick(game.at(8, 8))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+    assert.that(levelComplete.isShown())
+    screenManager.onClick(game.at(10, 3))
+    assert.equals(hotDogTutorialLevel, levelManager.currentLevel())
+    assert.notThat(levelComplete.isShown())
+  }
+
+  test "apagar la simulacion sin ganar vuelve a pedir que se prenda" {
+    self.build()
+    levelManager.toggleSimulation()
+    levelManager.toggleSimulation()
+    assert.equals(11, self.step())
+  }
+
+  test "deja editar cualquier maquina, tambien las fijas" {
+    self.placeMachine(0, friesTutorialCells.firstBelt())
+    assert.that(levelManager.allowsTool(edit, friesTutorialCells.fixedArm()))
+    assert.that(levelManager.allowsTool(edit, friesTutorialCells.firstBelt()))
+  }
+
+  test "reiniciar el nivel vuelve al primer paso" {
+    self.placeMachine(0, game.at(6, 5))
+    levelManager.restart()
+    assert.equals(1, self.step())
+    assert.equals([[5, 6]], self.marksOf("look.gif"))
+  }
+}
+
+describe "tests de los tipos de paso" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(stepKindsLevel)
+  }
+
+  method step() = levelManager.tutorial().stepNumber()
+
+  test "un paso de evento se cumple con ese evento, y no con otro" {
+    toolsManager.useAt(place, game.at(15, 3))
+    assert.equals(1, self.step())
+    levelManager.continueTutorial()
+    assert.equals(2, self.step())
+  }
+
+  test "un paso de evento sigue cumplido aunque despues se haga otra cosa" {
+    levelManager.continueTutorial()
+    toolsManager.useAt(rotate, game.at(15, 3))
+    assert.equals(2, self.step())
+  }
+
+  test "reiniciar el nivel vuelve a empezar los pasos de evento" {
+    levelManager.continueTutorial()
+    levelManager.restart()
+    assert.equals(1, self.step())
+  }
+
+  test "mientras explica espera Enter para seguir; despues ya no" {
+    assert.that(levelManager.tutorial().waitsForContinue())
+    levelManager.continueTutorial()
+    assert.notThat(levelManager.tutorial().waitsForContinue())
+  }
+
+  test "un paso de 2x2 marca sus cuatro celdas y se cumple con la maquina colocada en ellas" {
+    levelManager.continueTutorial()
+    assert.equals(4, tutorialMarks.marks().size())
+    playingScreen.onClick(game.at(8, 8))
+    assert.equals(3, self.step())
+  }
+
+  test "la flecha sobre una maquina de 2x2 queda arriba de ella y centrada" {
+    board.push(game.at(12, 5), new Assembler(direction = up))
+    const arrow = tutorialMarks.arrowPosition(game.at(13, 6))
+    assert.equals(12.5, arrow.x())
+    assert.equals(7, arrow.y())
+  }
+
+  test "si se cumplen todos los pasos sin ganar se queda en el ultimo, sin error" {
+    levelManager.load(onlyRunLevel)
+    levelManager.toggleSimulation()
+    assert.equals(1, self.step())
+  }
+
+  test "el brazo inteligente dice por donde sacaria cada ingrediente" {
+    const arm = new SmartRoboticArm(direction = left)
+    arm.settings().first().value([eggFryed])
+    assert.equals(right, arm.exitSideFor(eggFryed))
+    arm.settings().first().value([friedPotato])
+    assert.notThat(arm.takes(eggFryed))
+    assert.equals(right, arm.exitSideFor(friedPotato))
+  }
+}
+
+describe "tests del tutorial de panchos" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(hotDogTutorialLevel)
+  }
+
+  method step() = levelManager.tutorial().stepNumber()
+
+  method marksOf(image) = tutorialMarks.marks().filter({ mark => mark.image() == "tutorial/" + image }).map({ mark => [mark.position().x(), mark.position().y()] })
+
+  method cellOf(position) = [position.x(), position.y()]
+
+  method useTool(tool, pos) {
+    toolsManager.useAt(tool, pos)
+  }
+
+  // Sigue después de la explicación (si hay una), elige la máquina del catálogo y la coloca mirando hacia ese lado
+  method placeMachine(index, pos, direction) {
+    levelManager.continueTutorial()
+    machineManager.select(hotDogTutorialLevel.availableMachines().get(index))
+    toolsManager.currentDirection(direction)
+    self.useTool(place, pos)
+  }
+
+  // Con edit, toca la máquina y elige en el panel esa opción de ese setting
+  method chooseOption(machinePos, settingName, value) {
+    levelManager.continueTutorial()
+    self.useTool(edit, machinePos)
+    const setting = board.machineAt(machinePos).settings().find({ each => each.name() == settingName })
+    const pos = (17 .. 21).flatMap({ x => (0 .. 12).map({ y => game.at(x, y) }) }).find({ pos =>
+      const slot = editMenu.slotAt(pos)
+      return slot.matches(setting, value)
+    })
+    playingScreen.onClick(pos)
+  }
+
+  method build() {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    self.placeMachine(1, hotDogTutorialCells.oven(), right)
+    self.placeMachine(2, hotDogTutorialCells.assembler(), up)
+    self.chooseOption(hotDogTutorialCells.assembler(), "Receta", hotDogRecipe)
+    levelManager.continueTutorial()
+    self.placeMachine(3, hotDogTutorialCells.arm(), left)
+  }
+
+  test "arranca explicando el dispenser de los panes, con la flecha arriba" {
+    assert.equals(1, self.step())
+    assert.equals([[5, 6]], self.marksOf("look.gif"))
+  }
+
+  test "el dispenser de los panes arranca largando salchichas" {
+    assert.equals(sausage, board.machineAt(hotDogTutorialCells.bunDispenser()).product())
+  }
+
+  test "pide editar el dispenser, marcandolo con el recuadro" {
+    levelManager.continueTutorial()
+    assert.equals(2, self.step())
+    assert.equals([self.cellOf(hotDogTutorialCells.bunDispenser())], self.marksOf("place.gif"))
+  }
+
+  test "elegir el pan en el dispenser pasa a explicar las salchichas" {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    assert.equals(3, self.step())
+  }
+
+  test "el ensamblador marca solo la celda donde se hace clic (abajo a la izquierda) y el cocinero la señala" {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    self.placeMachine(1, hotDogTutorialCells.oven(), right)
+    levelManager.continueTutorial()
+    assert.equals(6, self.step())
+    assert.equals([self.cellOf(hotDogTutorialCells.assembler())], self.marksOf("place.gif"))
+    assert.equals(self.cellOf(hotDogTutorialCells.assembler()), self.cellOf(levelManager.tutorial().speech().focus()))
+  }
+
+  test "al elegir el pancho marca solo la celda de abajo a la izquierda, pero deja usar las cuatro del ensamblador" {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    self.placeMachine(1, hotDogTutorialCells.oven(), right)
+    self.placeMachine(2, hotDogTutorialCells.assembler(), up)
+    assert.equals(7, self.step())
+    assert.equals([self.cellOf(hotDogTutorialCells.assembler())], self.marksOf("place.gif"))
+    assert.that(levelManager.allowsTool(rotate, hotDogTutorialCells.assembler().up(1).right(1)))
+    assert.notThat(levelManager.allowsTool(rotate, hotDogTutorialCells.assembler().right(2)))
+  }
+
+  test "el ensamblador hay que ponerlo apuntando arriba" {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    self.placeMachine(1, hotDogTutorialCells.oven(), right)
+    self.placeMachine(2, hotDogTutorialCells.assembler(), right)
+    assert.equals(6, self.step())
+  }
+
+  test "el ensamblador arranca con otra receta: hay que elegir el pancho" {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    self.placeMachine(1, hotDogTutorialCells.oven(), right)
+    self.placeMachine(2, hotDogTutorialCells.assembler(), up)
+    assert.equals(7, self.step())
+    self.chooseOption(hotDogTutorialCells.assembler(), "Receta", hotDogRecipe)
+    assert.equals(8, self.step())
+  }
+
+  test "explica el brazo con dos pasos, señalando el horno y despues el ensamblador" {
+    self.chooseOption(hotDogTutorialCells.bunDispenser(), "Ingrediente", bun)
+    self.placeMachine(1, hotDogTutorialCells.oven(), right)
+    self.placeMachine(2, hotDogTutorialCells.assembler(), up)
+    self.chooseOption(hotDogTutorialCells.assembler(), "Receta", hotDogRecipe)
+    assert.equals([[7, 8]], self.marksOf("look.gif"))
+    levelManager.continueTutorial()
+    assert.equals(9, self.step())
+    assert.equals([[9.5, 8]], self.marksOf("look.gif"))
+  }
+
+  test "con todo armado pide prender la simulacion" {
+    self.build()
+    assert.equals(11, self.step())
+  }
+
+  test "armado como dice el tutorial, entrega los panchos y se gana" {
+    self.build()
+    levelManager.toggleSimulation()
+    runner.runUntilWon()
+    assert.that(levelManager.completed())
+  }
+}
+
+describe "tests del dispenser y su ingrediente inicial" {
+  test "un dispenser que ofrece papa arranca con papa" {
+    assert.equals(potato, new Dispenser(availableKinds = [meat, potato]).product())
+  }
+
+  test "un dispenser que no ofrece papa arranca con el primero que ofrece" {
+    assert.equals(sausage, new Dispenser(availableKinds = [sausage, bun]).product())
+  }
+}
+
+describe "tests de saltear el tutorial" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(tutorialLevel)
+  }
+
+  test "saltear el tutorial va al nivel 1 y da por hechos los dos tutoriales" {
+    levelManager.skipTutorial()
+    assert.equals(level1, levelManager.currentLevel())
+    assert.that(levelManager.completedLevels().contains(tutorialLevel))
+    assert.that(levelManager.completedLevels().contains(hotDogTutorialLevel))
+  }
+
+  test "tambien se puede saltear desde el segundo tutorial" {
+    levelManager.load(hotDogTutorialLevel)
+    levelManager.skipTutorial()
+    assert.equals(level1, levelManager.currentLevel())
+  }
+
+  test "fuera de un tutorial, saltear no hace nada" {
+    levelManager.load(level2)
+    levelManager.skipTutorial()
+    assert.equals(level2, levelManager.currentLevel())
+  }
+
+  test "en un tutorial se ve el boton, y clickearlo lo saltea" {
+    assert.that(levelInfoMenu.isSkipButton(game.at(1, 9)))
+  }
+
+  test "en un nivel sin tutorial no hay boton" {
+    levelManager.load(level1)
+    assert.notThat(levelInfoMenu.isSkipButton(game.at(1, 9)))
+  }
+}
+
+// El cocinero del tutorial: dice el mensaje del paso al lado de la celda que importa, y si el jugador
+// hace algo que el paso no deja, lo dice en rojo (y el recuadro se pone rojo) un momento
+describe "tests del cocinero del tutorial" {
+
+  method initialize() {
+    playingScreen.show()
+    deliveryPoints.setUp()
+    levelManager.load(tutorialLevel)
+  }
+
+  method useTool(tool, pos) {
+    toolsManager.useAt(tool, pos)
+  }
+
+  // Un click en el casillero del menú de colocar de esa máquina (la 1 es la cinta, la 2 la cortadora)
+  method clickSlot(slot) {
+    playingScreen.onClick(placeMenu.slotPosition(slot))
+  }
+
+  test "colocar fuera del recuadro: dice que es en el recuadro, y el recuadro se pone rojo" {
+    levelManager.continueTutorial()
+    self.useTool(place, game.at(7, 5))
+    assert.notThat(board.isThereAMachine(game.at(7, 5)))
+    assert.notThat(chefGuide.complaint().isEmpty())
+    assert.equals("tutorial/place_error.gif", tutorialMarks.marks().first().image())
+  }
+
+  // RENDIMIENTO: la queja también es una sola imagen, la misma para todas, en el lugar del mensaje
+  test "al quejarse dibuja la imagen de error en el lugar del mensaje, y al seguir vuelve el mensaje" {
+    levelManager.continueTutorial()
+    const step = chefGuide.drawnVisuals().first()
+    self.useTool(place, game.at(7, 5))
+    const oops = chefGuide.drawnVisuals().first()
+    assert.equals(["tutorial/steps/oops_right.png"], chefGuide.drawnVisuals().map({ visual => visual.image() }))
+    assert.equals(step.position().x(), oops.position().x())
+    self.useTool(place, game.at(6, 5))
+    assert.equals(["tutorial/steps/fries_3.png"], chefGuide.drawnVisuals().map({ visual => visual.image() }))
+  }
+
+  // Ya al elegirla en el menú se queja, y en el recuadro no la deja poner
+  test "con una maquina que el paso no pide se queja, y no la coloca" {
+    levelManager.continueTutorial()
+    self.clickSlot(2)
+    assert.notThat(chefGuide.complaint().isEmpty())
+    self.useTool(place, game.at(6, 5))
+    assert.notThat(board.isThereAMachine(game.at(6, 5)))
+  }
+
+  test "elegir en el menu la maquina que pide el paso no lo hace quejarse" {
+    levelManager.continueTutorial()
+    self.clickSlot(1)
+    assert.that(chefGuide.complaint().isEmpty())
+  }
+
+  test "un clic en el recuadro coloca la maquina que pide el paso" {
+    levelManager.continueTutorial()
+    playingScreen.onClick(game.at(6, 5))
+    assert.that(board.isThereAMachine(game.at(6, 5)))
+    assert.that(chefGuide.complaint().isEmpty())
+  }
+
+  test "la celda del recuadro queda elegida sola, pero Enter no coloca ahi" {
+    levelManager.continueTutorial()
+    assert.that(boardCursor.isAt(game.at(6, 5)))
+    playingScreen.enter()
+    assert.notThat(board.isThereAMachine(game.at(6, 5)))
+  }
+
+  test "C sobre la maquina del cursor mientras explica: no rota y dice que apriete Enter" {
+    levelManager.continueTutorial()
+    playingScreen.onClick(game.at(6, 5))
+    levelManager.continueTutorial()
+    machineManager.select(machineManager.cuttingMachineFactory())
+    playingScreen.onClick(game.at(7, 5))
+    assert.that(boardCursor.isAt(game.at(7, 5)))
+    toolsManager.act(rotate)
+    assert.equals(right, board.machineAt(game.at(7, 5)).direction())
+    assert.notThat(chefGuide.complaint().isEmpty())
+  }
+
+  test "tocar el globo mientras explica es seguir, como Enter" {
+    assert.that(chefGuide.bubbleContains(game.at(9, 7)))
+    playingScreen.onClick(game.at(9, 7))
+    assert.equals(2, levelManager.tutorial().stepNumber())
+  }
+
+  test "usar una herramienta mientras explica no hace nada, y se queja" {
+    self.useTool(place, game.at(6, 5))
+    assert.notThat(board.isThereAMachine(game.at(6, 5)))
+    assert.notThat(chefGuide.complaint().isEmpty())
+  }
+
+  test "con el siguiente paso deja de quejarse" {
+    levelManager.continueTutorial()
+    self.useTool(place, game.at(7, 5))
+    self.useTool(place, game.at(6, 5))
+    assert.that(chefGuide.complaint().isEmpty())
+  }
+
+  test "en un nivel sin tutorial no se queja de nada" {
+    levelManager.load(level1)
+    self.useTool(place, game.at(6, 5))
+    assert.that(chefGuide.complaint().isEmpty())
+    assert.that(chefGuide.message().isEmpty())
+  }
+
+  test "el menu de colocar hace titilar la maquina que pide el paso, si no es la elegida" {
+    levelManager.continueTutorial()
+    // pide la cinta, que ya está elegida (es la primera del catálogo): no titila nada
+    assert.equals([], placeMenu.hintedSlots())
+    self.useTool(place, game.at(6, 5))
+    levelManager.continueTutorial()
+    // pide la cortadora, que está en el casillero 2
+    assert.equals([placeMenu.slotPosition(2)], placeMenu.hintedSlots())
+  }
+
+  test "si el paso pide la misma maquina, el casillero que titila no se vuelve a dibujar" {
+    levelManager.continueTutorial()
+    self.useTool(place, game.at(6, 5))
+    levelManager.continueTutorial()
+    const hinted = placeMenu.hintedSlots()
+    placeMenu.highlight(levelManager.tutorial().wantedMachines())
+    assert.that(hinted == placeMenu.hintedSlots())
+  }
+}

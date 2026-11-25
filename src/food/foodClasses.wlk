@@ -1,0 +1,105 @@
+// Buffet Albert Einstein - las clases de la comida (ingredientes y platos) y los procesos que pueden sufrir.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// Las clases de la comida y los procesos que puede sufrir.
+import simulation.animationEngine.*
+
+// Objetos de transformación: sirven para definir los procesos que pueden sufrir los ingredientes.
+object cutting {}
+object frying {}
+// Quemarse por quedarse demasiado tiempo en la freidora
+object burning {}
+object cooking {}
+
+// Lo común a ingredientes y platos: su imagen y su insignia
+class FoodKind {
+    // La insignia se arma una vez: la dibuja una máquina en cada frame
+    var badgeImage = ""
+
+    method image()
+
+    // La insignia de las máquinas: la comida centrada en un círculo
+    method badgeImage() {
+        if (badgeImage.isEmpty()) badgeImage = "machines/badge/" + self.image()
+        return badgeImage
+    }
+
+    // Un kind también es un filtro de items: deja pasar a los que son de ese kind
+    method accepts(item) = item.kind() == self
+
+    method canProcess(aProcess)
+}
+
+// Clase para los ingredientes
+class IngredientKind inherits FoodKind {
+    const transitions = new Dictionary()
+
+    // Pasos de simulación que tarda en procesarse.
+    method processTime() = 5
+
+    // Agrega un proceso (como cutting) y en qué se convierte el ingrediente
+    method turnsInto(aProcess, aKind) {
+        transitions.put(aProcess, aKind)
+    }
+
+    // Verifica si al ingrediente se le puede aplicar un proceso, por ejemplo, freírlo
+    override method canProcess(aProcess) = transitions.containsKey(aProcess)
+
+    // Aplica el proceso y devuelve el objeto ya convertido.
+    method process(aProcess) =
+        transitions.getOrElse(aProcess, { self.error("No se le puede aplicar " + aProcess) })
+}
+
+// Clase para los platos finales: ningún proceso se les puede aplicar
+class DishKind inherits FoodKind {
+    override method canProcess(_) = false
+}
+
+// Lo que circula por el tablero.
+class Item inherits Animated {
+    var kind
+
+    // Getter
+    method kind() = kind
+    method image() = kind.image()
+    method canProcess(aProcess) = kind.canProcess(aProcess)
+
+    // Cuánto tarda en procesarse: lo dice su kind de origen
+    method processTime() = kind.processTime()
+    
+    method process(aProcess) {
+        kind = kind.process(aProcess)
+    }
+
+    // Las máquinas le piden a su item que se entregue o que un brazo lo agarre
+    method asList() = [self]
+    method deliverFrom(machine, target) { machine.deliver(self, target) }
+    method grabbedBy(arm, source) {
+        if (arm.canReceive(self)) {
+            source.surrender(self)
+            arm.receive(self)
+        }
+    }
+}
+
+// "No hay item": lo que devuelve una máquina que no tiene nada para entregar o para que un brazo agarre.
+object noItem {
+    method asList() = []
+    method deliverFrom(machine, target) {}
+    method grabbedBy(arm, source) {}
+}

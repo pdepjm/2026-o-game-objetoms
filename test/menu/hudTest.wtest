@@ -1,0 +1,337 @@
+// Buffet Albert Einstein - tests de los menús.
+//
+// Copyright (C) 2026  grupo objeTOMs (Mateo Bustos, Carlos Aramis Chambi Flores,
+// Facundo Ramounat, Federico Scalise Giussani, Mateo Silva)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import wollok.game.*
+import src.cellPosition.*
+import src.board.*
+import src.menu.screenManager.*
+import src.menu.screens.*
+import src.menu.hud.hud.*
+import src.menu.hud.rightPanel.*
+import src.cellPosition.*
+import src.menu.hud.editMenu.*
+import src.menu.hud.hud.*
+import src.food.foodTypes.*
+import src.menu.hud.placeMenu.*
+import src.tools.toolsManager.*
+import src.menu.overBoard.actionsMenu.*
+import src.tools.userTools.*
+import src.machines.machineManager.*
+import src.machines.types.dispenser.*
+import src.machines.types.belt.*
+import src.machines.types.processing.*
+import src.directions.*
+
+describe "tests del HUD" {
+
+  // Los casilleros del panel de place van de a 2 por fila, de 2x2 celdas: el 1º arriba a la izquierda
+  // (x 18, y 10), el 2º a su derecha (x 20), y el 3º y el 4º abajo (y 8).
+  method slotPosition(slot) = new CellPosition(x = [18, 20, 18, 20].get(slot - 1), y = [10, 10, 8, 8].get(slot - 1))
+
+  // la máquina dibujada en un casillero del panel (sin los marcos, que van en la misma celda)
+  method slotVisuals(slot) = placeMenu.items().filter({ item => item.position() == self.slotPosition(slot) })
+
+  method menuIsEmpty() = [1, 2, 3, 4].all({ slot => self.slotVisuals(slot).isEmpty() })
+
+  // todo lo que hay dibujado en la zona interactiva
+  method zoneVisuals() = (18..21).flatMap({ x => (0..11).flatMap({ y => game.getObjectsIn(new CellPosition(x = x, y = y)) }) })
+
+  // coloca un dispenser en el tablero y lo edita (X sobre él), así el panel de edit tiene qué mostrar
+  method editADispenser() {
+    playingScreen.show()
+    board.push(game.at(8, 8), new Dispenser())
+    toolsManager.useAt(edit, game.at(8, 8))
+  }
+
+  // el juego arranca COLOCANDO: el panel de máquinas a la derecha
+  method startWithPlace() {
+    playingScreen.show()
+  }
+
+  test "al arrancar esta colocando, con el panel de maquinas en la zona interactiva" {
+    playingScreen.show()
+    assert.equals(placingMode, toolsManager.mode())
+    assert.that(game.hasVisual(selectionFrame))
+    assert.notThat(self.menuIsEmpty())
+  }
+
+  test "al arrancar el cartel dice COLOCANDO" {
+    playingScreen.show()
+    assert.equals("menu/mode_placing.png", modeBanner.image())
+  }
+
+  test "un clic en una maquina la elige: el cursor va ahi, aparece su menu y no se coloca nada" {
+    playingScreen.show()
+    board.push(game.at(8, 8), new Dispenser())
+    playingScreen.onClick(game.at(8, 8))
+    assert.that(boardCursor.isAt(game.at(8, 8)))
+    assert.that(actionsMenu.isShown())
+    assert.equals(1, board.machines().size())
+  }
+
+  test "un clic en una celda vacia coloca la maquina elegida y muestra su menu enseguida" {
+    playingScreen.show()
+    playingScreen.onClick(game.at(8, 8))
+    assert.that(board.isThereAMachine(game.at(8, 8)))
+    assert.that(boardCursor.isAt(game.at(8, 8)))
+    assert.that(actionsMenu.isShown())
+  }
+
+  test "si no se pudo colocar, no aparece ningun menu" {
+    playingScreen.show()
+    board.buildZones([])
+    playingScreen.onClick(game.at(8, 8))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+    assert.notThat(actionsMenu.isShown())
+    board.buildZones([wholeBoard])
+  }
+
+  test "el menu de la maquina va debajo de ella, y un clic en sus celdas usa esa accion" {
+    playingScreen.show()
+    const belt = new Belt(direction = right)
+    board.push(game.at(8, 8), belt)
+    playingScreen.onClick(game.at(8, 8))
+    assert.equals(new CellPosition(x = 7, y = 7), actionsMenu.position())
+    // la del medio es EDITAR y la de la izquierda ROTAR
+    playingScreen.onClick(game.at(7, 7))
+    assert.equals(down, belt.direction())
+    // la de la derecha es BORRAR
+    playingScreen.onClick(game.at(9, 7))
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+    assert.notThat(actionsMenu.isShown())
+  }
+
+  test "C, X y V actuan sobre la maquina del cursor" {
+    playingScreen.show()
+    const belt = new Belt(direction = right)
+    board.push(game.at(8, 8), belt)
+    playingScreen.onClick(game.at(8, 8))
+    toolsManager.act(rotate)
+    assert.equals(down, belt.direction())
+    toolsManager.act(delete)
+    assert.notThat(board.isThereAMachine(game.at(8, 8)))
+  }
+
+  test "en el tablero las flechas no mueven nada y Enter no coloca: es solo con el mouse" {
+    playingScreen.show()
+    playingScreen.onClick(game.at(8, 8))
+    toolsManager.arrow(right)
+    toolsManager.arrow(up)
+    assert.that(boardCursor.isAt(game.at(8, 8)))
+    toolsManager.enter()
+    assert.equals(1, board.machines().size())
+  }
+
+  test "la celda elegida no se dibuja: la maquina elegida se ve por su menu" {
+    playingScreen.show()
+    board.push(game.at(8, 8), new Belt())
+    playingScreen.onClick(game.at(8, 8))
+    assert.notThat(game.hasVisual(boardCursor))
+    assert.that(actionsMenu.isShown())
+  }
+
+  test "editar abre el panel de edit y el cartel dice EDITANDO" {
+    self.editADispenser()
+    assert.that(toolsManager.isEditing())
+    assert.equals("menu/mode_editing.png", modeBanner.image())
+    assert.notThat(game.hasVisual(selectionFrame))
+    assert.notThat(self.zoneVisuals().isEmpty())
+  }
+
+  test "dejar de editar (Esc) vuelve a colocar y a dibujar las maquinas" {
+    self.editADispenser()
+    toolsManager.stopEditing()
+    assert.notThat(toolsManager.isEditing())
+    assert.equals("menu/mode_placing.png", modeBanner.image())
+    assert.that(game.hasVisual(selectionFrame))
+    assert.equals(1, self.slotVisuals(1).size())
+  }
+
+  test "X con el panel de edit abierto lo cierra" {
+    self.editADispenser()
+    toolsManager.editKey()
+    assert.notThat(toolsManager.isEditing())
+  }
+
+  test "editar una maquina sin nada para ajustar no abre el panel" {
+    playingScreen.show()
+    board.push(game.at(8, 8), new Belt())
+    toolsManager.useAt(edit, game.at(8, 8))
+    assert.notThat(toolsManager.isEditing())
+  }
+
+  test "con el panel de edit, las flechas mueven la marca y Enter aplica la opcion marcada" {
+    self.editADispenser()
+    const dispenser = board.machineAt(game.at(8, 8))
+    // la primera opción es la de arriba a la izquierda del panel (la lechuga, ver settingsTest)
+    assert.equals(0, editMenu.focusIndex())
+    toolsManager.enter()
+    assert.equals(lettuce, dispenser.product())
+    toolsManager.arrow(right)
+    assert.equals(1, editMenu.focusIndex())
+    toolsManager.arrow(up)
+    toolsManager.arrow(up)
+    assert.equals(editMenu.slotCount() - 1, editMenu.focusIndex())
+  }
+
+  test "un clic en la brujula cambia hacia donde mira la maquina a colocar" {
+    playingScreen.show()
+    playingScreen.onClick(game.at(20, 5))
+    assert.equals(up, toolsManager.currentDirection())
+    assert.equals("menu/compass_up_on.png", placeMenu.compassTiles().first().image())
+    playingScreen.onClick(game.at(18, 4))
+    assert.equals(left, toolsManager.currentDirection())
+    playingScreen.onClick(game.at(19, 2))
+    assert.equals(down, toolsManager.currentDirection())
+  }
+
+  test "Q y E eligen la maquina anterior o la siguiente, y pasan de pagina" {
+    playingScreen.show()
+    const catalog = machineManager.catalog()
+    rightPanel.chooseMachine(1)
+    assert.that(machineManager.selects(catalog.get(1)))
+    rightPanel.chooseMachine(-1)
+    rightPanel.chooseMachine(-1)
+    assert.that(machineManager.selects(catalog.last()))
+    assert.equals(machineManager.pageCount() - 1, placeMenu.currentPage())
+  }
+
+  test "Q o E mientras edita vuelve a colocar" {
+    self.editADispenser()
+    rightPanel.chooseMachine(1)
+    assert.notThat(toolsManager.isEditing())
+  }
+
+  // el brazo automático no rota: su imagen del menú no cambia (ver el test siguiente)
+  test "cambiar la dirección actualiza las imágenes del panel activo" {
+    self.startWithPlace()
+    toolsManager.currentDirection(up)
+    const items = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first() })
+      .filter({ item => item.name() != "AutomaticArm" })
+    assert.equals(items.map({ item => "machines/" + item.name() + "/up_menu.png" }), items.map({ item => item.image() }))
+  }
+
+  // el brazo está en la última página, en el slot 1
+  test "cambiar la dirección no cambia la imagen del brazo automático en el menú" {
+    self.startWithPlace()
+    placeMenu.next()
+    placeMenu.next()
+    toolsManager.currentDirection(up)
+    const arm = [1, 2].map({ slot => self.slotVisuals(slot).first() })
+      .find({ item => item.name() == "AutomaticArm" })
+    assert.equals("machines/AutomaticArm/down_menu.png", arm.image())
+  }
+
+  // ORDEN DE LOS SLOTS: la 1ª máquina de la página va arriba
+
+  test "al clickear cada máquina dibujada se elige esa máquina" {
+    self.startWithPlace()
+    const drawn = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).first().name() })
+    const chosen = [1, 2, 3, 4].map({ slot =>
+      playingScreen.onClick(self.slotVisuals(slot).first().position())
+      machineManager.selectedName()
+    })
+    assert.equals(drawn, chosen)
+  }
+
+  test "el marco amarillo arranca sobre la primera máquina y queda sobre la elegida" {
+    self.startWithPlace()
+    assert.equals(self.slotPosition(1), selectionFrame.position())
+    const framed = [1, 2, 3, 4].map({ slot =>
+      playingScreen.onClick(self.slotVisuals(slot).first().position())
+      selectionFrame.position()
+    })
+    assert.equals([1, 2, 3, 4].map({ slot => self.slotPosition(slot) }), framed)
+  }
+
+  // Lo esperado sale del catálogo, así el test no depende de cuántas máquinas haya:
+  // si la última página no está llena, los slots que sobran son los de abajo
+  test "la última página llena los slots desde arriba y deja libres los de abajo" {
+    self.startWithPlace()
+    const lastPage = machineManager.pageCount() - 1
+    lastPage.times({ _ => placeMenu.next() })
+    const inLastPage = machineManager.machinesOfPage(lastPage).size()
+    const sizes = [1, 2, 3, 4].map({ slot => self.slotVisuals(slot).size() })
+    assert.equals([1, 2, 3, 4].map({ slot => if (slot <= inLastPage) 1 else 0 }), sizes)
+    assert.notThat(game.hasVisual(selectionFrame))
+  }
+
+  test "volver de la primera página o pasar de la última no hace nada" {
+    self.startWithPlace()
+    placeMenu.prev()
+    assert.equals(0, placeMenu.currentPage())
+    3.times({ _ => placeMenu.next() })
+    assert.equals(machineManager.pageCount() - 1, placeMenu.currentPage())
+  }
+
+  test "un click en la zona interactiva con edit no cambia la máquina elegida" {
+    self.editADispenser()
+    const selectedBefore = machineManager.selectedName()
+    playingScreen.onClick(game.at(19, 8))
+    assert.equals(selectedBefore, machineManager.selectedName())
+  }
+
+  // ZONAS
+
+  // CATÁLOGO Y REINICIO (fase 1 del plan de niveles)
+
+  // un catálogo de 2 máquinas que no empieza como el de siempre (la cinta)
+  method ovenAndBelt() = [{ => new Oven() }, { => new Belt() }]
+
+  test "changeCatalog elige la primera maquina del catalogo nuevo" {
+    machineManager.changeCatalog(self.ovenAndBelt())
+    assert.equals("Oven", machineManager.selectedName())
+    assert.equals(1, machineManager.pageCount())
+  }
+
+  test "con place elegido, changeCatalog y resetPage muestran el catalogo nuevo" {
+    self.startWithPlace()
+    machineManager.changeCatalog(self.ovenAndBelt())
+    placeMenu.resetPage()
+    assert.equals("Oven", self.slotVisuals(1).first().name())
+    assert.equals("Belt", self.slotVisuals(2).first().name())
+    assert.that(self.slotVisuals(3).isEmpty())
+    assert.that(self.slotVisuals(4).isEmpty())
+  }
+
+  test "resetPage vuelve a la primera pagina" {
+    self.startWithPlace()
+    placeMenu.next()
+    assert.equals(1, placeMenu.currentPage())
+    placeMenu.resetPage()
+    assert.equals(0, placeMenu.currentPage())
+    assert.equals("Belt", self.slotVisuals(1).first().name())
+  }
+
+  test "toolsManager.reset deja colocando, hacia la derecha y con el panel de maquinas" {
+    self.editADispenser()
+    toolsManager.currentDirection(up)
+    toolsManager.reset()
+    assert.equals(placingMode, toolsManager.mode())
+    assert.equals(right, toolsManager.currentDirection())
+    assert.that(game.hasVisual(selectionFrame))
+    assert.equals("menu/mode_placing.png", modeBanner.image())
+  }
+
+  // Importa porque, al reiniciar, esa máquina ya no está en el tablero
+  test "toolsManager.reset con edit mostrando una maquina hace que edit la olvide" {
+    self.editADispenser()
+    toolsManager.reset()
+    assert.that(editMenu.settings().isEmpty())
+  }
+}
